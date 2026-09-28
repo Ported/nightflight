@@ -1,0 +1,35 @@
+[workspace]
+resolver = "3"
+members = ["crates/dsp", "crates/engine", "crates/app"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+publish = false
+
+[workspace.dependencies]
+dsp = { path = "crates/dsp" }
+engine = { path = "crates/engine" }
+cpal = "0.18"
+eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu"] }
+egui = "0.36"
+rtrb = "0.4"
+hound = "3.5"
+assert_no_alloc = "1.1"
+
+# Clippy lints worth having on an audio thread. Each crate opts in with
+# `[lints] workspace = true`.
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "warn"
+missing_panics_doc = "warn"
+
+# Our code needs some optimisation even in dev or the DSP cannot keep up with
+# real time; dependencies get the lot, because we never step through them.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"

@@ -1,0 +1,17 @@
+[package]
+name = "app"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+
+[dependencies]
+engine.workspace = true
+dsp.workspace = true
+cpal.workspace = true
+eframe.workspace = true
+egui.workspace = true
+rtrb.workspace = true
+assert_no_alloc.workspace = true
+
+[lints]
+workspace = true

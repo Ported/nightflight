@@ -1,0 +1,10 @@
+# Build output
+/target
+
+# Audio this repo can rebuild from code in seconds
+/renders
+
+# Head-related transfer function data: tens of megabytes, fetched per machine
+/hrtf
+
+.DS_Store
