@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::automation::{Flight, Macro, Play, Transition};
 use crate::mix::Gate;
+use crate::telemetry::{Description, LaneDescription, MacroDescription, SpanDescription};
 
 /// One step of a pattern. Velocity 0 is a rest.
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
@@ -316,5 +317,67 @@ impl Lane {
         self.spans
             .iter()
             .any(|s| matches!(s.enter, Transition::Fly(_)))
+    }
+}
+
+impl Set {
+    /// Everything about this piece that an interface needs in order to draw it.
+    ///
+    /// Telemetry says where a macro *is*; only this says where it is going,
+    /// which is the difference between a fader and a timeline.
+    #[must_use]
+    pub fn describe(&self) -> Description {
+        Description {
+            bpm: self.bpm,
+            length_bars: self.length_bars,
+            lanes: self
+                .lanes
+                .iter()
+                .map(|lane| LaneDescription {
+                    name: lane.name.clone(),
+                    clip: lane.clip.clone(),
+                    instrument: lane.voicing.instrument(),
+                    gain: lane.gain,
+                    send: lane.send,
+                    muted: lane.muted,
+                    // A lane is placed if it has somewhere to be, or ever flies
+                    // to one.
+                    placed: !matches!(lane.home, Home::Centre) || lane.ever_flies(),
+                    ducked: lane.ducked,
+                    steps: lane
+                        .pattern
+                        .all()
+                        .iter()
+                        .map(|step| (step.velocity, step.offset))
+                        .collect(),
+                    root: lane.root,
+                    spans: lane
+                        .spans
+                        .iter()
+                        .map(|play| SpanDescription {
+                            start: play.start,
+                            end: play.end,
+                            first_bar: play.first_bar(),
+                            enter: play.enter.name(),
+                            leave: play.leave.name(),
+                        })
+                        .collect(),
+                    gate_depth: lane.gate.as_ref().map(|gate| gate.depth),
+                })
+                .collect(),
+            macros: self
+                .macros
+                .iter()
+                .map(|m| MacroDescription {
+                    name: m.name.clone(),
+                    automated: m.manual.is_none(),
+                    curve: m
+                        .automation
+                        .as_ref()
+                        .map(|curve| curve.points().to_vec())
+                        .unwrap_or_default(),
+                })
+                .collect(),
+        }
     }
 }

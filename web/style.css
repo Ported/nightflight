@@ -156,3 +156,11 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .step.accent { background: #b9e2ff; border-color: #b9e2ff; }
 .step.playing { outline: 1px solid var(--good); outline-offset: 1px; }
 .step:hover { border-color: var(--accent); }
+
+/* Save is only interesting when there is something to save. */
+#save { min-width: 0; padding: 3px 10px; font-size: 12px; margin-right: 10px; visibility: hidden; }
+#save.dirty { visibility: visible; color: var(--warn); border-color: var(--warn); }
+#save.dirty::after { content: " ●"; font-size: 8px; vertical-align: middle; }
+
+/* The loop region, drawn behind the playhead on the timeline. */
+.looping { color: var(--good); }

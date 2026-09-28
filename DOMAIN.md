@@ -72,7 +72,13 @@ the engine plays what it is given, and the built-in Rust generators are now only
 provenance — `cargo run -p engine --example export` writes what they make. Hand
 edit a piece file, restart, and you hear the change.
 
-What is still missing is the loop back: an edit made in an editor reaches the
-running engine but nothing writes it down, because the server does not yet hold
-the document. When it does, a save is a file write and a reload shows what you
-edited rather than what the piece started as.
+The loop is closed: the server holds the document, an edit is applied to it *and*
+forwarded to the engine so it is heard at once, and a save is a file write. The
+engine holds no document at all — it is handed a piece and plays it.
+
+Which makes the distinction between the two kinds of message worth stating.
+**Authoring** changes the document: a step placed, later a parameter turned.
+**Performance** does not: a lane muted, a fader moved, a macro taken off its
+curve, the transport scrubbed. Both reach the engine; only the first is written
+down. It is the same distinction a mixing desk makes between playing and
+authoring, and it is why moving a fader for an hour leaves a piece unmodified.

@@ -25,9 +25,7 @@ use dsp::smooth::Smoothed;
 use dsp::space::{Ears, Motion, Placer, Position};
 use mix::Duck;
 use seq::{Home, Lane, Set, Step, Voicing};
-use telemetry::{
-    Command, Description, LaneDescription, LaneState, MacroDescription, SpanDescription, Telemetry,
-};
+use telemetry::{Command, LaneState, Telemetry};
 use voices::{AnyVoice, Pool};
 
 /// The control rate: how often positions, faders and filter coefficients are
@@ -82,6 +80,9 @@ pub struct Engine {
     /// notes start, but everything already sounding is left to finish — so
     /// pausing sounds like the room emptying rather than like a cut.
     playing: bool,
+    /// Bars to loop between, while editing a clip. Kept as bars rather than
+    /// samples so it survives a change of tempo.
+    loop_region: Option<(f32, f32)>,
     /// A bar the transport has been asked to jump to, waiting for the fade.
     seek_target: Option<f64>,
     /// The scrub fade: 1 is open, 0 is closed.
@@ -101,8 +102,6 @@ pub struct Engine {
     send_bus: [f32; MAX_BLOCK],
     duck_curve: [f32; MAX_BLOCK],
     master: f32,
-    /// How long the piece is, in bars. Only an interface uses it.
-    length_bars: f32,
     /// Every macro mapping with its lane already found, so moving a fader
     /// never searches a list of names on the audio thread.
     wires: Vec<Wire>,
@@ -163,6 +162,7 @@ impl Engine {
             lane_positions: vec![Position::default(); lanes.len()],
             peak: 0.0,
             playing: true,
+            loop_region: None,
             seek_target: None,
             seek_gain: 1.0,
             seek_step: 0.0,
@@ -180,7 +180,6 @@ impl Engine {
             send_bus: [0.0; MAX_BLOCK],
             duck_curve: [0.0; MAX_BLOCK],
             master: 0.5,
-            length_bars: set.length_bars,
             wires,
         }
     }
@@ -202,6 +201,15 @@ impl Engine {
             {
                 self.jump_to(bar);
                 self.seek_step = 1.0 / SEEK_FADE as f32;
+            }
+
+            // Wrap before working out what is due, so the step at the loop's
+            // start is the next one to fire rather than one already past.
+            if let Some((from, to)) = self.loop_region
+                && self.playing
+                && self.clock.bar() >= f64::from(to)
+            {
+                self.loop_back(f64::from(from));
             }
 
             // Stopped, the clock does not move, so no step is ever due. The
@@ -690,66 +698,6 @@ impl Engine {
     }
 
     /// Bar position, voice count and dropped-voice count, for the UI.
-    /// Everything about the set that does not change while it plays.
-    ///
-    /// Read once, before the engine is handed to the audio thread. Telemetry can
-    /// say where a macro *is*; only this says where it is going, which is the
-    /// difference between a fader and a timeline.
-    #[must_use]
-    pub fn describe(&self) -> Description {
-        Description {
-            bpm: self.clock.bpm(),
-            length_bars: self.length_bars,
-            lanes: self
-                .lanes
-                .iter()
-                .enumerate()
-                .map(|(index, lane)| LaneDescription {
-                    name: lane.name.clone(),
-                    clip: lane.clip.clone(),
-                    instrument: lane.voicing.instrument(),
-                    gain: lane.gain,
-                    send: lane.send,
-                    muted: lane.muted,
-                    placed: self.placers[index].is_some(),
-                    ducked: lane.ducked,
-                    steps: lane
-                        .pattern
-                        .all()
-                        .iter()
-                        .map(|s| (s.velocity, s.offset))
-                        .collect(),
-                    root: lane.root,
-                    spans: lane
-                        .spans
-                        .iter()
-                        .map(|play| SpanDescription {
-                            start: play.start,
-                            end: play.end,
-                            first_bar: play.first_bar(),
-                            enter: play.enter.name(),
-                            leave: play.leave.name(),
-                        })
-                        .collect(),
-                    gate_depth: lane.gate.as_ref().map(|g| g.depth),
-                })
-                .collect(),
-            macros: self
-                .macros
-                .iter()
-                .map(|m| MacroDescription {
-                    name: m.name.clone(),
-                    automated: m.manual.is_none(),
-                    curve: m
-                        .automation
-                        .as_ref()
-                        .map(|c| c.points().to_vec())
-                        .unwrap_or_default(),
-                })
-                .collect(),
-        }
-    }
-
     /// Everything the window draws. Reading it clears the peak meters, so each
     /// frame reports the loudest moment since the last one — which is what a
     /// meter should show, rather than whatever happened to be true at the
@@ -763,6 +711,8 @@ impl Engine {
             dropped: self.pool.dropped,
             peak: std::mem::take(&mut self.peak),
             playing: self.playing,
+            loop_from: self.loop_region.map_or(0.0, |(from, _)| from),
+            loop_to: self.loop_region.map_or(0.0, |(_, to)| to),
             lane_count: self.lanes.len().min(telemetry::MAX_PARTS) as u8,
             ..Telemetry::default()
         };
@@ -797,6 +747,33 @@ impl Engine {
     #[must_use]
     pub fn playing(&self) -> bool {
         self.playing
+    }
+
+    /// Loop between two bars, or stop looping.
+    pub fn set_loop(&mut self, region: Option<(f32, f32)>) {
+        // A loop that does not move forwards would spin inside one callback.
+        self.loop_region = region.filter(|(from, to)| to > from);
+    }
+
+    #[must_use]
+    pub fn loop_region(&self) -> Option<(f32, f32)> {
+        self.loop_region
+    }
+
+    /// Wrap the transport back to `bar`, seamlessly.
+    ///
+    /// Nothing like a scrub: a loop point is a musical edge, not a cut, so
+    /// nothing is silenced and nothing is faded. Notes ringing at the end of the
+    /// bar continue over the seam — which is what makes a hat's tail carry into
+    /// the next pass — the room keeps its tail, and the orbits keep turning,
+    /// since a source circling every four bars should not jump back each time a
+    /// one-bar loop comes round.
+    ///
+    /// The flight cursors do reset: they remember which steps they have already
+    /// fired ahead of the beat, and after a wrap those steps are due again.
+    fn loop_back(&mut self, bar: f64) {
+        self.clock.seek(bar);
+        self.flight_cursor.fill(None);
     }
 
     /// Move the transport to `bar`, fading out and back in around the cut.
@@ -856,6 +833,9 @@ impl Engine {
             Command::Bpm { value } => self.clock.set_bpm(value),
             Command::Seek { bar } => self.seek(bar),
             Command::Playing { value } => self.playing = value,
+            Command::Loop { from, to, on } => {
+                self.set_loop(on.then_some((from, to)));
+            }
             Command::SetStep {
                 lane,
                 step,

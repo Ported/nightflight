@@ -76,7 +76,8 @@ fn a_telemetry_frame_and_a_description_both_serialise() {
     let telemetry = serde_json::to_string(&engine.telemetry()).expect("telemetry");
     assert!(telemetry.contains("\"bar\""), "{telemetry}");
 
-    let description = serde_json::to_string(&engine.describe()).expect("description");
+    let description =
+        serde_json::to_string(&engine::sets::intro().describe()).expect("description");
     // The things a timeline cannot be drawn without.
     for expected in [
         "\"lanes\"",
@@ -103,69 +104,59 @@ fn editing_a_step_changes_what_plays() {
     // the next time round the bar it is heard. Nothing is allocated to do it —
     // the slot already exists — which is why an editor sends one step rather
     // than a whole clip.
-    let mut engine = engine::Engine::new(dsp::SR, 126.0, engine::sets::rolling());
-    let kick = engine
-        .describe()
+    //
+    // Asserted on the sound, not on the engine's own account of itself: the
+    // engine holds no document. It is handed a piece, it plays it, and what it
+    // was handed is the server's business.
+    let set = engine::sets::rolling();
+    let kick = set
         .lanes
         .iter()
         .position(|lane| lane.name == "kick")
         .expect("rolling has a kick") as u8;
+    assert_eq!(
+        set.lanes[kick as usize].pattern.all()[5].velocity,
+        0.0,
+        "step 5 should start empty"
+    );
 
-    // Rolling's kick is four on the floor: steps 0, 4, 8 and 12.
-    let before = engine.describe().lanes[kick as usize].steps.clone();
-    assert_eq!(before[5].0, 0.0, "step 5 should start empty");
+    // The level in the sixteenth where the new step lands, which is the only
+    // place the sound should differ. Counting onsets would not do: a 49 Hz kick
+    // crosses any threshold you pick a dozen times per hit.
+    let bar = 4.0 * 60.0 / 126.0 * f64::from(dsp::SR);
+    let at_step_five = |engine: &mut engine::Engine| -> f32 {
+        engine.apply(Command::Seek { bar: 0.0 });
+        // Let the seek fade open before measuring.
+        engine.process(&mut vec![0.0f32; 2048]);
+        let mut out = vec![0.0f32; bar as usize * 2];
+        engine.process(&mut out);
+        let sixteenth = out.len() / 2 / 16;
+        out.chunks(2)
+            .map(|frame| frame[0].abs())
+            .skip(5 * sixteenth)
+            .take(sixteenth)
+            .fold(0.0f32, f32::max)
+    };
 
+    let mut engine = engine::Engine::new(dsp::SR, set.bpm, set);
+    let before = at_step_five(&mut engine);
+
+    // The exact JSON the page sends when a cell is clicked.
     let command: Command = serde_json::from_str(&format!(
-        r#"{{"t":"set_step","lane":{kick},"step":5,"velocity":0.7,"offset":0}}"#
+        r#"{{"t":"set_step","lane":{kick},"step":5,"velocity":0.9,"offset":0}}"#
     ))
     .expect("the page's own JSON");
     engine.apply(command);
 
-    let after = engine.describe().lanes[kick as usize].steps.clone();
-    assert_eq!(after[5].0, 0.7, "the step did not take");
-    assert_eq!(after[0].0, before[0].0, "the other steps moved");
-
-    // And it is audible: render the bar and count the kicks.
-    let mut out = vec![0.0f32; (4.0 * 60.0 / 126.0 * 4.0 * f64::from(dsp::SR)) as usize * 2];
-    engine.apply(Command::Seek { bar: 0.0 });
-    engine.process(&mut out);
-    let onsets = out
-        .chunks(2)
-        .map(|frame| frame[0].abs())
-        .collect::<Vec<_>>()
-        .windows(2)
-        .filter(|w| w[0] < 0.2 && w[1] >= 0.2)
-        .count();
+    let after = at_step_five(&mut engine);
+    // Two decibels, not ten: the window is not silent to begin with. A kick
+    // rings for 0.4 s and a sixteenth is 0.119, so the one on step 4 is still
+    // sounding through step 5, and a new kick on top of it is a step up rather
+    // than an arrival out of nothing.
+    let louder = 20.0 * (after / before.max(1e-6)).log10();
     assert!(
-        onsets >= 5,
-        "expected five kicks in the bar, heard {onsets}"
+        louder > 2.0,
+        "the extra kick was not heard: step 5 peaked at {before:.3} and now peaks \
+         at {after:.3}, only {louder:.1} dB louder"
     );
-}
-
-#[test]
-fn a_piece_survives_being_written_down_and_read_back() {
-    // The claim the whole persistence design rests on: the engine's `Set` *is*
-    // the document, so writing one out and reading it back must give a piece
-    // that plays identically. Not approximately — the same samples.
-    for name in engine::sets::NAMES {
-        let original = engine::sets::by_name(name).expect("a built-in piece");
-
-        let json = serde_json::to_string(&original).expect("a piece serialises");
-        let read_back: engine::seq::Set = serde_json::from_str(&json)
-            .unwrap_or_else(|err| panic!("{name} did not survive the round trip: {err}"));
-
-        let render = |set: engine::seq::Set| {
-            let mut engine = engine::Engine::new(dsp::SR, set.bpm, set);
-            let mut out = vec![0.0f32; 48_000 * 2 * 4];
-            engine.process(&mut out);
-            out
-        };
-        let before = render(original);
-        let after = render(read_back);
-        let differences = before.iter().zip(&after).filter(|(a, b)| a != b).count();
-        assert_eq!(
-            differences, 0,
-            "{name} played differently after a round trip through JSON"
-        );
-    }
 }

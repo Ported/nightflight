@@ -66,10 +66,18 @@ A debug build has `assert_no_alloc` armed and DSP too slow to keep up. Run
 
 ## Traps this project has already fallen into
 
-- **An edit that silently does not apply.** A string replacement whose anchor
+- **An edit that silently does not apply.** This has now happened four times and
+  is the most expensive trap here. After any scripted edit, grep for the text you
+  inserted before doing anything else. Anchors rot for three reasons: `cargo fmt`
+  reformats, a rename changes the surrounding lines, and indentation moves when
+  code is wrapped in a new block. A string replacement whose anchor
   `cargo fmt` had already rewritten did nothing; the build passed because nothing
   changed and the tests passed because they cover the engine, not the window. A
   button was reported as shipped and did not exist. **Verify an edit landed.**
+- **Counting onsets by threshold.** A 49 Hz kick crosses any level you pick a
+  dozen times per hit. This has been got wrong three times in three different
+  tests. Use a smoothed envelope with hysteresis, or measure the level in the
+  window where the change should be.
 - **A stale binary.** A failed `cargo build` left the previous binary in place, so
   measurements described code that no longer compiled. Read the compiler output
   before the numbers.

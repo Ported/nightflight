@@ -35,6 +35,10 @@ function connect() {
       buildLanes(message.lanes);
       buildMacros(message.macros);
       buildTabs();
+      $("save").classList.toggle("dirty", message.dirty);
+    } else if (message.t === "document") {
+      $("save").classList.toggle("dirty", message.dirty);
+      if (message.saved) $("set").title = `saved to ${message.saved}`;
     } else if (message.t === "telemetry") {
       telemetry = message.Telemetry ?? message;
     }
@@ -164,6 +168,11 @@ function buildTabs() {
 }
 
 function show(name) {
+  // Leaving an editor stops auditioning: a loop left running would be a
+  // mysterious four bars for ever.
+  if (tab !== "conductor" && name === "conductor") {
+    send({ t: "loop", from: 0, to: 0, on: false });
+  }
   tab = name;
   $("view-conductor").classList.toggle("hidden", name !== "conductor");
   $("view-clip").classList.toggle("hidden", name === "conductor");
@@ -228,6 +237,24 @@ function paint(cell, velocity) {
 }
 
 // ── Transport ───────────────────────────────────────────────────────────────
+
+$("save").onclick = () => send({ t: "save" });
+
+/**
+ * Audition the open clip: loop over one pass of it, from where it actually
+ * plays. A clip's steps start at zero but the clip itself may not begin until
+ * bar 26, so looping bars 0 to 1 would audition silence.
+ */
+$("audition").onclick = () => {
+  const lanes = clips().get(tab) ?? [];
+  if (!lanes.length) return;
+  const steps = Math.max(...lanes.map((lane) => lane.steps.length));
+  const start = Math.min(...lanes.map((lane) => lane.spans[0]?.start ?? 0));
+  const to = start + steps / 16;
+  send({ t: "loop", from: start, to, on: true });
+  send({ t: "seek", bar: start });
+  send({ t: "playing", value: true });
+};
 
 $("play").onclick = () => send({ t: "playing", value: !(telemetry?.playing ?? true) });
 $("start").onclick = () => send({ t: "seek", bar: 0 });
@@ -366,6 +393,16 @@ function drawTimeline() {
     context.fillStyle = colour(shade);
     context.fillText(macro.name, x(firstBar) + 3, curveBottom - (curveBottom - curveTop) * firstValue - 7);
   });
+
+  if (telemetry && telemetry.loop_to > telemetry.loop_from) {
+    context.fillStyle = colour("--good") + "22";
+    context.fillRect(
+      x(telemetry.loop_from),
+      top,
+      x(telemetry.loop_to) - x(telemetry.loop_from),
+      height - 14 - top,
+    );
+  }
 
   if (telemetry) {
     context.strokeStyle = colour("--good");

@@ -212,3 +212,68 @@ fn the_playhead_can_be_moved_while_stopped() {
     play(&mut engine, (0.5 * BAR_SAMPLES) as usize);
     assert!(engine.state().bar > 24.4, "it did not start from there");
 }
+
+#[test]
+fn a_loop_holds_the_transport_inside_it() {
+    // Auditioning a clip: the transport wraps at the end of the loop and comes
+    // back, for as long as you are editing.
+    let mut engine = engine();
+    engine.apply(Command::Loop {
+        from: 0.0,
+        to: 1.0,
+        on: true,
+    });
+    engine.apply(Command::Seek { bar: 0.0 });
+    play(&mut engine, (6.0 * BAR_SAMPLES) as usize);
+    let bar = engine.state().bar;
+    assert!(
+        bar < 1.0,
+        "six bars of audio later the transport is at bar {bar:.2}, outside its loop"
+    );
+
+    // And it really did go round rather than sitting still.
+    assert!(bar > 0.0, "the transport did not move at all");
+
+    // Turning it off lets it run on.
+    engine.apply(Command::Loop {
+        from: 0.0,
+        to: 1.0,
+        on: false,
+    });
+    play(&mut engine, (2.0 * BAR_SAMPLES) as usize);
+    assert!(
+        engine.state().bar > 1.0,
+        "the loop was turned off and it still wrapped"
+    );
+}
+
+#[test]
+fn a_loop_does_not_silence_what_is_ringing() {
+    // A loop point is a musical edge, not a cut: a hat's tail carries over the
+    // seam, and the room keeps its tail. Nothing is faded and nothing is
+    // stopped, which is what separates this from a scrub.
+    let mut engine = engine();
+    engine.apply(Command::Loop {
+        from: 0.0,
+        to: 1.0,
+        on: true,
+    });
+    engine.apply(Command::Seek { bar: 0.0 });
+    let out = play(&mut engine, (4.0 * BAR_SAMPLES) as usize);
+
+    // No gap anywhere: with a one-bar loop, four bars of audio should be four
+    // passes of the same music and never silence.
+    let window = (0.05 * f64::from(dsp::SR)) as usize;
+    let quietest = out
+        .chunks(2)
+        .map(|frame| frame[0])
+        .collect::<Vec<_>>()
+        .chunks(window)
+        .map(|chunk| chunk.iter().fold(0.0f32, |m, s| m.max(s.abs())))
+        .skip(2)
+        .fold(f32::MAX, f32::min);
+    assert!(
+        quietest > 0.001,
+        "there is a hole in the loop: the quietest 50 ms peaks at {quietest:.5}"
+    );
+}

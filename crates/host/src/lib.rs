@@ -124,12 +124,17 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
         buffer_size,
     };
 
+    // The piece is described before it is handed over. The engine holds no
+    // document — it is given one and plays it — so this is the last moment
+    // anyone can ask the piece about itself.
+    let description = set.describe();
+
     // Built here, on this thread, and then moved into the callback: every
     // allocation the engine will ever need has happened by the time it plays.
     let mut engine = Box::new(Engine::new(dsp::SR, 126.0, set));
     let lane_names = engine.lane_names();
     let macro_names = engine.macro_names();
-    let description = engine.describe();
+
 
     let (command_tx, mut command_rx) = rtrb::RingBuffer::new(256);
     let (mut telemetry_tx, telemetry_rx) = rtrb::RingBuffer::new(8);

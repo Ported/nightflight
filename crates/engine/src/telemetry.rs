@@ -55,6 +55,9 @@ pub struct Telemetry {
     pub xruns: u32,
     /// Whether the transport is running.
     pub playing: bool,
+    /// The bars being looped between, if any.
+    pub loop_from: f32,
+    pub loop_to: f32,
 }
 
 impl Default for Telemetry {
@@ -72,6 +75,8 @@ impl Default for Telemetry {
             load: 0.0,
             xruns: 0,
             playing: true,
+            loop_from: 0.0,
+            loop_to: 0.0,
         }
     }
 }
@@ -115,6 +120,12 @@ pub enum Command {
     /// Run the transport, or stop it.
     Playing {
         value: bool,
+    },
+    /// Loop between two bars while editing, or stop looping.
+    Loop {
+        from: f32,
+        to: f32,
+        on: bool,
     },
     /// Change one step of a lane. An editor sends these one at a time as cells
     /// are clicked, which is both what an interface naturally produces and the
