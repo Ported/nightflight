@@ -35,7 +35,7 @@ fn the_engine_needs_no_audio_device_and_no_window() {
     let mut out = vec![0.0f32; 512];
     engine.process(&mut out);
     assert!(out.iter().any(|s| *s != 0.0), "no sound without a device");
-    assert!(engine.telemetry().part_count > 0);
+    assert!(engine.telemetry().lane_count > 0);
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn a_telemetry_frame_and_a_description_both_serialise() {
     let description = serde_json::to_string(&engine.describe()).expect("description");
     // The things a timeline cannot be drawn without.
     for expected in [
-        "\"parts\"",
+        "\"lanes\"",
         "\"spans\"",
         "\"steps\"",
         "\"curve\"",
@@ -94,5 +94,50 @@ fn a_telemetry_frame_and_a_description_both_serialise() {
         "telemetry {} bytes of JSON, description {} bytes",
         telemetry.len(),
         description.len()
+    );
+}
+
+#[test]
+fn editing_a_step_changes_what_plays() {
+    // The drum machine's whole loop: a cell is clicked, one step changes, and
+    // the next time round the bar it is heard. Nothing is allocated to do it —
+    // the slot already exists — which is why an editor sends one step rather
+    // than a whole clip.
+    let mut engine = engine::Engine::new(dsp::SR, 126.0, engine::sets::rolling());
+    let kick = engine
+        .describe()
+        .lanes
+        .iter()
+        .position(|lane| lane.name == "kick")
+        .expect("rolling has a kick") as u8;
+
+    // Rolling's kick is four on the floor: steps 0, 4, 8 and 12.
+    let before = engine.describe().lanes[kick as usize].steps.clone();
+    assert_eq!(before[5].0, 0.0, "step 5 should start empty");
+
+    let command: Command = serde_json::from_str(&format!(
+        r#"{{"t":"set_step","lane":{kick},"step":5,"velocity":0.7,"offset":0}}"#
+    ))
+    .expect("the page's own JSON");
+    engine.apply(command);
+
+    let after = engine.describe().lanes[kick as usize].steps.clone();
+    assert_eq!(after[5].0, 0.7, "the step did not take");
+    assert_eq!(after[0].0, before[0].0, "the other steps moved");
+
+    // And it is audible: render the bar and count the kicks.
+    let mut out = vec![0.0f32; (4.0 * 60.0 / 126.0 * 4.0 * f64::from(dsp::SR)) as usize * 2];
+    engine.apply(Command::Seek { bar: 0.0 });
+    engine.process(&mut out);
+    let onsets = out
+        .chunks(2)
+        .map(|frame| frame[0].abs())
+        .collect::<Vec<_>>()
+        .windows(2)
+        .filter(|w| w[0] < 0.2 && w[1] >= 0.2)
+        .count();
+    assert!(
+        onsets >= 5,
+        "expected five kicks in the bar, heard {onsets}"
     );
 }

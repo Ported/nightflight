@@ -20,6 +20,8 @@ const held = new Set();
 const macroHeld = new Map();
 
 let socket = null;
+/** Which view is showing: "conductor", or a clip's name. */
+let tab = "conductor";
 
 function connect() {
   socket = new WebSocket(`ws://${location.host}/`);
@@ -30,8 +32,9 @@ function connect() {
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
       $("scrub").max = message.length_bars;
-      buildParts(message.parts);
+      buildLanes(message.lanes);
       buildMacros(message.macros);
+      buildTabs();
     } else if (message.t === "telemetry") {
       telemetry = message.Telemetry ?? message;
     }
@@ -52,15 +55,15 @@ function send(message) {
 
 // ── Building the controls, once the hello says what there is ─────────────────
 
-function buildParts(parts) {
-  const host = $("parts");
+function buildLanes(lanes) {
+  const host = $("lanes");
   host.replaceChildren();
-  parts.forEach((part, index) => {
+  lanes.forEach((lane, index) => {
     const name = document.createElement("button");
-    name.className = "name" + (part.muted ? " muted" : "");
-    name.textContent = part.name;
-    name.title = `${part.instrument}${part.placed ? " · placed" : " · centre"}${
-      part.ducked ? " · ducked by the kick" : ""
+    name.className = "name" + (lane.muted ? " muted" : "");
+    name.textContent = lane.name;
+    name.title = `${lane.instrument}${lane.placed ? " · placed" : " · centre"}${
+      lane.ducked ? " · ducked by the kick" : ""
     }`;
     name.onclick = () => {
       const muted = !name.classList.contains("muted");
@@ -69,10 +72,10 @@ function buildParts(parts) {
     };
 
     const fader = document.createElement("input");
-    Object.assign(fader, { type: "range", min: 0, max: 2, step: 0.01, value: part.gain });
+    Object.assign(fader, { type: "range", min: 0, max: 2, step: 0.01, value: lane.gain });
     const readout = document.createElement("span");
     readout.className = "gain";
-    readout.textContent = part.gain.toFixed(2);
+    readout.textContent = lane.gain.toFixed(2);
     fader.oninput = () => {
       readout.textContent = Number(fader.value).toFixed(2);
       send({ t: "level", index, gain: Number(fader.value) });
@@ -82,7 +85,7 @@ function buildParts(parts) {
     meter.className = "meter";
     const fill = document.createElement("i");
     meter.append(fill);
-    meter.dataset.part = index;
+    meter.dataset.lane = index;
 
     host.append(name, fader, readout, meter);
   });
@@ -135,6 +138,95 @@ function buildMacros(macros) {
   });
 }
 
+// ── Tabs ────────────────────────────────────────────────────────────────────
+
+/** Lanes grouped by the clip they belong to, in the order they first appear. */
+function clips() {
+  const grouped = new Map();
+  description?.lanes.forEach((lane, index) => {
+    if (!grouped.has(lane.clip)) grouped.set(lane.clip, []);
+    grouped.get(lane.clip).push({ ...lane, index });
+  });
+  return grouped;
+}
+
+function buildTabs() {
+  const host = $("tabs");
+  host.replaceChildren();
+  const names = ["conductor", ...clips().keys()];
+  for (const name of names) {
+    const button = document.createElement("button");
+    button.textContent = name;
+    button.className = name === tab ? "on" : "";
+    button.onclick = () => show(name);
+    host.append(button);
+  }
+}
+
+function show(name) {
+  tab = name;
+  $("view-conductor").classList.toggle("hidden", name !== "conductor");
+  $("view-clip").classList.toggle("hidden", name === "conductor");
+  if (name !== "conductor") buildClip(name);
+  buildTabs();
+}
+
+/**
+ * The step grid: one row per lane of the clip, one cell per step.
+ *
+ * Clicking a cell places or clears a step, which goes straight to the engine as
+ * a single `set_step` — the slot already exists there, so nothing has to be
+ * allocated on the audio thread to change a loop while it plays.
+ */
+function buildClip(name) {
+  const lanes = clips().get(name) ?? [];
+  $("clipName").textContent = name;
+  const steps = lanes[0]?.steps.length ?? 0;
+  $("clipInfo").textContent = `${lanes.length} lanes · ${steps} steps`;
+
+  const host = $("clipLanes");
+  host.replaceChildren();
+  for (const lane of lanes) {
+    const row = document.createElement("div");
+    row.className = "lane";
+    row.dataset.lane = lane.index;
+
+    const label = document.createElement("span");
+    label.className = "name";
+    label.textContent = lane.name;
+    const patch = document.createElement("span");
+    patch.className = "patch";
+    patch.textContent = lane.instrument;
+
+    const cells = document.createElement("div");
+    cells.className = "steps";
+    lane.steps.forEach(([velocity, offset], step) => {
+      const cell = document.createElement("div");
+      cell.className = "step" + (step % 4 === 0 ? " beat" : "");
+      cell.dataset.step = step;
+      paint(cell, velocity);
+      cell.onclick = (event) => {
+        // Off, on, or accented: a drum grid needs three states and a click has
+        // two, so shift is the third.
+        const now = Number(cell.dataset.velocity);
+        const next = event.shiftKey ? (now >= 1 ? 0 : 1) : now > 0 ? 0 : 0.7;
+        paint(cell, next);
+        send({ t: "set_step", lane: lane.index, step, velocity: next, offset });
+      };
+      cells.append(cell);
+    });
+
+    row.append(label, patch, cells);
+    host.append(row);
+  }
+}
+
+function paint(cell, velocity) {
+  cell.dataset.velocity = velocity;
+  cell.classList.toggle("on", velocity > 0);
+  cell.classList.toggle("accent", velocity >= 1);
+}
+
 // ── Transport ───────────────────────────────────────────────────────────────
 
 $("play").onclick = () => send({ t: "playing", value: !(telemetry?.playing ?? true) });
@@ -178,7 +270,7 @@ function fit(canvas) {
 const style = getComputedStyle(document.documentElement);
 const colour = (name) => style.getPropertyValue(name).trim();
 
-/** The arrangement: one row per part, its spans drawn, with the playhead. */
+/** The arrangement: one row per lane, its spans drawn, with the playhead. */
 function drawTimeline() {
   const { context, width, height } = fit($("timeline"));
   context.clearRect(0, 0, width, height);
@@ -189,7 +281,7 @@ function drawTimeline() {
   const gutter = 74;
   const top = 4;
   const bars = description.length_bars;
-  const rows = description.parts.length;
+  const rows = clips().size;
   const rowHeight = Math.min(16, (height - top - 16) / Math.max(rows, 1));
   const x = (bar) => gutter + (bar / bars) * (width - gutter - 4);
 
@@ -211,15 +303,17 @@ function drawTimeline() {
   const playhead = telemetry?.bar ?? -1;
   const inside = (from, to) => playhead >= from && playhead < to;
 
-  description.parts.forEach((part, index) => {
+  [...clips()].forEach(([clip, lanes], index) => {
     const y = top + index * rowHeight;
     const middle = y + rowHeight / 2 - 1;
-    const muted = telemetry?.parts?.[index]?.muted;
+    // A clip is muted when every lane of it is.
+    const muted = lanes.every((lane) => telemetry?.lanes?.[lane.index]?.muted);
 
-    // A part with no spans plays for ever, which a set for jamming wants.
-    const spans = part.spans.length
-      ? part.spans
-      : [{ start: 0, end: bars, first_bar: 0 }];
+    // Every span of every lane in the clip. A lane with no spans plays for
+    // ever, which a piece for jamming wants.
+    const spans = lanes.flatMap((lane) =>
+      lane.spans.length ? lane.spans : [{ start: 0, end: bars, first_bar: 0 }],
+    );
     // Whether a block is lit follows the playhead being inside it, not whether
     // a voice happens to be ringing this instant: a closed hat sounds for a
     // third of the time it is playing, so voice activity makes a block flicker
@@ -228,11 +322,11 @@ function drawTimeline() {
 
     context.fillStyle = muted ? colour("--line") : live ? colour("--text") : colour("--weak");
     context.textAlign = "right";
-    context.fillText(part.name, gutter - 6, middle);
+    context.fillText(clip, gutter - 6, middle);
     context.textAlign = "left";
 
     for (const span of spans) {
-      // A flight's approach: the part is sounding, but from somewhere else. It
+      // A flight's approach: the lane is sounding, but from somewhere else. It
       // is drawn thinner rather than fainter, so that it can still light up
       // when the playhead is in it.
       if (span.first_bar < span.start) {
@@ -331,40 +425,40 @@ function drawPlan() {
   context.stroke();
 
   if (!telemetry || !description) return;
-  const parts = telemetry.parts.slice(0, telemetry.part_count);
+  const lanes = telemetry.lanes.slice(0, telemetry.lane_count);
   const fade = (base, alpha) =>
     colour(base) + Math.round(Math.min(alpha, 1) * 255).toString(16).padStart(2, "0");
 
-  // Parts in the centre of your head — kick and bass, which is where low
+  // Lanes in the centre of your head — kick and bass, which is where low
   // frequencies belong — get a list rather than a dot, since they would all be
   // the same dot.
   context.font = `10px ${colour("--font")}`;
   let centred = 0;
-  parts.forEach((part, index) => {
-    if (part.placed) return;
-    const name = description.parts[index]?.name ?? "?";
-    const level = Math.sqrt(Math.min(Math.max(part.level, 0), 1));
+  lanes.forEach((lane, index) => {
+    if (lane.placed) return;
+    const name = description.lanes[index]?.name ?? "?";
+    const level = Math.sqrt(Math.min(Math.max(lane.level, 0), 1));
     const y = height - 10 - 13 * centred++;
-    context.fillStyle = fade("--weak", part.muted ? 0.25 : 0.4 + 0.6 * level);
+    context.fillStyle = fade("--weak", lane.muted ? 0.25 : 0.4 + 0.6 * level);
     context.beginPath();
     context.arc(10, y - 3, 2 + 4 * level, 0, Math.PI * 2);
     context.fill();
     context.fillText(`${name} · centre`, 20, y);
   });
 
-  parts.forEach((part, index) => {
-    if (!part.placed) return;
-    const name = description.parts[index]?.name ?? "?";
-    const [x, , z] = part.position;
+  lanes.forEach((lane, index) => {
+    if (!lane.placed) return;
+    const name = description.lanes[index]?.name ?? "?";
+    const [x, , z] = lane.position;
     const distance = Math.hypot(x, z);
     if (distance < 0.001) return;
     const at = {
       x: centre.x + (x / distance) * scale(distance),
       y: centre.y + (z / distance) * scale(distance),
     };
-    const level = Math.sqrt(Math.min(Math.max(part.level, 0), 1));
+    const level = Math.sqrt(Math.min(Math.max(lane.level, 0), 1));
     const size = 3 + 9 * level;
-    context.fillStyle = fade("--accent", part.muted ? 0.2 : 0.3 + 0.7 * level);
+    context.fillStyle = fade("--accent", lane.muted ? 0.2 : 0.3 + 0.7 * level);
     context.beginPath();
     context.arc(at.x, at.y, size, 0, Math.PI * 2);
     context.fill();
@@ -380,7 +474,7 @@ function drawPlan() {
     context.lineWidth = 3;
     context.strokeStyle = colour("--panel");
     context.strokeText(name, label.x, label.y);
-    context.fillStyle = fade("--text", part.muted ? 0.3 : 0.55 + 0.45 * level);
+    context.fillStyle = fade("--text", lane.muted ? 0.3 : 0.55 + 0.45 * level);
     context.fillText(name, label.x, label.y);
     context.textAlign = "left";
   });
@@ -412,11 +506,11 @@ function frame() {
     $("dropouts").style.color = t.xruns > 0 ? colour("--bad") : t.dropped > 0 ? colour("--warn") : colour("--weak");
     if (!held.has("bpm")) $("bpmText").textContent = t.bpm.toFixed(1);
 
-    for (const meter of document.querySelectorAll(".parts .meter")) {
-      const part = t.parts[Number(meter.dataset.part)];
+    for (const meter of document.querySelectorAll(".lanes .meter")) {
+      const lane = t.lanes[Number(meter.dataset.lane)];
       const fill = meter.firstElementChild;
-      fill.style.width = `${Math.sqrt(Math.min(Math.max(part.level, 0), 1)) * 100}%`;
-      fill.style.background = part.sounding ? colour("--good") : colour("--weak");
+      fill.style.width = `${Math.sqrt(Math.min(Math.max(lane.level, 0), 1)) * 100}%`;
+      fill.style.background = lane.sounding ? colour("--good") : colour("--weak");
     }
     for (const box of document.querySelectorAll(".macro")) {
       const index = Number(box.dataset.macro);
@@ -425,8 +519,22 @@ function frame() {
       box.querySelector(".value").textContent = value.toFixed(2);
     }
   }
-  drawTimeline();
-  drawPlan();
+  if (tab === "conductor") {
+    drawTimeline();
+    drawPlan();
+  } else if (telemetry) {
+    // Which step is sounding, so the grid reads as a machine running rather
+    // than a spreadsheet.
+    const sixteenth = Math.floor(telemetry.bar * 16);
+    for (const row of document.querySelectorAll(".lane")) {
+      const lane = description?.lanes[Number(row.dataset.lane)];
+      if (!lane) continue;
+      const here = ((sixteenth % lane.steps.length) + lane.steps.length) % lane.steps.length;
+      for (const cell of row.querySelectorAll(".step")) {
+        cell.classList.toggle("playing", Number(cell.dataset.step) === here);
+      }
+    }
+  }
   requestAnimationFrame(frame);
 }
 

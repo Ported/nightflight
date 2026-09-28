@@ -9,6 +9,7 @@
 <header>
   <h1>nightflight</h1>
   <span id="set" class="set">connecting…</span>
+  <nav id="tabs" class="tabs"></nav>
   <span class="spacer"></span>
   <span id="device" class="weak mono"></span>
 </header>
@@ -34,14 +35,15 @@
   <input id="master" type="range" min="0" max="1.5" step="0.01" value="0.5">
 </section>
 
+<div id="view-conductor" class="view">
 <section class="timeline">
   <canvas id="timeline"></canvas>
 </section>
 
 <main>
   <div class="column">
-    <h2>parts</h2>
-    <div id="parts" class="parts"></div>
+    <h2>lanes</h2>
+    <div id="lanes" class="lanes"></div>
   </div>
   <div class="column">
     <h2>where things are</h2>
@@ -50,6 +52,17 @@
     <div id="macros" class="macros"></div>
   </div>
 </main>
+</div>
+
+<div id="view-clip" class="view hidden">
+  <section class="clip-head">
+    <span id="clipName" class="set"></span>
+    <span id="clipInfo" class="weak mono fixed"></span>
+    <span class="spacer"></span>
+    <span class="weak">click a cell to place or clear a step · shift-click for an accent</span>
+  </section>
+  <div class="column"><div id="clipLanes" class="clip"></div></div>
+</div>
 
 <script src="app.js" type="module"></script>
 </body>

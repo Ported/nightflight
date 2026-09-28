@@ -22,7 +22,7 @@ fn main() {
         println!(
             "{bar:5}  {:>28}  {}",
             macros.join(" "),
-            engine.debug_parts()
+            engine.debug_lanes()
         );
     }
 }

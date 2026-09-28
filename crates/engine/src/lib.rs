@@ -1,4 +1,4 @@
-//! The player: a clock, some parts and a pool of voices, with one entry point.
+//! The player: a clock, some lanes and a pool of voices, with one entry point.
 //!
 //! `Engine::process` fills a buffer of interleaved stereo samples. cpal calls
 //! it about three hundred times a second from the audio thread; an offline
@@ -23,9 +23,9 @@ use dsp::reverb::Reverb;
 use dsp::smooth::Smoothed;
 use dsp::space::{Ears, Motion, Placer, Position};
 use mix::Duck;
-use seq::{Home, Part, Set, Voicing};
+use seq::{Home, Lane, Set, Step, Voicing};
 use telemetry::{
-    Command, Description, MacroDescription, PartDescription, PartState, SpanDescription, Telemetry,
+    Command, Description, LaneDescription, LaneState, MacroDescription, SpanDescription, Telemetry,
 };
 use voices::{AnyVoice, Pool};
 
@@ -48,7 +48,7 @@ pub const MAX_BLOCK: usize = CONTROL_BLOCK;
 /// enough to feel instant and long enough that the cut is a dip, not a click.
 const SEEK_FADE: usize = 288;
 
-/// Where a part with no place of its own flies to: just above your head.
+/// Where a lane with no place of its own flies to: just above your head.
 const OVERHEAD: Position = Position {
     x: 0.0,
     y: 1.0,
@@ -58,23 +58,23 @@ const OVERHEAD: Position = Position {
 pub struct Engine {
     clock: Clock,
     pool: Pool,
-    parts: Vec<Part>,
+    lanes: Vec<Lane>,
     macros: Vec<Macro>,
-    /// One smoothed fader per part, so a mute or a level change ramps instead
-    /// of stepping. Parallel to `parts`.
+    /// One smoothed fader per lane, so a mute or a level change ramps instead
+    /// of stepping. Parallel to `lanes`.
     levels: Vec<Smoothed>,
     duck: Duck,
     reverb: Option<Reverb>,
-    /// One placer per placed part, holding its delay line and filters.
-    /// Parallel to `parts`; `None` for parts that stay in the centre.
+    /// One placer per placed lane, holding its delay line and filters.
+    /// Parallel to `lanes`; `None` for lanes that stay in the centre.
     placers: Vec<Option<Placer>>,
-    /// Laps each orbiting part has turned so far. Accumulated rather than
+    /// Laps each orbiting lane has turned so far. Accumulated rather than
     /// derived, so a change of speed never moves a source.
     laps: Vec<f64>,
-    /// Peak of each part's own contribution since the last telemetry frame.
-    part_peaks: Vec<f32>,
-    /// Where each part was when it was last drawn.
-    part_positions: Vec<Position>,
+    /// Peak of each lane's own contribution since the last telemetry frame.
+    lane_peaks: Vec<f32>,
+    /// Where each lane was when it was last drawn.
+    lane_positions: Vec<Position>,
     /// Master peak since the last telemetry frame.
     peak: f32,
     /// Whether the transport is running. Paused, the clock stops and no new
@@ -87,14 +87,14 @@ pub struct Engine {
     seek_gain: f32,
     /// Per-sample change in that fade; 0 when it has arrived.
     seek_step: f32,
-    /// The next step each flying part owes, while it is in the air. Flights fire
+    /// The next step each flying lane owes, while it is in the air. Flights fire
     /// ahead of the beat, so they cannot use the shared step counter.
     flight_cursor: Vec<Option<u64>>,
     /// Scratch buffers for one sub-block. Preallocated: the audio thread never
     /// asks for memory.
     mix: [[f32; MAX_BLOCK]; 2],
-    part_buffer: [f32; MAX_BLOCK],
-    /// The shared reverb feed. Every part contributes through its own send, and
+    lane_buffer: [f32; MAX_BLOCK],
+    /// The shared reverb feed. Every lane contributes through its own send, and
     /// the whole bus is reverberated once — the mixing desk's send bus, and the
     /// reason a room sounds like one room rather than one per instrument.
     send_bus: [f32; MAX_BLOCK],
@@ -107,17 +107,17 @@ pub struct Engine {
 impl Engine {
     #[must_use]
     pub fn new(sr: f32, bpm: f32, set: Set) -> Self {
-        let parts = set.parts;
-        let levels = parts
+        let lanes = set.lanes;
+        let levels = lanes
             .iter()
             .map(|p| Smoothed::new(sr, 0.02, p.gain))
             .collect();
         // Delay lines are 32 KB each, so they are built here, before the
-        // stream starts, and only for parts that actually move.
-        let placers = parts
+        // stream starts, and only for lanes that actually move.
+        let placers = lanes
             .iter()
             .map(|p| {
-                // A part that only ever sits in the centre needs no delay line;
+                // A lane that only ever sits in the centre needs no delay line;
                 // one that flies does, even if it lands in the centre.
                 if matches!(p.home, Home::Centre) && !p.ever_flies() {
                     None
@@ -129,16 +129,16 @@ impl Engine {
         Self {
             clock: Clock::new(sr, bpm),
             pool: Pool::default(),
-            laps: vec![0.0; parts.len()],
-            flight_cursor: vec![None; parts.len()],
-            part_peaks: vec![0.0; parts.len()],
-            part_positions: vec![Position::default(); parts.len()],
+            laps: vec![0.0; lanes.len()],
+            flight_cursor: vec![None; lanes.len()],
+            lane_peaks: vec![0.0; lanes.len()],
+            lane_positions: vec![Position::default(); lanes.len()],
             peak: 0.0,
             playing: true,
             seek_target: None,
             seek_gain: 1.0,
             seek_step: 0.0,
-            parts,
+            lanes,
             macros: set.macros,
             levels,
             placers,
@@ -148,7 +148,7 @@ impl Engine {
                 .reverb
                 .map(|r| Reverb::new(sr, r.rt60, r.damping, r.predelay, r.lowcut)),
             mix: [[0.0; MAX_BLOCK]; 2],
-            part_buffer: [0.0; MAX_BLOCK],
+            lane_buffer: [0.0; MAX_BLOCK],
             send_bus: [0.0; MAX_BLOCK],
             duck_curve: [0.0; MAX_BLOCK],
             master: 0.5,
@@ -221,14 +221,14 @@ impl Engine {
         }
     }
 
-    /// One sub-block: every part into its own buffer, then summed.
+    /// One sub-block: every lane into its own buffer, then summed.
     ///
-    /// Per-part buffers are not tidiness — the duck has to apply to the bass
+    /// Per-lane buffers are not tidiness — the duck has to apply to the bass
     /// and not to the kick that triggers it, so they cannot share a bus.
     ///
-    /// A part with live voices is always advanced, muted or not. Skipping it
-    /// would leak: `add_part` is what retires a finished voice, so voices in a
-    /// skipped part never die, the pool fills, and the parts you *can* hear
+    /// A lane with live voices is always advanced, muted or not. Skipping it
+    /// would leak: `add_lane` is what retires a finished voice, so voices in a
+    /// skipped lane never die, the pool fills, and the lanes you *can* hear
     /// start losing their slots.
     fn render(&mut self, n: usize, control_start: u64, offset: usize) {
         let base_sample = self.clock.sample;
@@ -245,60 +245,60 @@ impl Engine {
         self.mix[0][..n].fill(0.0);
         self.mix[1][..n].fill(0.0);
         self.send_bus[..n].fill(0.0);
-        for (index, part) in self.parts.iter().enumerate() {
+        for (index, lane) in self.lanes.iter().enumerate() {
             let level = &mut self.levels[index];
             // Muted, or the score has it silent: either way the fader goes to
             // zero and gets there smoothly.
-            let scored = part.scored(bar).unwrap_or(0.0);
-            // A part in the air is quieter than the same part landed: the
+            let scored = lane.scored(bar).unwrap_or(0.0);
+            // A lane in the air is quieter than the same lane landed: the
             // intro's balance depends on the landing being a clear step up
             // rather than a jolt.
-            let airborne = part.flying(bar).map_or(1.0, |(f, _)| f.gain);
-            level.set(if part.muted {
+            let airborne = lane.flying(bar).map_or(1.0, |(f, _)| f.gain);
+            level.set(if lane.muted {
                 0.0
             } else {
-                part.gain * scored * airborne
+                lane.gain * scored * airborne
             });
             let sounding = self.pool.playing(index);
             let placed = self.placers[index].is_some();
 
-            // A placed part is processed even when it is silent, because its
+            // A placed lane is processed even when it is silent, because its
             // delay line holds sound still travelling to the ears — up to
             // 4.4 ms at 1.5 m. Freezing the line between hits would smear the
             // tail of one hat onto the attack of the next.
             if !sounding && !placed {
                 // Nothing ringing and nothing in flight: keep the fader moving
-                // so it is where it should be when the part comes back.
+                // so it is where it should be when the lane comes back.
                 for _ in 0..n {
                     level.tick();
                 }
                 continue;
             }
 
-            self.part_buffer[..n].fill(0.0);
+            self.lane_buffer[..n].fill(0.0);
             if sounding {
-                self.pool.add_part(index, &mut self.part_buffer[..n]);
+                self.pool.add_lane(index, &mut self.lane_buffer[..n]);
             }
-            // The chop, if this part has one. It comes before the fader so
-            // that muting a gated part still fades smoothly.
-            if let Some(gate) = &part.gate {
+            // The chop, if this lane has one. It comes before the fader so
+            // that muting a gated lane still fades smoothly.
+            if let Some(gate) = &lane.gate {
                 let spss = self.clock.samples_per_step();
-                for (i, s) in self.part_buffer[..n].iter_mut().enumerate() {
+                for (i, s) in self.lane_buffer[..n].iter_mut().enumerate() {
                     *s *= gate.gain(base_sample + i as u64, spss, dsp::SR);
                 }
             }
 
             // The fader is ticked for every sample either way, so it tracks
-            // real time rather than how much the part happened to play.
-            if part.ducked {
-                for (s, &d) in self.part_buffer[..n]
+            // real time rather than how much the lane happened to play.
+            if lane.ducked {
+                for (s, &d) in self.lane_buffer[..n]
                     .iter_mut()
                     .zip(self.duck_curve[..n].iter())
                 {
                     *s *= level.tick() * d;
                 }
             } else {
-                for s in self.part_buffer[..n].iter_mut() {
+                for s in self.lane_buffer[..n].iter_mut() {
                     *s *= level.tick();
                 }
             }
@@ -306,10 +306,10 @@ impl Engine {
             // Then either straight up the middle, or placed around the head —
             // and if it is in the air, on the aircraft instead.
             let turned = self.laps[index];
-            let turning = part.home.laps_per_bar() * (bar_end - bar);
-            let (start, finish, send) = match part.flying(bar) {
+            let turning = lane.home.laps_per_bar() * (bar_end - bar);
+            let (start, finish, send) = match lane.flying(bar) {
                 Some((flight, lands)) => {
-                    let home = |laps, at| part.home.at(laps, at).unwrap_or(OVERHEAD);
+                    let home = |laps, at| lane.home.at(laps, at).unwrap_or(OVERHEAD);
                     (
                         Some(home(turned, bar) + flight.offset(flight.progress(lands, bar))),
                         Some(
@@ -320,18 +320,18 @@ impl Engine {
                     )
                 }
                 None => (
-                    part.home.at(turned, bar),
-                    part.home.at(turned + turning, bar_end),
-                    part.send,
+                    lane.home.at(turned, bar),
+                    lane.home.at(turned + turning, bar_end),
+                    lane.send,
                 ),
             };
-            // For the window: how loud this part is and where it is.
-            let part_peak = self.part_buffer[..n]
+            // For the window: how loud this lane is and where it is.
+            let lane_peak = self.lane_buffer[..n]
                 .iter()
                 .fold(0.0f32, |m, s| m.max(s.abs()));
-            self.part_peaks[index] = self.part_peaks[index].max(part_peak);
+            self.lane_peaks[index] = self.lane_peaks[index].max(lane_peak);
             if let Some(at) = start {
-                self.part_positions[index] = at;
+                self.lane_positions[index] = at;
             }
 
             match (&mut self.placers[index], start, finish) {
@@ -349,13 +349,13 @@ impl Engine {
                         offset,
                         period: CONTROL_BLOCK,
                     };
-                    placer.place(&self.part_buffer[..n], motion, &mut ears, dsp::SR);
+                    placer.place(&self.lane_buffer[..n], motion, &mut ears, dsp::SR);
                 }
                 _ => {
                     for ear in 0..2 {
                         for (m, &s) in self.mix[ear][..n]
                             .iter_mut()
-                            .zip(self.part_buffer[..n].iter())
+                            .zip(self.lane_buffer[..n].iter())
                         {
                             *m += s;
                         }
@@ -363,7 +363,7 @@ impl Engine {
                     if send > 0.0 {
                         for (bus, &s) in self.send_bus[..n]
                             .iter_mut()
-                            .zip(self.part_buffer[..n].iter())
+                            .zip(self.lane_buffer[..n].iter())
                         {
                             *bus += s * send;
                         }
@@ -378,8 +378,8 @@ impl Engine {
         // wall-clock time.
         if offset + n == CONTROL_BLOCK && self.playing {
             let bars = CONTROL_BLOCK as f64 / (self.clock.samples_per_step() * 16.0);
-            for (laps, part) in self.laps.iter_mut().zip(&self.parts) {
-                *laps += part.home.laps_per_bar() * bars;
+            for (laps, lane) in self.laps.iter_mut().zip(&self.lanes) {
+                *laps += lane.home.laps_per_bar() * bars;
             }
         }
 
@@ -396,26 +396,26 @@ impl Engine {
         }
     }
 
-    /// Start whatever this step asks of every part that is on the ground.
+    /// Start whatever this step asks of every lane that is on the ground.
     fn fire_step(&mut self) {
         let bar = self.clock.bar();
         let step = self.clock.step;
-        for index in 0..self.parts.len() {
-            let part = &self.parts[index];
-            // A part outside its span starts no new notes; anything already
+        for index in 0..self.lanes.len() {
+            let lane = &self.lanes[index];
+            // A lane outside its span starts no new notes; anything already
             // ringing is left to finish.
-            if part.muted || part.scored(bar).is_none() {
+            if lane.muted || lane.scored(bar).is_none() {
                 continue;
             }
-            // A part in the air fires ahead of the beat instead: see `fire_flights`.
-            if part.flying(bar).is_some() {
+            // A lane in the air fires ahead of the beat instead: see `fire_flights`.
+            if lane.flying(bar).is_some() {
                 continue;
             }
-            self.fire_part(index, step);
+            self.fire_lane(index, step);
         }
     }
 
-    /// Start the notes a flying part owes, early.
+    /// Start the notes a flying lane owes, early.
     ///
     /// This is the one place the sequencer does not fire on the beat. A source
     /// 40 m away is heard 116 ms after it sounds — a quarter of a beat at
@@ -433,16 +433,16 @@ impl Engine {
         let now = self.clock.sample;
         let bar = self.clock.bar();
         let spss = self.clock.samples_per_step();
-        for index in 0..self.parts.len() {
-            let Some((flight, lands)) = self.parts[index].flying(bar) else {
+        for index in 0..self.lanes.len() {
+            let Some((flight, lands)) = self.lanes[index].flying(bar) else {
                 self.flight_cursor[index] = None;
                 continue;
             };
-            if self.parts[index].muted {
+            if self.lanes[index].muted {
                 continue;
             }
 
-            let home = self.parts[index]
+            let home = self.lanes[index]
                 .home
                 .at(self.laps[index], bar)
                 .unwrap_or(OVERHEAD);
@@ -460,7 +460,7 @@ impl Engine {
             let mut cursor = self.flight_cursor[index].unwrap_or_else(|| self.clock.step_of(now));
             while cursor <= due {
                 if self.clock.step_sample(cursor) < cutoff {
-                    self.fire_part(index, cursor);
+                    self.fire_lane(index, cursor);
                 }
                 cursor += 1;
             }
@@ -468,19 +468,19 @@ impl Engine {
         }
     }
 
-    /// One part, one step.
-    fn fire_part(&mut self, index: usize, step: u64) {
+    /// One lane, one step.
+    fn fire_lane(&mut self, index: usize, step: u64) {
         let sr = dsp::SR;
         let spss = self.clock.samples_per_step();
-        let part = &self.parts[index];
-        let hit = part.pattern.at(step);
+        let lane = &self.lanes[index];
+        let hit = lane.pattern.at(step);
         if hit.velocity <= 0.0 {
             return;
         }
-        let length = part.length.seconds(spss, sr);
-        let pitch = part.root + f32::from(hit.offset);
-        let velocity = (hit.velocity * part.velocity_scale).clamp(0.0, 4.0);
-        let voice = match part.voicing {
+        let length = lane.length.seconds(spss, sr);
+        let pitch = lane.root + f32::from(hit.offset);
+        let velocity = (hit.velocity * lane.velocity_scale).clamp(0.0, 4.0);
+        let voice = match lane.voicing {
             Voicing::Kick(p) => {
                 self.duck.trigger();
                 AnyVoice::Kick(Kick::new(sr, pitch, velocity, length, p))
@@ -526,8 +526,8 @@ impl Engine {
             for wire in 0..self.macros[index].mappings.len() {
                 let mapping = self.macros[index].mappings[wire];
                 let target = mapping.value(value);
-                if let Some(part) = self.parts.iter_mut().find(|p| p.name == mapping.part) {
-                    automation::apply(part, mapping.target, target);
+                if let Some(lane) = self.lanes.iter_mut().find(|p| p.name == mapping.lane) {
+                    automation::apply(lane, mapping.target, target);
                 }
             }
         }
@@ -556,11 +556,11 @@ impl Engine {
         self.macros.iter().map(|m| (m.name, m.at(bar))).collect()
     }
 
-    /// A one-line dump of what the macros have written into the parts. For
+    /// A one-line dump of what the macros have written into the lanes. For
     /// diagnosing automation; the window will show this properly.
     #[must_use]
-    pub fn debug_parts(&self) -> String {
-        self.parts
+    pub fn debug_lanes(&self) -> String {
+        self.lanes
             .iter()
             .map(|p| {
                 let gate = p.gate.as_ref().map_or(0.0, |g| g.depth);
@@ -588,11 +588,11 @@ impl Engine {
         self.master
     }
 
-    /// How hard a part's gate chops, 0 to 1. Returns false if the part has no
+    /// How hard a lane's gate chops, 0 to 1. Returns false if the lane has no
     /// gate. This is the control the intro's build rides on.
     pub fn set_gate_depth(&mut self, name: &str, depth: f32) -> bool {
-        match self.parts.iter_mut().find(|p| p.name == name) {
-            Some(part) => match &mut part.gate {
+        match self.lanes.iter_mut().find(|p| p.name == name) {
+            Some(lane) => match &mut lane.gate {
                 Some(gate) => {
                     gate.depth = depth.clamp(0.0, 1.0);
                     true
@@ -608,23 +608,23 @@ impl Engine {
         self.clock.set_bpm(bpm);
     }
 
-    /// Mute or unmute a part by name. Returns false if there is no such part.
+    /// Mute or unmute a lane by name. Returns false if there is no such lane.
     pub fn set_muted(&mut self, name: &str, muted: bool) -> bool {
-        match self.parts.iter_mut().find(|p| p.name == name) {
-            Some(part) => {
-                part.muted = muted;
+        match self.lanes.iter_mut().find(|p| p.name == name) {
+            Some(lane) => {
+                lane.muted = muted;
                 true
             }
             None => false,
         }
     }
 
-    /// Set how much of a part goes to the reverb. Returns false if there is no
-    /// such part.
+    /// Set how much of a lane goes to the reverb. Returns false if there is no
+    /// such lane.
     pub fn set_send(&mut self, name: &str, send: f32) -> bool {
-        match self.parts.iter_mut().find(|p| p.name == name) {
-            Some(part) => {
-                part.send = send.clamp(0.0, 1.0);
+        match self.lanes.iter_mut().find(|p| p.name == name) {
+            Some(lane) => {
+                lane.send = send.clamp(0.0, 1.0);
                 true
             }
             None => false,
@@ -636,24 +636,24 @@ impl Engine {
         dsp::SR
     }
 
-    /// Mute everything but one part.
+    /// Mute everything but one lane.
     pub fn solo(&mut self, name: &str) -> bool {
-        let found = self.parts.iter().any(|p| p.name == name);
-        for part in &mut self.parts {
-            part.muted = part.name != name;
+        let found = self.lanes.iter().any(|p| p.name == name);
+        for lane in &mut self.lanes {
+            lane.muted = lane.name != name;
         }
         found
     }
 
-    /// Each part's name and current reverb send.
+    /// Each lane's name and current reverb send.
     #[must_use]
     pub fn sends(&self) -> Vec<(&'static str, f32)> {
-        self.parts.iter().map(|p| (p.name, p.send)).collect()
+        self.lanes.iter().map(|p| (p.name, p.send)).collect()
     }
 
     #[must_use]
-    pub fn part_names(&self) -> Vec<&'static str> {
-        self.parts.iter().map(|p| p.name).collect()
+    pub fn lane_names(&self) -> Vec<&'static str> {
+        self.lanes.iter().map(|p| p.name).collect()
     }
 
     /// Bar position, voice count and dropped-voice count, for the UI.
@@ -667,26 +667,27 @@ impl Engine {
         Description {
             bpm: self.clock.bpm(),
             length_bars: self.length_bars,
-            parts: self
-                .parts
+            lanes: self
+                .lanes
                 .iter()
                 .enumerate()
-                .map(|(index, part)| PartDescription {
-                    name: part.name,
-                    instrument: part.voicing.instrument(),
-                    gain: part.gain,
-                    send: part.send,
-                    muted: part.muted,
+                .map(|(index, lane)| LaneDescription {
+                    name: lane.name,
+                    clip: lane.clip,
+                    instrument: lane.voicing.instrument(),
+                    gain: lane.gain,
+                    send: lane.send,
+                    muted: lane.muted,
                     placed: self.placers[index].is_some(),
-                    ducked: part.ducked,
-                    steps: part
+                    ducked: lane.ducked,
+                    steps: lane
                         .pattern
                         .all()
                         .iter()
                         .map(|s| (s.velocity, s.offset))
                         .collect(),
-                    root: part.root,
-                    spans: part
+                    root: lane.root,
+                    spans: lane
                         .spans
                         .iter()
                         .map(|play| SpanDescription {
@@ -697,7 +698,7 @@ impl Engine {
                             leave: play.leave.name(),
                         })
                         .collect(),
-                    gate_depth: part.gate.as_ref().map(|g| g.depth),
+                    gate_depth: lane.gate.as_ref().map(|g| g.depth),
                 })
                 .collect(),
             macros: self
@@ -729,18 +730,18 @@ impl Engine {
             dropped: self.pool.dropped,
             peak: std::mem::take(&mut self.peak),
             playing: self.playing,
-            part_count: self.parts.len().min(telemetry::MAX_PARTS) as u8,
+            lane_count: self.lanes.len().min(telemetry::MAX_PARTS) as u8,
             ..Telemetry::default()
         };
-        for (i, part) in self.parts.iter().enumerate().take(telemetry::MAX_PARTS) {
-            let at = self.part_positions[i];
-            frame.parts[i] = PartState {
-                level: std::mem::take(&mut self.part_peaks[i]),
+        for (i, lane) in self.lanes.iter().enumerate().take(telemetry::MAX_PARTS) {
+            let at = self.lane_positions[i];
+            frame.lanes[i] = LaneState {
+                level: std::mem::take(&mut self.lane_peaks[i]),
                 position: [at.x, at.y, at.z],
                 placed: self.placers[i].is_some(),
                 sounding: self.pool.playing(i),
-                muted: part.muted,
-                gain: part.gain,
+                muted: lane.muted,
+                gain: lane.gain,
             };
         }
         frame.macro_count = self.macros.len().min(telemetry::MAX_MACROS) as u8;
@@ -791,11 +792,11 @@ impl Engine {
         // would give when the rate has been changing — the honest answer would
         // need the integral of the whole curve — but a source's place in its own
         // lap is not something an ear can be wrong about.
-        for (laps, part) in self.laps.iter_mut().zip(&self.parts) {
-            *laps = bar * part.home.laps_per_bar();
+        for (laps, lane) in self.laps.iter_mut().zip(&self.lanes) {
+            *laps = bar * lane.home.laps_per_bar();
         }
         self.flight_cursor.fill(None);
-        self.part_peaks.fill(0.0);
+        self.lane_peaks.fill(0.0);
         self.peak = 0.0;
         self.seek_gain = 0.0;
     }
@@ -810,18 +811,29 @@ impl Engine {
                 }
             }
             Command::Mute { index, muted } => {
-                if let Some(part) = self.parts.get_mut(index as usize) {
-                    part.muted = muted;
+                if let Some(lane) = self.lanes.get_mut(index as usize) {
+                    lane.muted = muted;
                 }
             }
             Command::Level { index, gain } => {
-                if let Some(part) = self.parts.get_mut(index as usize) {
-                    part.gain = gain.clamp(0.0, 4.0);
+                if let Some(lane) = self.lanes.get_mut(index as usize) {
+                    lane.gain = gain.clamp(0.0, 4.0);
                 }
             }
             Command::Bpm { value } => self.clock.set_bpm(value),
             Command::Seek { bar } => self.seek(bar),
             Command::Playing { value } => self.playing = value,
+            Command::SetStep {
+                lane,
+                step,
+                velocity,
+                offset,
+            } => {
+                if let Some(lane) = self.lanes.get_mut(lane as usize) {
+                    lane.pattern
+                        .set(step as usize, Step::new(velocity.clamp(0.0, 2.0), offset));
+                }
+            }
             Command::Master { value } => self.set_master(value),
         }
     }

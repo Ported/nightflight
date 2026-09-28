@@ -1,4 +1,4 @@
-//! Patterns and parts: who plays what, and for how long.
+//! Patterns and lanes: who plays what, and for how long.
 //!
 //! A pattern is any number of steps, not necessarily sixteen. That is
 //! deliberate: a loop whose length does not divide the bar drifts against it
@@ -16,7 +16,7 @@ use crate::mix::Gate;
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Step {
     pub velocity: f32,
-    /// Semitones above the part's root, for pitched parts.
+    /// Semitones above the lane's root, for pitched lanes.
     pub offset: i8,
 }
 
@@ -75,6 +75,14 @@ impl Pattern {
         self.steps[(step % self.steps.len() as u64) as usize]
     }
 
+    /// Change one step. Allocation-free: the slot already exists, which is why
+    /// an editor sends one step rather than a whole clip.
+    pub fn set(&mut self, index: usize, step: Step) {
+        if let Some(slot) = self.steps.get_mut(index) {
+            *slot = step;
+        }
+    }
+
     /// Every step, for an interface that wants to draw the loop.
     #[must_use]
     pub fn all(&self) -> &[Step] {
@@ -130,7 +138,7 @@ impl Voicing {
     }
 }
 
-/// Which instrument a part plays, and how it is set up.
+/// Which instrument a lane plays, and how it is set up.
 #[derive(Clone, Copy, Debug)]
 pub enum Voicing {
     Kick(kick::Params),
@@ -142,33 +150,36 @@ pub enum Voicing {
 
 /// A lane: one instrument, one pattern, one fader.
 #[derive(Clone, Debug)]
-pub struct Part {
+pub struct Lane {
     pub name: &'static str,
+    /// Which clip this lane belongs to. Lanes of one clip are edited together
+    /// and drawn as one row on the timeline: "kick" is a lane of "beat".
+    pub clip: &'static str,
     pub voicing: Voicing,
     pub pattern: Pattern,
-    /// Linear level, relative to the other parts.
+    /// Linear level, relative to the other lanes.
     pub gain: f32,
     pub length: Length,
     /// MIDI note the pattern's offsets are relative to.
     pub root: f32,
     /// Where it sits around the head.
     pub home: Home,
-    /// How much of this part goes to the shared reverb, 0 for dry.
+    /// How much of this lane goes to the shared reverb, 0 for dry.
     pub send: f32,
-    /// A rhythmic chop on this part's level, if any.
+    /// A rhythmic chop on this lane's level, if any.
     pub gate: Option<Gate>,
-    /// When this part plays, in bars. Empty means always — which is what a
+    /// When this lane plays, in bars. Empty means always — which is what a
     /// looping set for jamming wants, and a score fills in.
     pub spans: Vec<Play>,
     /// A multiplier on the velocity of notes started from now on. Macros ride
     /// this; nothing else touches it.
     pub velocity_scale: f32,
-    /// Whether the kick ducks this part (the sidechain pump).
+    /// Whether the kick ducks this lane (the sidechain pump).
     pub ducked: bool,
     pub muted: bool,
 }
 
-/// Where a part sits, described rather than baked.
+/// Where a lane sits, described rather than baked.
 ///
 /// The Python scene stores a path as a list of keyframes, computed once by the
 /// composition. Live, the description has to survive: you want to speed an
@@ -260,7 +271,7 @@ pub struct ReverbSettings {
 
 /// Everything the engine needs to play a piece.
 pub struct Set {
-    pub parts: Vec<Part>,
+    pub lanes: Vec<Lane>,
     pub reverb: Option<ReverbSettings>,
     /// The conductor's faders.
     pub macros: Vec<Macro>,
@@ -269,9 +280,9 @@ pub struct Set {
     pub length_bars: f32,
 }
 
-impl Part {
-    /// How loud the score says this part is at `bar`, or `None` if it is not
-    /// playing. A part with no spans always plays.
+impl Lane {
+    /// How loud the score says this lane is at `bar`, or `None` if it is not
+    /// playing. A lane with no spans always plays.
     #[must_use]
     pub fn scored(&self, bar: f64) -> Option<f32> {
         if self.spans.is_empty() {
@@ -283,14 +294,14 @@ impl Part {
             .reduce(f32::max)
     }
 
-    /// If this part is in the air right now, the flight and the bar it lands on.
+    /// If this lane is in the air right now, the flight and the bar it lands on.
     #[must_use]
     pub fn flying(&self, bar: f64) -> Option<(Flight, f32)> {
         self.spans.iter().find_map(|s| s.approach(bar))
     }
 
-    /// Whether any of this part's spans ever puts it in the air. Decided at
-    /// load, because it settles whether the part needs a delay line.
+    /// Whether any of this lane's spans ever puts it in the air. Decided at
+    /// load, because it settles whether the lane needs a delay line.
     #[must_use]
     pub fn ever_flies(&self) -> bool {
         self.spans

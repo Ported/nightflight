@@ -43,7 +43,7 @@ impl Voice for AnyVoice {
 }
 
 struct Slot {
-    part: usize,
+    lane: usize,
     voice: AnyVoice,
 }
 
@@ -64,27 +64,27 @@ impl Default for Pool {
 }
 
 impl Pool {
-    /// Start a voice for `part` in the first free slot, or count a drop.
-    pub fn start(&mut self, part: usize, voice: AnyVoice) {
+    /// Start a voice for `lane` in the first free slot, or count a drop.
+    pub fn start(&mut self, lane: usize, voice: AnyVoice) {
         if let Some(slot) = self.slots.iter_mut().find(|s| s.is_none()) {
-            *slot = Some(Slot { part, voice });
+            *slot = Some(Slot { lane, voice });
         } else {
             self.dropped = self.dropped.saturating_add(1);
         }
     }
 
     #[must_use]
-    pub fn playing(&self, part: usize) -> bool {
+    pub fn playing(&self, lane: usize) -> bool {
         self.slots
             .iter()
-            .any(|s| s.as_ref().is_some_and(|s| s.part == part))
+            .any(|s| s.as_ref().is_some_and(|s| s.lane == lane))
     }
 
-    /// Mix one part's live voices into `out`, retiring the ones that rang out.
-    pub fn add_part(&mut self, part: usize, out: &mut [f32]) {
+    /// Mix one lane's live voices into `out`, retiring the ones that rang out.
+    pub fn add_lane(&mut self, lane: usize, out: &mut [f32]) {
         for slot in &mut self.slots {
             if let Some(s) = slot {
-                if s.part != part {
+                if s.lane != lane {
                     continue;
                 }
                 s.voice.add(out);

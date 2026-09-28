@@ -44,7 +44,7 @@ fn main() {
     };
     let mut engine = Engine::new(dsp::SR, bpm, set);
     if args.iter().any(|a| a == "--dry") {
-        for name in engine.part_names() {
+        for name in engine.lane_names() {
             engine.set_send(name, 0.0);
         }
     }
@@ -52,7 +52,7 @@ fn main() {
         engine.set_master(engine.master() * scale);
     }
     if let Some(depth) = flag("--gate").and_then(|s| s.parse::<f32>().ok()) {
-        for name in engine.part_names() {
+        for name in engine.lane_names() {
             engine.set_gate_depth(name, depth);
         }
     }
@@ -64,7 +64,7 @@ fn main() {
     if let Some(name) = flag("--solo")
         && !engine.solo(&name)
     {
-        eprintln!("no part named {name:?}; parts: {:?}", engine.part_names());
+        eprintln!("no lane named {name:?}; lanes: {:?}", engine.lane_names());
         std::process::exit(1);
     }
     for (i, arg) in args.iter().enumerate() {
@@ -72,7 +72,7 @@ fn main() {
             && let Some(name) = args.get(i + 1)
             && !engine.set_muted(name, true)
         {
-            eprintln!("no part named {name:?}; parts: {:?}", engine.part_names());
+            eprintln!("no lane named {name:?}; lanes: {:?}", engine.lane_names());
             std::process::exit(1);
         }
     }

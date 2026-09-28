@@ -1,4 +1,4 @@
-//! The trance gate: a rhythm cut into a part's level.
+//! The trance gate: a rhythm cut into a lane's level.
 
 use engine::mix::Gate;
 

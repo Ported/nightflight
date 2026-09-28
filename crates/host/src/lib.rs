@@ -65,7 +65,7 @@ pub struct Link {
     pub telemetry: rtrb::Consumer<Telemetry>,
     /// Read once, before the engine was handed to the audio thread. Commands
     /// carry indices into these.
-    pub part_names: Vec<&'static str>,
+    pub lane_names: Vec<&'static str>,
     pub macro_names: Vec<&'static str>,
     /// Everything about the set that does not change while it plays. Read before
     /// the engine was handed over, which is also why editing it later means the
@@ -127,7 +127,7 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     // Built here, on this thread, and then moved into the callback: every
     // allocation the engine will ever need has happened by the time it plays.
     let mut engine = Box::new(Engine::new(dsp::SR, 126.0, set));
-    let part_names = engine.part_names();
+    let lane_names = engine.lane_names();
     let macro_names = engine.macro_names();
     let description = engine.describe();
 
@@ -185,7 +185,7 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     Ok(Link {
         commands: command_tx,
         telemetry: telemetry_rx,
-        part_names,
+        lane_names,
         macro_names,
         description,
         device: name,

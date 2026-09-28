@@ -73,7 +73,7 @@ impl Position {
 /// Interaural time difference of a spherical head, seconds. Positive means the
 /// source is to the right, so the **left** ear hears it later.
 ///
-/// Woodworth's model: the extra distance to the far ear is the straight part
+/// Woodworth's model: the extra distance to the far ear is the straight lane
 /// plus the arc around the head, which comes to `(a/c)(θ + sin θ)`. The Python
 /// studio uses it rather than its own measurements because measured delays are
 /// slightly noisy from one direction to the next, and a moving source turns
@@ -88,7 +88,7 @@ pub fn woodworth(lateral_sine: f32) -> f32 {
 ///
 /// The interpolation is 4-point Lagrange rather than linear for one specific
 /// reason: linear interpolation is itself a lowpass, losing several dB at the
-/// top of the spectrum, and it varies with the fractional part — so a source
+/// top of the spectrum, and it varies with the fractional lane — so a source
 /// moving smoothly would shimmer. Hats live entirely in that top octave.
 pub struct Delay {
     buffer: Vec<f32>,

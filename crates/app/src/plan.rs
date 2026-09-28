@@ -75,15 +75,15 @@ pub fn show(ui: &mut egui::Ui, telemetry: &Telemetry, names: &[&'static str]) {
         Stroke::new(1.5, HEAD),
     );
 
-    for (index, part) in telemetry.parts[..telemetry.part_count as usize]
+    for (index, lane) in telemetry.lanes[..telemetry.lane_count as usize]
         .iter()
         .enumerate()
     {
         let name = names.get(index).copied().unwrap_or("?");
-        // A part that is not placed is drawn at the centre, greyed: it is in the
+        // A lane that is not placed is drawn at the centre, greyed: it is in the
         // middle of your head, which is exactly where a kick belongs.
-        let (x, z) = if part.placed {
-            (part.position[0], part.position[2])
+        let (x, z) = if lane.placed {
+            (lane.position[0], lane.position[2])
         } else {
             (0.0, 0.0)
         };
@@ -97,9 +97,9 @@ pub fn show(ui: &mut egui::Ui, telemetry: &Telemetry, names: &[&'static str]) {
 
         // Size and brightness follow the level, so the picture pulses with the
         // music rather than just mapping it.
-        let level = part.level.clamp(0.0, 1.0).sqrt();
-        let colour = if part.placed { SOURCE } else { CENTRED };
-        let faded = colour.gamma_multiply(if part.muted {
+        let level = lane.level.clamp(0.0, 1.0).sqrt();
+        let colour = if lane.placed { SOURCE } else { CENTRED };
+        let faded = colour.gamma_multiply(if lane.muted {
             0.25
         } else {
             0.35 + 0.65 * level
@@ -121,12 +121,12 @@ pub fn show(ui: &mut egui::Ui, telemetry: &Telemetry, names: &[&'static str]) {
         Vec2::new(rect.width() - 8.0, 14.0),
     );
     painter.rect_stroke(strip, 2.0, Stroke::new(1.0, GRID), egui::StrokeKind::Inside);
-    for part in telemetry.parts[..telemetry.part_count as usize].iter() {
-        if !part.placed {
+    for lane in telemetry.lanes[..telemetry.lane_count as usize].iter() {
+        if !lane.placed {
             continue;
         }
         // +/- 4 m of height across the strip.
-        let t = (part.position[1] / 8.0 + 0.5).clamp(0.0, 1.0);
+        let t = (lane.position[1] / 8.0 + 0.5).clamp(0.0, 1.0);
         let x = strip.left() + t * strip.width();
         painter.line_segment(
             [

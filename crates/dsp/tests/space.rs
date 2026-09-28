@@ -42,7 +42,7 @@ fn peak(x: &[f32]) -> f32 {
 fn woodworth_matches_the_spherical_head() {
     // Straight ahead: no difference at all.
     assert!(woodworth(0.0).abs() < 1e-9);
-    // Hard right: the arc plus the straight part, (a/c)(pi/2 + 1) = 0.80 ms.
+    // Hard right: the arc plus the straight lane, (a/c)(pi/2 + 1) = 0.80 ms.
     let full = HEAD_RADIUS / SPEED_OF_SOUND * (std::f32::consts::FRAC_PI_2 + 1.0);
     assert!((woodworth(1.0) - full).abs() < 1e-9);
     assert!((0.79e-3..0.81e-3).contains(&woodworth(1.0)));

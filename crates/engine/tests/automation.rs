@@ -76,7 +76,7 @@ fn the_macros_actually_move_the_parts() {
     // At the start the chop is off, the ring turns slowly, the pad is nearly
     // silent.
     let early = play_to(0.5);
-    let start = early.debug_parts();
+    let start = early.debug_lanes();
     assert!(
         start.contains("pad 1: v0."),
         "the pad should start under 1.0: {start}"
@@ -88,7 +88,7 @@ fn the_macros_actually_move_the_parts() {
 
     // By the dominant pedal the chop is full and the ring turns once a bar.
     let late = play_to(23.0);
-    let end = late.debug_parts();
+    let end = late.debug_lanes();
     assert!(
         end.contains("g1.00"),
         "the chop should be full by bar 22: {end}"
@@ -111,7 +111,7 @@ fn a_hand_on_a_fader_beats_the_score() {
     let mut buf = vec![0.0f32; 256];
     engine.process(&mut buf);
     assert!(
-        engine.debug_parts().contains("g1.00"),
+        engine.debug_lanes().contains("g1.00"),
         "a manual macro did not override the curve"
     );
 
@@ -131,7 +131,7 @@ fn a_hand_on_a_fader_beats_the_score() {
 }
 
 #[test]
-fn parts_stop_starting_notes_when_their_span_ends() {
+fn lanes_stop_starting_notes_when_their_span_ends() {
     // The intro's spans all end at bar 26. Past that nothing new may start, but
     // the reverb keeps ringing — and it should, or the piece would end on a
     // cliff.

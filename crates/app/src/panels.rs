@@ -1,4 +1,4 @@
-//! The window: part strips, macro faders, and a health readout.
+//! The window: lane strips, macro faders, and a health readout.
 //!
 //! Every control here holds its own value and sends a command when it moves. It
 //! deliberately does *not* read the value back from telemetry each frame — a
@@ -41,7 +41,7 @@ pub struct App {
 impl App {
     #[must_use]
     pub fn new(link: Link, set: String, length: f32) -> Self {
-        let parts = link.part_names.len();
+        let lanes = link.lane_names.len();
         let macros = link.macro_names.len();
         Self {
             link,
@@ -49,8 +49,8 @@ impl App {
             length: length.max(1.0),
             latest: Telemetry::default(),
             scrub: None,
-            levels: vec![f32::NAN; parts],
-            mutes: vec![false; parts],
+            levels: vec![f32::NAN; lanes],
+            mutes: vec![false; lanes],
             macros: vec![None; macros],
             bpm: 126.0,
             master: 0.5,
@@ -66,9 +66,9 @@ impl App {
         // The first frame is where the faders learn the set's own levels.
         for (i, level) in self.levels.iter_mut().enumerate() {
             if level.is_nan()
-                && let Some(part) = self.latest.parts.get(i)
+                && let Some(lane) = self.latest.lanes.get(i)
             {
-                *level = part.gain;
+                *level = lane.gain;
             }
         }
     }
@@ -263,14 +263,14 @@ impl App {
         });
     }
 
-    fn parts(&mut self, ui: &mut egui::Ui) {
-        egui::Grid::new("parts")
+    fn lanes(&mut self, ui: &mut egui::Ui) {
+        egui::Grid::new("lanes")
             .num_columns(4)
             .spacing([10.0, 4.0])
             .show(ui, |ui| {
-                for index in 0..self.link.part_names.len() {
-                    let name = self.link.part_names[index];
-                    let state = self.latest.parts[index];
+                for index in 0..self.link.lane_names.len() {
+                    let name = self.link.lane_names[index];
+                    let state = self.latest.lanes[index];
 
                     if ui
                         .selectable_label(!self.mutes[index], RichText::new(name).size(13.0))
@@ -335,9 +335,9 @@ impl eframe::App for App {
             self.health(ui);
             ui.separator();
             ui.columns(2, |columns| {
-                columns[0].heading("parts");
+                columns[0].heading("lanes");
                 columns[0].add_space(4.0);
-                self.parts(&mut columns[0]);
+                self.lanes(&mut columns[0]);
                 columns[0].add_space(10.0);
                 columns[0].heading("macros");
                 columns[0].add_space(4.0);
@@ -345,7 +345,7 @@ impl eframe::App for App {
 
                 columns[1].heading("where things are");
                 columns[1].add_space(4.0);
-                plan::show(&mut columns[1], &self.latest, &self.link.part_names);
+                plan::show(&mut columns[1], &self.latest, &self.link.lane_names);
             });
         });
     }

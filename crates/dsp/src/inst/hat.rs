@@ -24,7 +24,7 @@ const OSCILLATORS: [f32; 6] = [205.3, 304.4, 369.6, 522.7, 540.0, 800.0];
 /// band-limited to 6-16 kHz leave very little behind, since only their high
 /// harmonics survive. The Python version divides each hit by its own peak,
 /// which a streaming voice cannot do — it would have to see the whole note
-/// first — so the gain is fixed here and the part's level does the balancing.
+/// first — so the gain is fixed here and the lane's level does the balancing.
 const MAKEUP: f32 = 6.5;
 
 #[derive(Clone, Copy, Debug)]

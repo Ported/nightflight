@@ -23,14 +23,14 @@
 //!
 //! It is Rust rather than a data file on purpose, for now. A file would need a
 //! format, a writer, a schema and a drift test before a single note played; a
-//! `Vec<Part>` needs none of that, and the structs are already `serde`-shaped
+//! `Vec<Lane>` needs none of that, and the structs are already `serde`-shaped
 //! for the day loading one is worth it.
 
 use dsp::inst::{bass, glass, hat, kick, strings};
 
 use crate::automation::{Curve, Flight, Macro, Mapping, Play, Target, Transition};
 use crate::mix::Gate;
-use crate::seq::{Home, Length, Part, Pattern, ReverbSettings, Set, Step, Voicing};
+use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, Set, Step, Voicing};
 
 /// G1, about 49 Hz: Rolling's root, and the kick is tuned to it.
 pub const ROOT: f32 = 31.0;
@@ -86,12 +86,13 @@ fn closed_hats() -> Pattern {
 }
 
 #[must_use]
-/// The four parts of the groove. Both `rolling` and the arrival use these; the
+/// The four lanes of the groove. Both `rolling` and the arrival use these; the
 /// score is the only difference between a loop to jam on and a piece.
-fn groove_parts() -> Vec<Part> {
+fn groove_lanes() -> Vec<Lane> {
     vec![
-        Part {
+        Lane {
             name: "kick",
+            clip: "beat",
             voicing: Voicing::Kick(kick::Params::default()),
             pattern: Pattern::grid("X...X...X...X..."),
             gain: 1.0,
@@ -106,8 +107,9 @@ fn groove_parts() -> Vec<Part> {
             ducked: false,
             muted: false,
         },
-        Part {
+        Lane {
             name: "closed hat",
+            clip: "beat",
             voicing: Voicing::Hat(hat::Params::default()),
             pattern: closed_hats(),
             gain: 0.6,
@@ -121,8 +123,9 @@ fn groove_parts() -> Vec<Part> {
             ducked: false,
             muted: false,
         },
-        Part {
+        Lane {
             name: "open hat",
+            clip: "beat",
             voicing: Voicing::Hat(hat::Params {
                 decay: 0.3,
                 ..hat::Params::default()
@@ -143,8 +146,9 @@ fn groove_parts() -> Vec<Part> {
             ducked: false,
             muted: false,
         },
-        Part {
+        Lane {
             name: "bass",
+            clip: "bass",
             voicing: Voicing::Bass(bass::Params::default()),
             pattern: rolling_bass(),
             gain: 0.8,
@@ -164,7 +168,7 @@ fn groove_parts() -> Vec<Part> {
 #[must_use]
 pub fn rolling() -> Set {
     Set {
-        parts: groove_parts(),
+        lanes: groove_lanes(),
         macros: Vec::new(),
         // Rolling's own length in the Python: forty bars, four-bar blocks.
         length_bars: 40.0,
@@ -274,9 +278,10 @@ pub fn prelude() -> Set {
     // long; everything above is a single eighth.
     let lengths = [Length::Steps(16.0), Length::Steps(14.0), Length::Steps(2.0)];
     let names = ["voice 1", "voice 2", "voice 3"];
-    let parts = (0..3)
-        .map(|voice| Part {
+    let lanes = (0..3)
+        .map(|voice| Lane {
             name: names[voice],
+            clip: "prelude",
             voicing: Voicing::Glass(dreaming()),
             pattern: bach_voice(voice, 0),
             // Measured, not chosen: at 1.2/1.0 the mix peaked at +3.5 dBFS.
@@ -309,7 +314,7 @@ pub fn prelude() -> Set {
         .collect();
 
     Set {
-        parts,
+        lanes,
         macros: Vec::new(),
         // Bach's eleven bars, two of ours each.
         length_bars: (CHORDS.len() * 2) as f32,
@@ -370,9 +375,10 @@ pub fn pad() -> Set {
         "pad voice 4",
         "pad voice 5",
     ];
-    let parts = (0..PAD_VOICES)
-        .map(|voice| Part {
+    let lanes = (0..PAD_VOICES)
+        .map(|voice| Lane {
             name: NAMES[voice],
+            clip: "pad",
             voicing: Voicing::Strings(strings::dark()),
             pattern: pad_voice(voice),
             // Measured for a standalone listen: at 0.3 the five voices peaked
@@ -403,7 +409,7 @@ pub fn pad() -> Set {
         .collect();
 
     Set {
-        parts,
+        lanes,
         macros: Vec::new(),
         // Four chords, two bars each.
         length_bars: (PAD_CHORDS.len() * 2) as f32,
@@ -467,9 +473,10 @@ const INTRO_PAD_VOICES: usize = 4;
 pub fn intro() -> Set {
     let glass_names = ["voice 1", "voice 2", "voice 3"];
     let lengths = [Length::Steps(16.0), Length::Steps(14.0), Length::Steps(2.0)];
-    let mut parts: Vec<Part> = (0..3)
-        .map(|voice| Part {
+    let mut lanes: Vec<Lane> = (0..3)
+        .map(|voice| Lane {
             name: glass_names[voice],
+            clip: "prelude",
             voicing: Voicing::Glass(dreaming()),
             pattern: bach_voice(voice, PEDAL_BARS),
             gain: if voice == 0 { 0.3 } else { 0.25 },
@@ -493,8 +500,9 @@ pub fn intro() -> Set {
         .collect();
 
     const PAD_NAMES: [&str; INTRO_PAD_VOICES] = ["pad 1", "pad 2", "pad 3", "pad 4"];
-    parts.extend((0..INTRO_PAD_VOICES).map(|voice| Part {
+    lanes.extend((0..INTRO_PAD_VOICES).map(|voice| Lane {
         name: PAD_NAMES[voice],
+        clip: "pad",
         voicing: Voicing::Strings(strings::dark()),
         // Bach's chords held, one per Bach bar: the harmony the glass
         // arpeggiates, so the pad is never a second idea.
@@ -553,22 +561,22 @@ pub fn intro() -> Set {
         gain: 0.85,
         ..Flight::default()
     });
-    for mut part in groove_parts() {
-        part.spans = vec![Play {
+    for mut lane in groove_lanes() {
+        lane.spans = vec![Play {
             start: LANDING,
             end: LANDING + AFTER,
-            enter: if part.name == "bass" {
+            enter: if lane.name == "bass" {
                 Transition::Cut
             } else {
                 arrive
             },
             leave: Transition::Cut,
         }];
-        parts.push(part);
+        lanes.push(lane);
     }
 
     Set {
-        parts,
+        lanes,
         macros: vec![
             Macro::new("energy", energy).automated(Curve::new(vec![(0.0, 0.10), (LANDING, 0.50)])),
             Macro::new("build", build).automated(Curve::new(vec![(0.0, 0.0), (LANDING, 1.0)])),

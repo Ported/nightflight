@@ -14,17 +14,17 @@
 
 use serde::{Deserialize, Serialize};
 
-/// More parts than any set has. Costs 80 bytes each in a telemetry frame.
+/// More lanes than any set has. Costs 80 bytes each in a telemetry frame.
 pub const MAX_PARTS: usize = 16;
 /// More macros than a hand can hold anyway.
 pub const MAX_MACROS: usize = 8;
 
-/// One part, as the window sees it.
+/// One lane, as the window sees it.
 #[derive(Clone, Copy, Debug, Default, Serialize)]
-pub struct PartState {
-    /// Peak of this part's own contribution since the last frame.
+pub struct LaneState {
+    /// Peak of this lane's own contribution since the last frame.
     pub level: f32,
-    /// Where it is, in metres. All zeros for a part that is not placed.
+    /// Where it is, in metres. All zeros for a lane that is not placed.
     pub position: [f32; 3],
     /// Whether it is placed at all.
     pub placed: bool,
@@ -44,8 +44,8 @@ pub struct Telemetry {
     pub dropped: u32,
     /// Master peak since the last frame.
     pub peak: f32,
-    pub parts: [PartState; MAX_PARTS],
-    pub part_count: u8,
+    pub lanes: [LaneState; MAX_PARTS],
+    pub lane_count: u8,
     pub macros: [f32; MAX_MACROS],
     pub macro_count: u8,
     /// Share of the callback's deadline used, 0 to 1. Filled in by whoever owns
@@ -65,8 +65,8 @@ impl Default for Telemetry {
             voices: 0,
             dropped: 0,
             peak: 0.0,
-            parts: [PartState::default(); MAX_PARTS],
-            part_count: 0,
+            lanes: [LaneState::default(); MAX_PARTS],
+            lane_count: 0,
             macros: [0.0; MAX_MACROS],
             macro_count: 0,
             load: 0.0,
@@ -116,6 +116,18 @@ pub enum Command {
     Playing {
         value: bool,
     },
+    /// Change one step of a lane. An editor sends these one at a time as cells
+    /// are clicked, which is both what an interface naturally produces and the
+    /// only shape that needs no allocation on the audio thread: the slot
+    /// already exists.
+    SetStep {
+        lane: u8,
+        step: u16,
+        /// 0 is a rest.
+        velocity: f32,
+        /// Semitones from the lane's root.
+        offset: i8,
+    },
 }
 
 // ── Describing a set, so an interface can draw it ────────────────────────────
@@ -130,13 +142,15 @@ pub enum Command {
 pub struct Description {
     pub bpm: f32,
     pub length_bars: f32,
-    pub parts: Vec<PartDescription>,
+    pub lanes: Vec<LaneDescription>,
     pub macros: Vec<MacroDescription>,
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct PartDescription {
+pub struct LaneDescription {
     pub name: &'static str,
+    /// The clip this lane belongs to.
+    pub clip: &'static str,
     /// Which instrument plays it: kick, hat, bass, glass, strings.
     pub instrument: &'static str,
     pub gain: f32,
@@ -148,7 +162,7 @@ pub struct PartDescription {
     pub ducked: bool,
     /// The loop, as velocity and semitone offset per step. Velocity 0 is a rest.
     pub steps: Vec<(f32, i8)>,
-    /// The part's root note, which the offsets are relative to.
+    /// The lane's root note, which the offsets are relative to.
     pub root: f32,
     /// When it plays. Empty means always, which is what a set for jamming wants.
     pub spans: Vec<SpanDescription>,
@@ -161,7 +175,7 @@ pub struct PartDescription {
 pub struct SpanDescription {
     pub start: f32,
     pub end: f32,
-    /// Where the part first makes a sound — earlier than `start` if it flies in.
+    /// Where the lane first makes a sound — earlier than `start` if it flies in.
     pub first_bar: f32,
     /// "cut", "fade" or "fly".
     pub enter: &'static str,

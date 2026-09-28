@@ -38,7 +38,7 @@ impl Smoothed {
         self.value
     }
 
-    /// True once the value has effectively arrived, so a silent part can be
+    /// True once the value has effectively arrived, so a silent lane can be
     /// skipped without cutting it off mid-fade.
     #[must_use]
     pub fn settled_at_zero(&self) -> bool {

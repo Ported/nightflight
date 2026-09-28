@@ -1,6 +1,6 @@
 //! Mixing: the sidechain duck.
 
-/// Duck one part's level every time another part plays — almost always the
+/// Duck one lane's level every time another lane plays — almost always the
 /// kick ducking everything else.
 ///
 /// Why it exists: the kick and the bass both want the bottom of the spectrum,
@@ -51,7 +51,7 @@ impl Duck {
     }
 }
 
-/// A trance gate: chop a part's level in a rhythm, like a hand on a fader.
+/// A trance gate: chop a lane's level in a rhythm, like a hand on a fader.
 ///
 /// Not re-triggered notes — the pad keeps playing underneath and only its
 /// *volume* is cut, so the swell and the swirl carry on through the holes. That

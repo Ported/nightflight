@@ -2,7 +2,7 @@
 //!
 //! Three ideas, and between them they turn a set of loops into a piece.
 //!
-//! * A **span** says when a part plays, in bars, with a transition at each end.
+//! * A **span** says when a lane plays, in bars, with a transition at each end.
 //!   Parts know *how* to play; the score says *when*.
 //! * A **curve** is a value against bars — straight lines between keyframes.
 //! * A **macro** is one number wired to many parameters at once. Move `energy`
@@ -58,7 +58,7 @@ impl Curve {
     }
 }
 
-/// The helicopter. A part flies in from far away and lands on its home.
+/// The helicopter. A lane flies in from far away and lands on its home.
 ///
 /// Entering, it plays the `bars` *before* its span starts, from an aircraft on a
 /// descending, tightening spiral — so the beat is audibly approaching for half a
@@ -81,7 +81,7 @@ pub struct Flight {
     /// a drop-out, with the glass and the reverb tails ringing through it. The
     /// hole is what makes the landing land.
     pub breath_beats: f32,
-    /// Level in the air, relative to the landed part.
+    /// Level in the air, relative to the landed lane.
     pub gain: f32,
     /// How much of it goes to the room while flying.
     pub send: f32,
@@ -105,7 +105,7 @@ impl Default for Flight {
 }
 
 impl Flight {
-    /// Where the aircraft is relative to the part's home, at progress `u`:
+    /// Where the aircraft is relative to the lane's home, at progress `u`:
     /// 0 far away, 1 landed.
     ///
     /// It covers most of the distance early and slows to touch down, circling
@@ -133,7 +133,7 @@ impl Flight {
     }
 }
 
-/// How a part comes in or goes out at the edge of a span.
+/// How a lane comes in or goes out at the edge of a span.
 #[derive(Clone, Copy, Debug)]
 pub enum Transition {
     /// On the bar.
@@ -144,7 +144,7 @@ pub enum Transition {
     Fly(Flight),
 }
 
-/// When a part plays, in bars.
+/// When a lane plays, in bars.
 #[derive(Clone, Copy, Debug)]
 pub struct Play {
     pub start: f32,
@@ -210,7 +210,7 @@ impl Play {
     /// How loud this span is at `bar`, or `None` if it is not running.
     ///
     /// During an approach this is 1.0: the flight carries its own gain, because
-    /// a part in the air is a different thing from the same part fading in.
+    /// a lane in the air is a different thing from the same lane fading in.
     #[must_use]
     pub fn level(&self, bar: f64) -> Option<f32> {
         if self.approach(bar).is_some() {
@@ -235,7 +235,7 @@ impl Play {
 /// What a macro can move. Each of these is also a knob the window will show.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Target {
-    /// The part's fader.
+    /// The lane's fader.
     Level,
     /// How much of it goes to the room.
     Send,
@@ -270,8 +270,8 @@ pub enum Target {
 /// One wire from a macro to a parameter.
 #[derive(Clone, Copy, Debug)]
 pub struct Mapping {
-    /// Which part, by name.
-    pub part: &'static str,
+    /// Which lane, by name.
+    pub lane: &'static str,
     pub target: Target,
     /// Where the parameter sits at macro 0 and at macro 1.
     pub from: f32,
@@ -283,9 +283,9 @@ pub struct Mapping {
 
 impl Mapping {
     #[must_use]
-    pub fn new(part: &'static str, target: Target, from: f32, to: f32) -> Self {
+    pub fn new(lane: &'static str, target: Target, from: f32, to: f32) -> Self {
         Self {
-            part,
+            lane,
             target,
             from,
             to,
@@ -348,60 +348,60 @@ impl Macro {
 /// Instrument parameters are read when a voice is created, so changing one moves
 /// the notes that start from now on and not the ones already ringing — which is
 /// how the Python studio works too, where a filter sweep across a piece is a
-/// per-note parameter. `Level`, `Send` and `GateDepth` belong to the part rather
+/// per-note parameter. `Level`, `Send` and `GateDepth` belong to the lane rather
 /// than the note, so they move continuously.
-pub fn apply(part: &mut crate::seq::Part, target: Target, value: f32) {
+pub fn apply(lane: &mut crate::seq::Lane, target: Target, value: f32) {
     match target {
-        Target::Level => part.gain = value,
-        Target::Send => part.send = value.clamp(0.0, 1.0),
+        Target::Level => lane.gain = value,
+        Target::Send => lane.send = value.clamp(0.0, 1.0),
         Target::GateDepth => {
-            if let Some(gate) = &mut part.gate {
+            if let Some(gate) = &mut lane.gate {
                 gate.depth = value.clamp(0.0, 1.0);
             }
         }
-        Target::Velocity => part.velocity_scale = value.max(0.0),
+        Target::Velocity => lane.velocity_scale = value.max(0.0),
         Target::LapRate => {
-            if let Home::Orbit { bars_per_lap, .. } = &mut part.home {
+            if let Home::Orbit { bars_per_lap, .. } = &mut lane.home {
                 *bars_per_lap = value.max(0.01);
             }
         }
         Target::Radius => {
-            if let Home::Orbit { radius, .. } = &mut part.home {
+            if let Home::Orbit { radius, .. } = &mut lane.home {
                 *radius = value.max(0.25);
             }
         }
         Target::GlassIndex => {
-            if let Voicing::Glass(p) = &mut part.voicing {
+            if let Voicing::Glass(p) = &mut lane.voicing {
                 p.index = value.max(0.0);
             }
         }
         Target::StringsCutoff => {
-            if let Voicing::Strings(p) = &mut part.voicing {
+            if let Voicing::Strings(p) = &mut lane.voicing {
                 p.cutoff = value.max(20.0);
             }
         }
         Target::BassCutoff => {
-            if let Voicing::Bass(p) = &mut part.voicing {
+            if let Voicing::Bass(p) = &mut lane.voicing {
                 p.cutoff = value.max(20.0);
             }
         }
         Target::BassEnvAmount => {
-            if let Voicing::Bass(p) = &mut part.voicing {
+            if let Voicing::Bass(p) = &mut lane.voicing {
                 p.env_amount = value.max(0.0);
             }
         }
         Target::KickPunch => {
-            if let Voicing::Kick(p) = &mut part.voicing {
+            if let Voicing::Kick(p) = &mut lane.voicing {
                 p.punch = value.max(0.0);
             }
         }
         Target::KickDrive => {
-            if let Voicing::Kick(p) = &mut part.voicing {
+            if let Voicing::Kick(p) = &mut lane.voicing {
                 p.drive = value.max(0.1);
             }
         }
         Target::HatDecay => {
-            if let Voicing::Hat(p) = &mut part.voicing {
+            if let Voicing::Hat(p) = &mut lane.voicing {
                 p.decay = value.max(0.001);
             }
         }
