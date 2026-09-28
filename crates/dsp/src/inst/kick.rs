@@ -13,6 +13,8 @@
 //! `drive` saturates the lot. The defaults are the "punch" preset from the
 //! Python studio it was ported from, chosen by ear from four candidates.
 
+use serde::{Deserialize, Serialize};
+
 use crate::env::{Amp, Decay};
 use crate::filter::{Mode, Svf};
 use crate::noise::Noise;
@@ -20,7 +22,8 @@ use crate::osc::{Phasor, sine};
 use crate::shape::saturate;
 use crate::{Voice, hz};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Params {
     /// Starts this many times above the note's pitch, then falls to it.
     pub sweep: f32,

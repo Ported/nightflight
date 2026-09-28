@@ -7,6 +7,7 @@ publish.workspace = true
 [dependencies]
 dsp.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 hound.workspace = true

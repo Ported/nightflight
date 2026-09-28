@@ -1,0 +1,4362 @@
+{
+  "version": 1,
+  "name": "prelude",
+  "bpm": 126.0,
+  "lanes": [
+    {
+      "name": "voice 1",
+      "clip": "prelude",
+      "voicing": {
+        "instrument": "glass",
+        "ratio": 3.0,
+        "index": 1.3,
+        "index_decay": 0.25,
+        "detune": 6.0,
+        "attack": 0.004,
+        "decay": 4.0,
+        "release": 3.0,
+        "strike": 0.07,
+        "wow_depth": 8.0,
+        "wow_rate": 0.2
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -3
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -3
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -10
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -10
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -5
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.77,
+            "offset": -5
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.55,
+      "length": {
+        "steps": 16.0
+      },
+      "root": 55.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 2.0,
+        "bars_per_lap": 8.0,
+        "phase": 0.5,
+        "elevation": -0.3,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 1.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "voice 2",
+      "clip": "prelude",
+      "voicing": {
+        "instrument": "glass",
+        "ratio": 3.0,
+        "index": 1.3,
+        "index_decay": 0.25,
+        "detune": 6.0,
+        "attack": 0.004,
+        "decay": 4.0,
+        "release": 3.0,
+        "strike": 0.07,
+        "wow_depth": 8.0,
+        "wow_rate": 0.2
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": -3
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": -3
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": -1
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.46,
+      "length": {
+        "steps": 14.0
+      },
+      "root": 55.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 2.0,
+        "bars_per_lap": 8.0,
+        "phase": 0.8333334,
+        "elevation": 0.0,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 1.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "voice 3",
+      "clip": "prelude",
+      "voicing": {
+        "instrument": "glass",
+        "ratio": 3.0,
+        "index": 1.3,
+        "index_decay": 0.25,
+        "detune": 6.0,
+        "attack": 0.004,
+        "decay": 4.0,
+        "release": 3.0,
+        "strike": 0.07,
+        "wow_depth": 8.0,
+        "wow_rate": 0.2
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 9
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 6
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 6
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 6
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 6
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 2
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.46,
+      "length": {
+        "steps": 2.0
+      },
+      "root": 55.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 2.0,
+        "bars_per_lap": 8.0,
+        "phase": 1.1666667,
+        "elevation": 0.3,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 1.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    }
+  ],
+  "reverb": {
+    "rt60": 7.0,
+    "damping": 1.0,
+    "predelay": 0.04,
+    "lowcut": 100.0
+  },
+  "macros": [],
+  "length_bars": 22.0
+}

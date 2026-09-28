@@ -23,6 +23,12 @@ Four sets ship with it, and they build on each other:
 | `pad` | A string machine through a phaser — the *Oxygène* sound — five voices spread around you. |
 | `intro` | All of it as a piece: the Prelude with the pad under it, a helicopter flying the beat in from 40 m, one beat of held breath, and the landing. |
 
+Pieces live in `pieces/` as JSON and are the source of truth. The Rust in
+`crates/engine/src/sets.rs` is how they were first derived — Bach's figure over
+his chords is eleven lines of code and a thousand steps of data — and
+`cargo run -p engine --example export` writes out what it makes. Edit a piece
+file and you edit the music.
+
 ## How it is put together
 
 Three crates, and the boundaries are the design:

@@ -15,12 +15,13 @@
 //! mechanism, which is what makes a captured performance into a score.
 
 use dsp::space::{Position, SPEED_OF_SOUND};
+use serde::{Deserialize, Serialize};
 
 use crate::seq::{Home, Voicing};
 
 /// A value against bars, straight lines between `(bar, value)` keyframes.
 /// Before the first and after the last it holds.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Curve {
     points: Vec<(f32, f32)>,
 }
@@ -65,7 +66,7 @@ impl Curve {
 /// minute before it arrives. Which is a trick, not a sound: the ear has no
 /// trouble believing a drum machine is a helicopter if it gets closer, louder,
 /// brighter and drier the way one would.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Flight {
     /// Bars of approach before the landing.
     pub bars: f32,
@@ -134,18 +135,22 @@ impl Flight {
 }
 
 /// How a lane comes in or goes out at the edge of a span.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Transition {
     /// On the bar.
     Cut,
-    /// Over this many bars.
-    Fade(f32),
+    /// Over this many bars. A struct variant, not a newtype, for the same reason
+    /// the commands are: serde's internally tagged representation cannot carry a
+    /// bare primitive, and it fails when the piece is written rather than when
+    /// it is compiled.
+    Fade { bars: f32 },
     /// Flown in from far away.
     Fly(Flight),
 }
 
 /// When a lane plays, in bars.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Play {
     pub start: f32,
     pub end: f32,
@@ -159,7 +164,7 @@ impl Transition {
     pub fn name(self) -> &'static str {
         match self {
             Self::Cut => "cut",
-            Self::Fade(_) => "fade",
+            Self::Fade { .. } => "fade",
             Self::Fly(_) => "fly",
         }
     }
@@ -181,8 +186,8 @@ impl Play {
         Self {
             start,
             end,
-            enter: Transition::Fade(bars),
-            leave: Transition::Fade(bars),
+            enter: Transition::Fade { bars },
+            leave: Transition::Fade { bars },
         }
     }
 
@@ -222,18 +227,19 @@ impl Play {
         }
         let rising = match self.enter {
             Transition::Cut | Transition::Fly(_) => 1.0,
-            Transition::Fade(bars) => ((bar - self.start) / bars.max(1e-6)).clamp(0.0, 1.0),
+            Transition::Fade { bars } => ((bar - self.start) / bars.max(1e-6)).clamp(0.0, 1.0),
         };
         let falling = match self.leave {
             Transition::Cut | Transition::Fly(_) => 1.0,
-            Transition::Fade(bars) => ((self.end - bar) / bars.max(1e-6)).clamp(0.0, 1.0),
+            Transition::Fade { bars } => ((self.end - bar) / bars.max(1e-6)).clamp(0.0, 1.0),
         };
         Some(rising.min(falling))
     }
 }
 
 /// What a macro can move. Each of these is also a knob the window will show.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Target {
     /// The lane's fader.
     Level,
@@ -268,10 +274,10 @@ pub enum Target {
 }
 
 /// One wire from a macro to a parameter.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Mapping {
     /// Which lane, by name.
-    pub lane: &'static str,
+    pub lane: String,
     pub target: Target,
     /// Where the parameter sits at macro 0 and at macro 1.
     pub from: f32,
@@ -283,9 +289,9 @@ pub struct Mapping {
 
 impl Mapping {
     #[must_use]
-    pub fn new(lane: &'static str, target: Target, from: f32, to: f32) -> Self {
+    pub fn new(lane: impl Into<String>, target: Target, from: f32, to: f32) -> Self {
         Self {
-            lane,
+            lane: lane.into(),
             target,
             from,
             to,
@@ -307,9 +313,9 @@ impl Mapping {
 }
 
 /// One number, many parameters.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Macro {
-    pub name: &'static str,
+    pub name: String,
     pub mappings: Vec<Mapping>,
     /// A curve over bars, when the score is driving. A hand on the fader takes
     /// over: `manual` wins.
@@ -319,9 +325,9 @@ pub struct Macro {
 
 impl Macro {
     #[must_use]
-    pub fn new(name: &'static str, mappings: Vec<Mapping>) -> Self {
+    pub fn new(name: impl Into<String>, mappings: Vec<Mapping>) -> Self {
         Self {
-            name,
+            name: name.into(),
             mappings,
             automation: None,
             manual: None,

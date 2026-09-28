@@ -65,8 +65,8 @@ pub struct Link {
     pub telemetry: rtrb::Consumer<Telemetry>,
     /// Read once, before the engine was handed to the audio thread. Commands
     /// carry indices into these.
-    pub lane_names: Vec<&'static str>,
-    pub macro_names: Vec<&'static str>,
+    pub lane_names: Vec<String>,
+    pub macro_names: Vec<String>,
     /// Everything about the set that does not change while it plays. Read before
     /// the engine was handed over, which is also why editing it later means the
     /// front end keeping its own copy.

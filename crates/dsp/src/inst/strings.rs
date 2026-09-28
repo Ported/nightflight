@@ -20,6 +20,8 @@
 //! clock rather than each note's, so all the notes of a chord move together, as
 //! one instrument would.
 
+use serde::{Deserialize, Serialize};
+
 use crate::env::Sustain;
 use crate::filter::{Mode, Svf};
 use crate::osc::{Phasor, saw};
@@ -29,7 +31,8 @@ use crate::{Voice, hz};
 /// The most saws one note will ever use.
 const MAX_COPIES: usize = 5;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Params {
     /// Saws per note in the ensemble.
     pub copies: usize,

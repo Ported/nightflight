@@ -23,7 +23,7 @@ const GRID: Color32 = Color32::from_rgb(48, 52, 62);
 const SOURCE: Color32 = Color32::from_rgb(120, 200, 255);
 const CENTRED: Color32 = Color32::from_rgb(150, 150, 160);
 
-pub fn show(ui: &mut egui::Ui, telemetry: &Telemetry, names: &[&'static str]) {
+pub fn show(ui: &mut egui::Ui, telemetry: &Telemetry, names: &[String]) {
     let size = ui.available_size().min(Vec2::splat(420.0));
     let (response, painter) = ui.allocate_painter(Vec2::splat(size.min_elem()), Sense::hover());
     let rect = response.rect;
@@ -79,7 +79,7 @@ pub fn show(ui: &mut egui::Ui, telemetry: &Telemetry, names: &[&'static str]) {
         .iter()
         .enumerate()
     {
-        let name = names.get(index).copied().unwrap_or("?");
+        let name = names.get(index).map_or("?", String::as_str);
         // A lane that is not placed is drawn at the centre, greyed: it is in the
         // middle of your head, which is exactly where a kick belongs.
         let (x, z) = if lane.placed {

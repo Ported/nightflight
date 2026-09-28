@@ -10,6 +10,8 @@
 //! Open or closed is only the decay — plus the note's length, since a note that
 //! ends early is choked, exactly as a pedal closing on a ringing hat.
 
+use serde::{Deserialize, Serialize};
+
 use crate::env::Amp;
 use crate::filter::{Mode, Svf};
 use crate::noise::Noise;
@@ -27,7 +29,8 @@ const OSCILLATORS: [f32; 6] = [205.3, 304.4, 369.6, 522.7, 540.0, 800.0];
 /// first — so the gain is fixed here and the lane's level does the balancing.
 const MAKEUP: f32 = 6.5;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Params {
     /// Seconds: about 0.04 closed, about 0.3 open.
     pub decay: f32,

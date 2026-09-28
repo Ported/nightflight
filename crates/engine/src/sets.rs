@@ -32,6 +32,9 @@ use crate::automation::{Curve, Flight, Macro, Mapping, Play, Target, Transition}
 use crate::mix::Gate;
 use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, Set, Step, Voicing};
 
+/// Everything here is written at this tempo.
+pub const BPM: f32 = 126.0;
+
 /// G1, about 49 Hz: Rolling's root, and the kick is tuned to it.
 pub const ROOT: f32 = 31.0;
 
@@ -91,8 +94,8 @@ fn closed_hats() -> Pattern {
 fn groove_lanes() -> Vec<Lane> {
     vec![
         Lane {
-            name: "kick",
-            clip: "beat",
+            name: "kick".into(),
+            clip: "beat".into(),
             voicing: Voicing::Kick(kick::Params::default()),
             pattern: Pattern::grid("X...X...X...X..."),
             gain: 1.0,
@@ -108,8 +111,8 @@ fn groove_lanes() -> Vec<Lane> {
             muted: false,
         },
         Lane {
-            name: "closed hat",
-            clip: "beat",
+            name: "closed hat".into(),
+            clip: "beat".into(),
             voicing: Voicing::Hat(hat::Params::default()),
             pattern: closed_hats(),
             gain: 0.6,
@@ -124,8 +127,8 @@ fn groove_lanes() -> Vec<Lane> {
             muted: false,
         },
         Lane {
-            name: "open hat",
-            clip: "beat",
+            name: "open hat".into(),
+            clip: "beat".into(),
             voicing: Voicing::Hat(hat::Params {
                 decay: 0.3,
                 ..hat::Params::default()
@@ -147,8 +150,8 @@ fn groove_lanes() -> Vec<Lane> {
             muted: false,
         },
         Lane {
-            name: "bass",
-            clip: "bass",
+            name: "bass".into(),
+            clip: "bass".into(),
             voicing: Voicing::Bass(bass::Params::default()),
             pattern: rolling_bass(),
             gain: 0.8,
@@ -168,6 +171,7 @@ fn groove_lanes() -> Vec<Lane> {
 #[must_use]
 pub fn rolling() -> Set {
     Set {
+        bpm: BPM,
         lanes: groove_lanes(),
         macros: Vec::new(),
         // Rolling's own length in the Python: forty bars, four-bar blocks.
@@ -280,8 +284,8 @@ pub fn prelude() -> Set {
     let names = ["voice 1", "voice 2", "voice 3"];
     let lanes = (0..3)
         .map(|voice| Lane {
-            name: names[voice],
-            clip: "prelude",
+            name: names[voice].into(),
+            clip: "prelude".into(),
             voicing: Voicing::Glass(dreaming()),
             pattern: bach_voice(voice, 0),
             // Measured, not chosen: at 1.2/1.0 the mix peaked at +3.5 dBFS.
@@ -314,6 +318,7 @@ pub fn prelude() -> Set {
         .collect();
 
     Set {
+        bpm: BPM,
         lanes,
         macros: Vec::new(),
         // Bach's eleven bars, two of ours each.
@@ -377,8 +382,8 @@ pub fn pad() -> Set {
     ];
     let lanes = (0..PAD_VOICES)
         .map(|voice| Lane {
-            name: NAMES[voice],
-            clip: "pad",
+            name: NAMES[voice].into(),
+            clip: "pad".into(),
             voicing: Voicing::Strings(strings::dark()),
             pattern: pad_voice(voice),
             // Measured for a standalone listen: at 0.3 the five voices peaked
@@ -409,6 +414,7 @@ pub fn pad() -> Set {
         .collect();
 
     Set {
+        bpm: BPM,
         lanes,
         macros: Vec::new(),
         // Four chords, two bars each.
@@ -475,8 +481,8 @@ pub fn intro() -> Set {
     let lengths = [Length::Steps(16.0), Length::Steps(14.0), Length::Steps(2.0)];
     let mut lanes: Vec<Lane> = (0..3)
         .map(|voice| Lane {
-            name: glass_names[voice],
-            clip: "prelude",
+            name: glass_names[voice].into(),
+            clip: "prelude".into(),
             voicing: Voicing::Glass(dreaming()),
             pattern: bach_voice(voice, PEDAL_BARS),
             gain: if voice == 0 { 0.3 } else { 0.25 },
@@ -501,8 +507,8 @@ pub fn intro() -> Set {
 
     const PAD_NAMES: [&str; INTRO_PAD_VOICES] = ["pad 1", "pad 2", "pad 3", "pad 4"];
     lanes.extend((0..INTRO_PAD_VOICES).map(|voice| Lane {
-        name: PAD_NAMES[voice],
-        clip: "pad",
+        name: PAD_NAMES[voice].into(),
+        clip: "pad".into(),
         voicing: Voicing::Strings(strings::dark()),
         // Bach's chords held, one per Bach bar: the harmony the glass
         // arpeggiates, so the pad is never a second idea.
@@ -523,7 +529,7 @@ pub fn intro() -> Set {
         spans: vec![Play {
             start: 0.0,
             end: LANDING,
-            enter: Transition::Fade(4.0),
+            enter: Transition::Fade { bars: 4.0 },
             leave: Transition::Cut,
         }],
         velocity_scale: 1.0,
@@ -576,6 +582,7 @@ pub fn intro() -> Set {
     }
 
     Set {
+        bpm: BPM,
         lanes,
         macros: vec![
             Macro::new("energy", energy).automated(Curve::new(vec![(0.0, 0.10), (LANDING, 0.50)])),

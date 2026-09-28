@@ -21,8 +21,8 @@ fn a_span_fades_in_and_out_and_is_silent_outside() {
     let play = Play {
         start: 4.0,
         end: 20.0,
-        enter: Transition::Fade(4.0),
-        leave: Transition::Fade(2.0),
+        enter: Transition::Fade { bars: 4.0 },
+        leave: Transition::Fade { bars: 2.0 },
     };
     assert_eq!(play.level(3.9), None, "before the span");
     assert_eq!(play.level(20.0), None, "the end is exclusive");

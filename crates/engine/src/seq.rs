@@ -8,12 +8,13 @@
 
 use dsp::inst::{bass, glass, hat, kick, strings};
 use dsp::space::Position;
+use serde::{Deserialize, Serialize};
 
 use crate::automation::{Flight, Macro, Play, Transition};
 use crate::mix::Gate;
 
 /// One step of a pattern. Velocity 0 is a rest.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 pub struct Step {
     pub velocity: f32,
     /// Semitones above the lane's root, for pitched lanes.
@@ -33,7 +34,7 @@ impl Step {
 }
 
 /// A looping sequence of steps. Built once, when a set is loaded.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pattern {
     steps: Vec<Step>,
 }
@@ -107,7 +108,8 @@ impl Pattern {
 /// last "a sixteenth" is in **steps**, and follows the tempo. Getting this
 /// wrong is what cut the Python beat sketch's kick to 0.12 s and made it feel
 /// wimpy — it had been given a one-step length.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Length {
     Seconds(f32),
     Steps(f32),
@@ -139,7 +141,8 @@ impl Voicing {
 }
 
 /// Which instrument a lane plays, and how it is set up.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(tag = "instrument", rename_all = "snake_case")]
 pub enum Voicing {
     Kick(kick::Params),
     Hat(hat::Params),
@@ -149,12 +152,12 @@ pub enum Voicing {
 }
 
 /// A lane: one instrument, one pattern, one fader.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Lane {
-    pub name: &'static str,
+    pub name: String,
     /// Which clip this lane belongs to. Lanes of one clip are edited together
     /// and drawn as one row on the timeline: "kick" is a lane of "beat".
-    pub clip: &'static str,
+    pub clip: String,
     pub voicing: Voicing,
     pub pattern: Pattern,
     /// Linear level, relative to the other lanes.
@@ -185,7 +188,8 @@ pub struct Lane {
 /// composition. Live, the description has to survive: you want to speed an
 /// orbit up or throw a source somewhere while it plays, and you cannot do that
 /// to a list of points. So a home is evaluated at the musical time it is needed.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Home {
     /// Not placed: mixed to the centre, untouched. Right for kick and bass —
     /// low frequencies barely localise, and a head filter would only colour
@@ -252,7 +256,7 @@ impl Home {
 }
 
 /// The shared reverb's settings, as the scene JSON describes them.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct ReverbSettings {
     /// Seconds for the tail to fall 60 dB at low frequencies: bedroom ~0.5,
     /// cathedral 6-10.
@@ -269,8 +273,13 @@ pub struct ReverbSettings {
     pub lowcut: f32,
 }
 
-/// Everything the engine needs to play a piece.
+/// Everything the engine needs to play a piece — and, because every field of it
+/// is data, the document itself. A piece on disk deserialises straight into this
+/// and the engine plays it; there is no second set of types to drift.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Set {
+    /// Beats a minute.
+    pub bpm: f32,
     pub lanes: Vec<Lane>,
     pub reverb: Option<ReverbSettings>,
     /// The conductor's faders.

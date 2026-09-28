@@ -75,6 +75,11 @@ A debug build has `assert_no_alloc` armed and DSP too slow to keep up. Run
   before the numbers.
 - **Missing glyphs.** egui's default fonts do not carry U+23F8 and friends, and a
   button whose label is a missing glyph is an invisible button. Use words.
+- **serde's internally tagged enums cannot carry a bare primitive.** A variant
+  like `Fade(f32)` under `#[serde(tag = "kind")]` compiles and then fails when a
+  value is written or read. It has caught this project twice — once on a command
+  and once on a transition — and both times at run time, in a place far from the
+  enum. Use a struct variant: `Fade { bars: f32 }`.
 - **zsh does not word-split unquoted parameters.** `$args` reaches a command as one
   argument, so a sweep silently ran the same case several times. Use arrays or
   explicit arguments.

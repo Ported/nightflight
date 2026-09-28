@@ -10,6 +10,7 @@
 
 pub mod automation;
 pub mod clock;
+pub mod document;
 pub mod mix;
 pub mod seq;
 pub mod sets;
@@ -102,6 +103,9 @@ pub struct Engine {
     master: f32,
     /// How long the piece is, in bars. Only an interface uses it.
     length_bars: f32,
+    /// Every macro mapping with its lane already found, so moving a fader
+    /// never searches a list of names on the audio thread.
+    wires: Vec<Wire>,
 }
 
 impl Engine {
@@ -126,6 +130,30 @@ impl Engine {
                 }
             })
             .collect();
+        // Resolved once: a name is a convenience for whoever writes a piece, and
+        // has no business being looked up seven hundred and fifty times a second.
+        let wires = set
+            .macros
+            .iter()
+            .enumerate()
+            .flat_map(|(macro_index, m)| {
+                let lanes = &lanes;
+                m.mappings.iter().filter_map(move |mapping| {
+                    lanes
+                        .iter()
+                        .position(|lane| lane.name == mapping.lane)
+                        .map(|lane| Wire {
+                            macro_index,
+                            lane,
+                            target: mapping.target,
+                            from: mapping.from,
+                            to: mapping.to,
+                            curve: mapping.curve,
+                        })
+                })
+            })
+            .collect();
+
         Self {
             clock: Clock::new(sr, bpm),
             pool: Pool::default(),
@@ -153,6 +181,7 @@ impl Engine {
             duck_curve: [0.0; MAX_BLOCK],
             master: 0.5,
             length_bars: set.length_bars,
+            wires,
         }
     }
 
@@ -521,14 +550,12 @@ impl Engine {
     /// 750 times a second is far finer than a hand, and the parameters that feed
     /// continuous DSP are smoothed downstream anyway.
     fn apply_macros(&mut self, bar: f64) {
-        for index in 0..self.macros.len() {
-            let value = self.macros[index].at(bar);
-            for wire in 0..self.macros[index].mappings.len() {
-                let mapping = self.macros[index].mappings[wire];
-                let target = mapping.value(value);
-                if let Some(lane) = self.lanes.iter_mut().find(|p| p.name == mapping.lane) {
-                    automation::apply(lane, mapping.target, target);
-                }
+        for wire in &self.wires {
+            let value = self.macros[wire.macro_index].at(bar);
+            let shaped = value.clamp(0.0, 1.0).powf(wire.curve);
+            let target = wire.from + (wire.to - wire.from) * shaped;
+            if let Some(lane) = self.lanes.get_mut(wire.lane) {
+                automation::apply(lane, wire.target, target);
             }
         }
     }
@@ -545,15 +572,18 @@ impl Engine {
     }
 
     #[must_use]
-    pub fn macro_names(&self) -> Vec<&'static str> {
-        self.macros.iter().map(|m| m.name).collect()
+    pub fn macro_names(&self) -> Vec<String> {
+        self.macros.iter().map(|m| m.name.clone()).collect()
     }
 
     /// Where each macro currently sits.
     #[must_use]
-    pub fn macro_values(&self) -> Vec<(&'static str, f32)> {
+    pub fn macro_values(&self) -> Vec<(String, f32)> {
         let bar = self.clock.bar();
-        self.macros.iter().map(|m| (m.name, m.at(bar))).collect()
+        self.macros
+            .iter()
+            .map(|m| (m.name.clone(), m.at(bar)))
+            .collect()
     }
 
     /// A one-line dump of what the macros have written into the lanes. For
@@ -647,13 +677,16 @@ impl Engine {
 
     /// Each lane's name and current reverb send.
     #[must_use]
-    pub fn sends(&self) -> Vec<(&'static str, f32)> {
-        self.lanes.iter().map(|p| (p.name, p.send)).collect()
+    pub fn sends(&self) -> Vec<(String, f32)> {
+        self.lanes
+            .iter()
+            .map(|lane| (lane.name.clone(), lane.send))
+            .collect()
     }
 
     #[must_use]
-    pub fn lane_names(&self) -> Vec<&'static str> {
-        self.lanes.iter().map(|p| p.name).collect()
+    pub fn lane_names(&self) -> Vec<String> {
+        self.lanes.iter().map(|lane| lane.name.clone()).collect()
     }
 
     /// Bar position, voice count and dropped-voice count, for the UI.
@@ -672,8 +705,8 @@ impl Engine {
                 .iter()
                 .enumerate()
                 .map(|(index, lane)| LaneDescription {
-                    name: lane.name,
-                    clip: lane.clip,
+                    name: lane.name.clone(),
+                    clip: lane.clip.clone(),
                     instrument: lane.voicing.instrument(),
                     gain: lane.gain,
                     send: lane.send,
@@ -705,7 +738,7 @@ impl Engine {
                 .macros
                 .iter()
                 .map(|m| MacroDescription {
-                    name: m.name,
+                    name: m.name.clone(),
                     automated: m.manual.is_none(),
                     curve: m
                         .automation
@@ -847,6 +880,17 @@ impl Engine {
             dropped: self.pool.dropped,
         }
     }
+}
+
+/// One macro mapping, with the lane it moves already found.
+#[derive(Clone, Copy, Debug)]
+struct Wire {
+    macro_index: usize,
+    lane: usize,
+    target: automation::Target,
+    from: f32,
+    to: f32,
+    curve: f32,
 }
 
 #[derive(Clone, Copy, Debug)]

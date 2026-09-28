@@ -224,7 +224,7 @@ impl App {
     fn macros(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for index in 0..self.link.macro_names.len() {
-                let name = self.link.macro_names[index];
+                let name = self.link.macro_names[index].clone();
                 let automated = self.macros[index].is_none();
                 // Under automation the curve owns the value and the fader
                 // follows; touching it takes over.
@@ -246,7 +246,7 @@ impl App {
                         });
                     }
                     ui.label(RichText::new(format!("{value:.2}")).monospace().size(11.0));
-                    ui.label(RichText::new(name).size(12.0));
+                    ui.label(RichText::new(&name).size(12.0));
                     let label = if automated { "auto" } else { "held" };
                     if ui
                         .selectable_label(automated, RichText::new(label).size(10.0))
@@ -269,11 +269,11 @@ impl App {
             .spacing([10.0, 4.0])
             .show(ui, |ui| {
                 for index in 0..self.link.lane_names.len() {
-                    let name = self.link.lane_names[index];
+                    let name = self.link.lane_names[index].clone();
                     let state = self.latest.lanes[index];
 
                     if ui
-                        .selectable_label(!self.mutes[index], RichText::new(name).size(13.0))
+                        .selectable_label(!self.mutes[index], RichText::new(&name).size(13.0))
                         .clicked()
                     {
                         self.mutes[index] = !self.mutes[index];

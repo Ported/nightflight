@@ -31,13 +31,16 @@
 //! Two carriers a few cents apart beat slowly against each other, which the ear
 //! reads as shimmer rather than as two notes.
 
+use serde::{Deserialize, Serialize};
+
 use crate::env::{Amp, Decay};
 use crate::filter::{Mode, Svf};
 use crate::noise::Noise;
 use crate::osc::{Phasor, sine};
 use crate::{Voice, hz};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Params {
     /// Modulator frequency as a multiple of the carrier's. Whole numbers stay
     /// in tune; anything else goes metallic.

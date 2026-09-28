@@ -45,7 +45,7 @@ fn main() {
     let mut engine = Engine::new(dsp::SR, bpm, set);
     if args.iter().any(|a| a == "--dry") {
         for name in engine.lane_names() {
-            engine.set_send(name, 0.0);
+            engine.set_send(&name, 0.0);
         }
     }
     if let Some(scale) = flag("--gain").and_then(|s| s.parse::<f32>().ok()) {
@@ -53,12 +53,12 @@ fn main() {
     }
     if let Some(depth) = flag("--gate").and_then(|s| s.parse::<f32>().ok()) {
         for name in engine.lane_names() {
-            engine.set_gate_depth(name, depth);
+            engine.set_gate_depth(&name, depth);
         }
     }
     if let Some(scale) = flag("--send-scale").and_then(|s| s.parse::<f32>().ok()) {
         for (name, send) in engine.sends() {
-            engine.set_send(name, send * scale);
+            engine.set_send(&name, send * scale);
         }
     }
     if let Some(name) = flag("--solo")

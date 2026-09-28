@@ -141,3 +141,31 @@ fn editing_a_step_changes_what_plays() {
         "expected five kicks in the bar, heard {onsets}"
     );
 }
+
+#[test]
+fn a_piece_survives_being_written_down_and_read_back() {
+    // The claim the whole persistence design rests on: the engine's `Set` *is*
+    // the document, so writing one out and reading it back must give a piece
+    // that plays identically. Not approximately — the same samples.
+    for name in engine::sets::NAMES {
+        let original = engine::sets::by_name(name).expect("a built-in piece");
+
+        let json = serde_json::to_string(&original).expect("a piece serialises");
+        let read_back: engine::seq::Set = serde_json::from_str(&json)
+            .unwrap_or_else(|err| panic!("{name} did not survive the round trip: {err}"));
+
+        let render = |set: engine::seq::Set| {
+            let mut engine = engine::Engine::new(dsp::SR, set.bpm, set);
+            let mut out = vec![0.0f32; 48_000 * 2 * 4];
+            engine.process(&mut out);
+            out
+        };
+        let before = render(original);
+        let after = render(read_back);
+        let differences = before.iter().zip(&after).filter(|(a, b)| a != b).count();
+        assert_eq!(
+            differences, 0,
+            "{name} played differently after a round trip through JSON"
+        );
+    }
+}

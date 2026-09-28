@@ -1,5 +1,7 @@
 //! Mixing: the sidechain duck.
 
+use serde::{Deserialize, Serialize};
+
 /// Duck one lane's level every time another lane plays — almost always the
 /// kick ducking everything else.
 ///
@@ -64,7 +66,7 @@ impl Duck {
 ///
 /// It is a pure function of the transport position — no state to get out of
 /// step, and it stays locked to the grid when the tempo changes.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Gate {
     /// One entry per cell of the pattern: true is open.
     open: Vec<bool>,

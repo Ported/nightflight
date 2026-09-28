@@ -67,9 +67,12 @@ yet and the shape is there when it does.
 and can be set per lane, but they cannot be named, saved or shared between lanes,
 which is what would make them patches rather than settings.
 
-**Nothing is saved.** A piece is Rust code in `sets.rs`, and an edit made in an
-editor lives in the running engine and in the page, and is gone when either
-restarts. The description the page receives is a snapshot taken before the engine
-started, so a reload shows the original, not what you have edited. That ordering
-— the editor owning the document and the engine playing what it is told — is the
-right one; it just needs somewhere to write it down.
+**Pieces are saved; edits are not yet.** A piece is a JSON file in `pieces/`,
+the engine plays what it is given, and the built-in Rust generators are now only
+provenance — `cargo run -p engine --example export` writes what they make. Hand
+edit a piece file, restart, and you hear the change.
+
+What is still missing is the loop back: an edit made in an editor reaches the
+running engine but nothing writes it down, because the server does not yet hold
+the document. When it does, a save is a file write and a reload shows what you
+edited rather than what the piece started as.

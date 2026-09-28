@@ -11,13 +11,16 @@
 //! resonance (a boost right at the cutoff) is what makes the sweep audible as a
 //! vowel rather than just a dimming.
 
+use serde::{Deserialize, Serialize};
+
 use crate::env::{Amp, Decay};
 use crate::filter::{Mode, Svf};
 use crate::osc::{Phasor, saw, sine};
 use crate::shape::saturate;
 use crate::{Voice, hz};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Params {
     /// Hz: the filter's floor, where the sweep lands.
     pub cutoff: f32,

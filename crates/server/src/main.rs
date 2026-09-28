@@ -58,9 +58,35 @@ fn main() {
     let set_name = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "intro".to_string());
-    let Some(set) = engine::sets::by_name(&set_name) else {
-        eprintln!("no set named {set_name:?}; have {:?}", engine::sets::NAMES);
-        std::process::exit(1);
+
+    // A piece on disk wins over the built-in of the same name. That ordering is
+    // the point: once a piece has been written down, editing the file is editing
+    // the music, and the Rust that first generated it is only its provenance.
+    let path = engine::document::directory().join(format!("{set_name}.json"));
+    let set = match engine::document::load(&path) {
+        Ok(piece) => {
+            println!("{} · {}", piece.name, path.display());
+            piece.set
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            match engine::sets::by_name(&set_name) {
+                Some(set) => {
+                    println!("{set_name} · built in, nothing at {}", path.display());
+                    set
+                }
+                None => {
+                    eprintln!(
+                        "no piece named {set_name:?}; have {:?}",
+                        engine::sets::NAMES
+                    );
+                    std::process::exit(1);
+                }
+            }
+        }
+        Err(err) => {
+            eprintln!("could not read {}: {err}", path.display());
+            std::process::exit(1);
+        }
     };
 
     let link = match host::start(set) {

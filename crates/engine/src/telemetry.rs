@@ -148,9 +148,9 @@ pub struct Description {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LaneDescription {
-    pub name: &'static str,
+    pub name: String,
     /// The clip this lane belongs to.
-    pub clip: &'static str,
+    pub clip: String,
     /// Which instrument plays it: kick, hat, bass, glass, strings.
     pub instrument: &'static str,
     pub gain: f32,
@@ -184,7 +184,7 @@ pub struct SpanDescription {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct MacroDescription {
-    pub name: &'static str,
+    pub name: String,
     /// Whether a curve is driving it rather than a hand.
     pub automated: bool,
     /// The curve's keyframes, as (bar, value). Empty if it has none.
