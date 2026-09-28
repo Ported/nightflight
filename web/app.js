@@ -208,30 +208,47 @@ function drawTimeline() {
     context.fillText(bar, x(bar) + 2, height - 6);
   }
 
+  const playhead = telemetry?.bar ?? -1;
+  const inside = (from, to) => playhead >= from && playhead < to;
+
   description.parts.forEach((part, index) => {
     const y = top + index * rowHeight;
     const middle = y + rowHeight / 2 - 1;
-    const sounding = telemetry?.parts?.[index]?.sounding;
     const muted = telemetry?.parts?.[index]?.muted;
-
-    context.fillStyle = muted ? colour("--line") : sounding ? colour("--text") : colour("--weak");
-    context.textAlign = "right";
-    context.fillText(part.name, gutter - 6, middle);
-    context.textAlign = "left";
 
     // A part with no spans plays for ever, which a set for jamming wants.
     const spans = part.spans.length
       ? part.spans
       : [{ start: 0, end: bars, first_bar: 0 }];
+    // Whether a block is lit follows the playhead being inside it, not whether
+    // a voice happens to be ringing this instant: a closed hat sounds for a
+    // third of the time it is playing, so voice activity makes a block flicker
+    // and says nothing about the arrangement.
+    const live = spans.some((span) => inside(span.first_bar, span.end));
+
+    context.fillStyle = muted ? colour("--line") : live ? colour("--text") : colour("--weak");
+    context.textAlign = "right";
+    context.fillText(part.name, gutter - 6, middle);
+    context.textAlign = "left";
+
     for (const span of spans) {
-      // A flight's approach is drawn fainter: sounding, but from somewhere else.
+      // A flight's approach: the part is sounding, but from somewhere else. It
+      // is drawn thinner rather than fainter, so that it can still light up
+      // when the playhead is in it.
       if (span.first_bar < span.start) {
-        context.fillStyle = colour("--accent") + "2e";
-        context.fillRect(x(span.first_bar), y + 1, x(span.start) - x(span.first_bar), rowHeight - 3);
+        const flying = inside(span.first_bar, span.start);
+        context.fillStyle = muted
+          ? colour("--line")
+          : colour("--accent") + (flying ? "aa" : "3a");
+        context.fillRect(
+          x(span.first_bar),
+          y + rowHeight * 0.32,
+          x(span.start) - x(span.first_bar),
+          rowHeight * 0.36,
+        );
       }
-      context.fillStyle = muted
-        ? colour("--line")
-        : colour("--accent") + (sounding ? "cc" : "5a");
+      const landed = inside(span.start, span.end);
+      context.fillStyle = muted ? colour("--line") : colour("--accent") + (landed ? "e6" : "55");
       context.fillRect(x(span.start), y + 1, Math.max(x(span.end) - x(span.start), 1.5), rowHeight - 3);
     }
   });
@@ -377,19 +394,21 @@ function frame() {
     $("play").textContent = t.playing ? "stop" : "play";
     if (!held.has("scrub")) scrub.value = t.bar;
     const seconds = (t.bar * 4 * 60) / Math.max(t.bpm, 1);
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
     $("position").textContent =
-      `bar ${t.bar.toFixed(2).padStart(7)} / ${description?.length_bars ?? 0}` +
-      `   ${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
+      `bar ${t.bar.toFixed(2).padStart(7)} / ${String(description?.length_bars ?? 0).padEnd(3)}` +
+      ` ${minutes}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
 
     const load = Math.min(t.load, 1);
     $("load").style.width = `${load * 100}%`;
     $("load").style.background = load > 0.7 ? colour("--bad") : load > 0.4 ? colour("--warn") : colour("--good");
-    $("loadText").textContent = `${(t.load * 100).toFixed(0)}%`;
-    $("voices").textContent = `${t.voices} voices`;
+    $("loadText").textContent = `${String(Math.round(t.load * 100)).padStart(3)}%`;
+    $("voices").textContent = `${String(t.voices).padStart(2)} voices`;
     const peak = 20 * Math.log10(Math.max(t.peak, 1e-6));
-    $("peak").textContent = `peak ${peak.toFixed(1)} dBFS`;
+    $("peak").textContent = `peak ${peak.toFixed(1).padStart(6)} dBFS`;
     $("peak").style.color = peak > -0.5 ? colour("--bad") : colour("--text");
-    $("dropouts").textContent = `${t.xruns} dropouts · ${t.dropped} voices dropped`;
+    $("dropouts").textContent =
+      `${String(t.xruns).padStart(2)} dropouts · ${String(t.dropped).padStart(2)} voices dropped`;
     $("dropouts").style.color = t.xruns > 0 ? colour("--bad") : t.dropped > 0 ? colour("--warn") : colour("--weak");
     if (!held.has("bpm")) $("bpmText").textContent = t.bpm.toFixed(1);
 

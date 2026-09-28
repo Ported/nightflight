@@ -26,6 +26,25 @@ body {
 }
 
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* Every live number is given the width of its widest possible value and never
+   changes size. Tabular figures keep the digits themselves aligned, but they do
+   nothing about a number gaining a digit — and a readout that grows from "6%" to
+   "12%" shoves everything after it along the row, which reads as the interface
+   twitching. Widths are in `ch`, which with a monospace font is exactly the
+   character count. */
+/* `pre`, not `nowrap`: HTML collapses runs of spaces, so the padding the page
+   puts on these strings would otherwise do nothing and the text would still
+   shift inside its fixed box. */
+.fixed { display: inline-block; text-align: right; white-space: pre; }
+#position { width: 25ch; }
+#loadText { width: 4ch; }
+#voices   { width: 10ch; }
+#peak     { width: 17ch; }
+#dropouts { width: 32ch; text-align: left; }
+#bpmText  { width: 5ch; }
+.parts .gain { width: 4ch; }
+.macro .value { width: 4ch; display: inline-block; text-align: center; }
 .weak { color: var(--weak); }
 .label { color: var(--weak); font-size: 11px; text-transform: lowercase; }
 .spacer { flex: 1; }
