@@ -135,7 +135,6 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     let lane_names = engine.lane_names();
     let macro_names = engine.macro_names();
 
-
     let (command_tx, mut command_rx) = rtrb::RingBuffer::new(256);
     let (mut telemetry_tx, telemetry_rx) = rtrb::RingBuffer::new(8);
 

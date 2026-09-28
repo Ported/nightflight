@@ -11,6 +11,7 @@ pub mod filter;
 pub mod inst;
 pub mod noise;
 pub mod osc;
+pub mod params;
 pub mod phaser;
 pub mod reverb;
 pub mod shape;

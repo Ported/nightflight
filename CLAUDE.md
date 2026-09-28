@@ -74,6 +74,10 @@ A debug build has `assert_no_alloc` armed and DSP too slow to keep up. Run
   `cargo fmt` had already rewritten did nothing; the build passed because nothing
   changed and the tests passed because they cover the engine, not the window. A
   button was reported as shipped and did not exist. **Verify an edit landed.**
+- **Measuring the wrong window.** Before concluding that a change had no effect,
+  check what else is sounding where you are looking. A window chosen to catch a
+  kick's tail caught a hat instead and reported two different renders as
+  identical to four decimal places. Solo the lane.
 - **Counting onsets by threshold.** A 49 Hz kick crosses any level you pick a
   dozen times per hit. This has been got wrong three times in three different
   tests. Use a smoothed envelope with hysteresis, or measure the level in the
@@ -81,6 +85,9 @@ A debug build has `assert_no_alloc` armed and DSP too slow to keep up. Run
 - **A stale binary.** A failed `cargo build` left the previous binary in place, so
   measurements described code that no longer compiled. Read the compiler output
   before the numbers.
+- **A class selector beats `[hidden]`.** `.patch { display: grid }` overrides the
+  browser's own `[hidden] { display: none }`, so setting `hidden` does nothing at
+  all. Add `.patch[hidden] { display: none; }`.
 - **Missing glyphs.** egui's default fonts do not carry U+23F8 and friends, and a
   button whose label is a missing glyph is an invisible button. Use words.
 - **serde's internally tagged enums cannot carry a bare primitive.** A variant

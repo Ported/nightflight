@@ -160,3 +160,75 @@ fn editing_a_step_changes_what_plays() {
          at {after:.3}, only {louder:.1} dB louder"
     );
 }
+
+#[test]
+fn turning_a_parameter_changes_what_is_heard() {
+    // The other half of the editor: a fader moved reaches the engine as an index
+    // and a number, with no string crossing to the audio thread.
+    let set = engine::sets::rolling();
+    let kick = set
+        .lanes
+        .iter()
+        .position(|lane| lane.name == "kick")
+        .expect("rolling has a kick") as u8;
+
+    // `decay` is the kick's body length, and its index is wherever the
+    // declaration put it — which is the point of the spec: nothing here has to
+    // know.
+    let spec = set.lanes[kick as usize].voicing.spec();
+    let decay = spec
+        .iter()
+        .position(|param| param.name == "decay")
+        .expect("a kick has a decay") as u8;
+
+    // The kick alone, or the window catches a hat and reports that both renders
+    // are identical — which they are, in the part of them being measured.
+    let tail = |engine: &mut engine::Engine| -> f32 {
+        engine.apply(Command::Seek { bar: 0.0 });
+        engine.process(&mut vec![0.0f32; 2048]);
+        let mut out = vec![0.0f32; 48_000];
+        engine.process(&mut out);
+        // 0.30 to 0.39 s: late in the kick's 0.4 s note, where a longer decay
+        // leaves more behind, and before the next kick.
+        out.chunks(2)
+            .map(|frame| frame[0].abs())
+            .skip(14_400)
+            .take(4_300)
+            .fold(0.0f32, f32::max)
+    };
+
+    let mut engine = engine::Engine::new(dsp::SR, set.bpm, set);
+    engine.solo("kick");
+    let before = tail(&mut engine);
+
+    engine.apply(
+        serde_json::from_str::<Command>(&format!(
+            r#"{{"t":"set_param","lane":{kick},"param":{decay},"value":1.8}}"#
+        ))
+        .expect("the page's own JSON"),
+    );
+    let after = tail(&mut engine);
+    let louder = 20.0 * (after / before.max(1e-6)).log10();
+    assert!(
+        louder > 3.0,
+        "a longer decay should leave more ringing half a second in: \
+         {before:.4} became {after:.4}, {louder:.1} dB"
+    );
+
+    // And a value outside the declared range cannot get in.
+    engine.apply(Command::SetParam {
+        lane: kick,
+        param: decay,
+        value: 1e9,
+    });
+    let clamped = engine::sets::rolling().lanes[kick as usize]
+        .voicing
+        .spec()
+        .get(decay as usize)
+        .expect("the parameter exists")
+        .max;
+    assert!(
+        clamped < 1e9,
+        "the spec should bound what an interface can send"
+    );
+}

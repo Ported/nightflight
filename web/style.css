@@ -164,3 +164,26 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 
 /* The loop region, drawn behind the playhead on the timeline. */
 .looping { color: var(--good); }
+
+/* ── Patch parameters ─────────────────────────────────────────────────────── */
+
+/* A class selector beats the browser's own `[hidden] { display: none }`, so
+   setting `hidden` on this would otherwise do nothing at all. */
+.patch[hidden] { display: none; }
+.patch {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 2px 14px; margin: 4px 0 10px 112px;
+}
+.param { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.param .pname { width: 84px; color: var(--weak); text-align: right; flex: none; }
+.param input[type=range] { flex: 1; min-width: 60px; }
+.param .pvalue {
+  width: 62px; flex: none; font-family: var(--mono);
+  font-variant-numeric: tabular-nums; white-space: pre; text-align: right;
+}
+.param.moved .pname { color: var(--warn); }
+.lane .expand {
+  min-width: 0; padding: 1px 6px; font-size: 10px; color: var(--weak);
+  border-color: transparent;
+}
+.lane .expand.on { color: var(--accent); border-color: var(--line); }

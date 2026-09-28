@@ -11,49 +11,34 @@
 //! resonance (a boost right at the cutoff) is what makes the sweep audible as a
 //! vowel rather than just a dimming.
 
-use serde::{Deserialize, Serialize};
-
 use crate::env::{Amp, Decay};
 use crate::filter::{Mode, Svf};
 use crate::osc::{Phasor, saw, sine};
+use crate::parameters;
 use crate::shape::saturate;
 use crate::{Voice, hz};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct Params {
-    /// Hz: the filter's floor, where the sweep lands.
-    pub cutoff: f32,
-    /// The envelope opens the filter to `cutoff * (1 + env_amount)`.
-    pub env_amount: f32,
-    /// Seconds: how fast the filter shuts. Short is plucky.
-    pub env_decay: f32,
-    /// 0 to just under 1. A boost at the cutoff itself.
-    pub resonance: f32,
-    /// Share of a sine at the fundamental, mixed under the saw.
-    pub sub: f32,
-    pub drive: f32,
-    pub attack: f32,
-    /// Seconds: amplitude decay while the note is held.
-    pub decay: f32,
-    pub release: f32,
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        // Rolling's settings: a touch more resonance and drive than the bare
-        // instrument, and a fast filter envelope.
-        Self {
-            cutoff: 200.0,
-            env_amount: 4.0,
-            env_decay: 0.05,
-            resonance: 0.6,
-            sub: 0.35,
-            drive: 2.5,
-            attack: 0.003,
-            decay: 0.25,
-            release: 0.03,
-        }
+parameters! {
+    /// A saw and a sub through a filter an envelope snaps open.
+    pub struct Params {
+        /// Hz: the filter's floor, where the sweep lands.
+        cutoff: log 20.0..=8000.0 = 200.0, "Hz";
+        /// The envelope opens the filter to cutoff times one plus this.
+        env_amount: lin 0.0..=16.0 = 4.0, "";
+        /// Seconds: how fast the filter shuts. Short is plucky.
+        env_decay: log 0.005..=1.0 = 0.05, "s";
+        /// 0 to just under 1. A boost at the cutoff itself.
+        resonance: lin 0.0..=0.98 = 0.6, "";
+        /// Share of a sine at the fundamental, mixed under the saw.
+        sub: lin 0.0..=1.0 = 0.35, "";
+        /// Saturation amount.
+        drive: lin 0.5..=8.0 = 2.5, "";
+        /// Seconds.
+        attack: log 0.0005..=0.1 = 0.003, "s";
+        /// Seconds: amplitude decay while the note is held.
+        decay: log 0.01..=2.0 = 0.25, "s";
+        /// Seconds.
+        release: log 0.005..=1.0 = 0.03, "s";
     }
 }
 

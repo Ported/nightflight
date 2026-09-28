@@ -10,12 +10,11 @@
 //! Open or closed is only the decay — plus the note's length, since a note that
 //! ends early is choked, exactly as a pedal closing on a ringing hat.
 
-use serde::{Deserialize, Serialize};
-
 use crate::env::Amp;
 use crate::filter::{Mode, Svf};
 use crate::noise::Noise;
 use crate::osc::{Phasor, saw};
+use crate::parameters;
 use crate::{SR, Voice};
 
 /// The 808's six hi-hat oscillators. The ratios between them are the point:
@@ -29,27 +28,17 @@ const OSCILLATORS: [f32; 6] = [205.3, 304.4, 369.6, 522.7, 540.0, 800.0];
 /// first — so the gain is fixed here and the lane's level does the balancing.
 const MAKEUP: f32 = 6.5;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct Params {
-    /// Seconds: about 0.04 closed, about 0.3 open.
-    pub decay: f32,
-    /// Hz: centre of the band kept. The band runs 0.6x to 1.6x this.
-    pub tone: f32,
-    /// White noise mixed in for sizzle.
-    pub noise: f32,
-    /// Seconds: the fade when choked, i.e. when the note ends.
-    pub release: f32,
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        Self {
-            decay: 0.04,
-            tone: 10_000.0,
-            noise: 0.3,
-            release: 0.008,
-        }
+parameters! {
+    /// How long it rings and how bright it is.
+    pub struct Params {
+        /// Seconds: about 0.04 closed, about 0.3 open.
+        decay: log 0.01..=1.0 = 0.04, "s";
+        /// Hz: centre of the band kept. The band runs 0.6x to 1.6x this.
+        tone: log 2000.0..=16000.0 = 10000.0, "Hz";
+        /// White noise mixed in for sizzle.
+        noise: lin 0.0..=1.0 = 0.3, "";
+        /// Seconds: the fade when choked, that is, when the note ends.
+        release: log 0.001..=0.05 = 0.008, "s";
     }
 }
 

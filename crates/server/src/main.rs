@@ -57,6 +57,12 @@ impl Session {
     /// Apply one command: always to the engine, and to the document too if it
     /// is an edit rather than a performance.
     fn apply(&mut self, command: Command) {
+        if let Command::SetParam { lane, param, value } = command
+            && let Some(lane) = self.document.lanes.get_mut(lane as usize)
+        {
+            lane.voicing.set_param(param as usize, value);
+            self.dirty = true;
+        }
         if let Command::SetStep {
             lane,
             step,

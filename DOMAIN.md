@@ -63,9 +63,12 @@ to, the timeline draws one row per clip, and each clip has an editor tab.
 so a clip cannot appear twice in a piece with different timing. Nothing needs it
 yet and the shape is there when it does.
 
-**Patches are only half real.** An instrument's parameters exist as a Rust struct
-and can be set per lane, but they cannot be named, saved or shared between lanes,
-which is what would make them patches rather than settings.
+**Patches are two thirds real.** Every parameter is declared once — field,
+default, range, unit and scale together — so an interface can draw a fader for any
+instrument without knowing which one it is looking at, and a turned fader is saved
+with the piece. What is still missing is the *naming*: a patch cannot yet be saved
+under its own name and shared between lanes, so changing it in one place changes
+it in one place. Until then they are settings that travel with a lane.
 
 **Pieces are saved; edits are not yet.** A piece is a JSON file in `pieces/`,
 the engine plays what it is given, and the built-in Rust generators are now only

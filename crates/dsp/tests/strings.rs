@@ -121,7 +121,7 @@ fn the_ensemble_beats_and_one_saw_does_not() {
     };
     let ensemble = wander(steady);
     let single = wander(strings::Params {
-        copies: 1,
+        copies: 1.0,
         ..steady
     });
     assert!(
@@ -174,4 +174,53 @@ fn a_pad_arrives_rather_than_strikes() {
     );
     let tail = x[x.len() - 64..].iter().fold(0.0f32, |m, s| m.max(s.abs()));
     assert!(tail < 1e-3, "release left {tail} hanging");
+}
+
+#[test]
+fn the_declaration_makes_all_three_things_agree() {
+    // The point of declaring a parameter once: the field, the default and the
+    // description cannot drift apart, because there is only one of each.
+    use dsp::params::Parameters;
+
+    let defaults = strings::Params::default();
+    for (index, spec) in strings::Params::SPEC.iter().enumerate() {
+        assert_eq!(
+            defaults.get(index),
+            spec.default,
+            "{}'s default and its description disagree",
+            spec.name
+        );
+        assert!(
+            spec.min <= spec.default && spec.default <= spec.max,
+            "{}'s default {} is outside its own range {}..={}",
+            spec.name,
+            spec.default,
+            spec.min,
+            spec.max
+        );
+        assert!(!spec.doc.is_empty(), "{} has no description", spec.name);
+
+        // And a value from outside the range cannot get in.
+        let mut params = defaults;
+        params.set(index, 1e9);
+        assert!(
+            params.get(index) <= spec.max,
+            "{} was not clamped",
+            spec.name
+        );
+        params.set(index, -1e9);
+        assert!(
+            params.get(index) >= spec.min,
+            "{} was not clamped",
+            spec.name
+        );
+    }
+    println!(
+        "strings has {} parameters, {} of them logarithmic",
+        strings::Params::SPEC.len(),
+        strings::Params::SPEC
+            .iter()
+            .filter(|s| s.logarithmic)
+            .count()
+    );
 }

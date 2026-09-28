@@ -20,56 +20,39 @@
 //! clock rather than each note's, so all the notes of a chord move together, as
 //! one instrument would.
 
-use serde::{Deserialize, Serialize};
-
 use crate::env::Sustain;
 use crate::filter::{Mode, Svf};
 use crate::osc::{Phasor, saw};
+use crate::parameters;
 use crate::phaser::Phaser;
 use crate::{Voice, hz};
 
 /// The most saws one note will ever use.
 const MAX_COPIES: usize = 5;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct Params {
-    /// Saws per note in the ensemble.
-    pub copies: usize,
-    /// Cents between the copies at rest.
-    pub detune: f32,
-    /// Cents each copy wobbles: the shimmer.
-    pub depth: f32,
-    /// Hz: lower is darker, further away.
-    pub cutoff: f32,
-    /// 0 still, 1 the cutoff sweeps down to a third and back.
-    pub breathe: f32,
-    /// Hz of that slow breath.
-    pub breathe_rate: f32,
-    /// Seconds to swell in.
-    pub attack: f32,
-    /// Seconds to fade after the note ends.
-    pub release: f32,
-    /// 0 off, 1 full swirl.
-    pub phaser: f32,
-    /// Hz: 0.12 is one sweep up and down every eight seconds.
-    pub phaser_rate: f32,
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        Self {
-            copies: 3,
-            detune: 7.0,
-            depth: 12.0,
-            cutoff: 2600.0,
-            breathe: 0.0,
-            breathe_rate: 0.07,
-            attack: 1.2,
-            release: 2.5,
-            phaser: 0.0,
-            phaser_rate: 0.12,
-        }
+parameters! {
+    /// An ensemble of detuned saws, a filter that breathes, and the swirl.
+    pub struct Params {
+        /// Saws per note in the ensemble.
+        copies: lin 1.0..=5.0 = 3.0, "";
+        /// Cents between the copies at rest.
+        detune: lin 0.0..=50.0 = 7.0, "cents";
+        /// Cents each copy wobbles: the shimmer.
+        depth: lin 0.0..=50.0 = 12.0, "cents";
+        /// Hz: lower is darker, further away.
+        cutoff: log 100.0..=12000.0 = 2600.0, "Hz";
+        /// 0 still, 1 the cutoff sweeps down to a third and back.
+        breathe: lin 0.0..=1.0 = 0.0, "";
+        /// Hz of that slow breath.
+        breathe_rate: log 0.01..=5.0 = 0.07, "Hz";
+        /// Seconds to swell in.
+        attack: log 0.01..=10.0 = 1.2, "s";
+        /// Seconds to fade after the note ends.
+        release: log 0.01..=10.0 = 2.5, "s";
+        /// 0 off, 1 full swirl.
+        phaser: lin 0.0..=1.0 = 0.0, "";
+        /// Hz: 0.12 is one sweep up and down every eight seconds.
+        phaser_rate: log 0.01..=2.0 = 0.12, "Hz";
     }
 }
 
@@ -128,7 +111,9 @@ impl Strings {
         track_time: f32,
         p: Params,
     ) -> Self {
-        let copies = p.copies.clamp(1, MAX_COPIES);
+        // Every parameter is an f32 so that one declaration can describe them
+        // all; this is the only one the ear counts rather than hears.
+        let copies = (p.copies.round() as usize).clamp(1, MAX_COPIES);
         Self {
             sr,
             p,

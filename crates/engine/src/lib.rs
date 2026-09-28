@@ -836,6 +836,11 @@ impl Engine {
             Command::Loop { from, to, on } => {
                 self.set_loop(on.then_some((from, to)));
             }
+            Command::SetParam { lane, param, value } => {
+                if let Some(lane) = self.lanes.get_mut(lane as usize) {
+                    lane.voicing.set_param(param as usize, value);
+                }
+            }
             Command::SetStep {
                 lane,
                 step,

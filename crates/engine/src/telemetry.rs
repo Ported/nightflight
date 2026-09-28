@@ -127,6 +127,12 @@ pub enum Command {
         to: f32,
         on: bool,
     },
+    /// Change one of a lane's patch parameters, by its index in the spec.
+    SetParam {
+        lane: u8,
+        param: u8,
+        value: f32,
+    },
     /// Change one step of a lane. An editor sends these one at a time as cells
     /// are clicked, which is both what an interface naturally produces and the
     /// only shape that needs no allocation on the audio thread: the slot
@@ -179,6 +185,10 @@ pub struct LaneDescription {
     pub spans: Vec<SpanDescription>,
     /// Whether it has a gate, and how hard it is currently chopping.
     pub gate_depth: Option<f32>,
+    /// What this lane's patch can be asked to change: name, range, unit, scale.
+    pub params: Vec<dsp::params::ParamSpec>,
+    /// Where each of those currently sits, in the same order.
+    pub values: Vec<f32>,
 }
 
 /// A span, flattened to what a timeline needs to draw it.

@@ -31,53 +31,36 @@
 //! Two carriers a few cents apart beat slowly against each other, which the ear
 //! reads as shimmer rather than as two notes.
 
-use serde::{Deserialize, Serialize};
-
 use crate::env::{Amp, Decay};
 use crate::filter::{Mode, Svf};
 use crate::noise::Noise;
 use crate::osc::{Phasor, sine};
+use crate::parameters;
 use crate::{Voice, hz};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct Params {
-    /// Modulator frequency as a multiple of the carrier's. Whole numbers stay
-    /// in tune; anything else goes metallic.
-    pub ratio: f32,
-    /// How hard the modulator pushes at the strike: the brightness of the tink.
-    pub index: f32,
-    /// Seconds for that brightness to melt away.
-    pub index_decay: f32,
-    /// Cents between the two carriers: a slow shimmer as they beat.
-    pub detune: f32,
-    pub attack: f32,
-    /// Seconds, amplitude.
-    pub decay: f32,
-    /// Seconds after the note ends, so arpeggios ring into each other.
-    pub release: f32,
-    /// Level of a 3 ms high tick at the start: the mallet touching the glass.
-    pub strike: f32,
-    /// Cents of slow pitch drift, like tape running unevenly.
-    pub wow_depth: f32,
-    /// Hz of that drift.
-    pub wow_rate: f32,
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        Self {
-            ratio: 3.0,
-            index: 2.2,
-            index_decay: 0.12,
-            detune: 6.0,
-            attack: 0.004,
-            decay: 1.6,
-            release: 0.6,
-            strike: 0.12,
-            wow_depth: 0.0,
-            wow_rate: 0.25,
-        }
+parameters! {
+    /// Two operators: a carrier, a modulator, and how hard it pushes.
+    pub struct Params {
+        /// Modulator frequency as a multiple of the carrier's. Whole numbers stay in tune.
+        ratio: lin 0.5..=12.0 = 3.0, "x";
+        /// How hard the modulator pushes at the strike: the brightness of the tink.
+        index: lin 0.0..=10.0 = 2.2, "";
+        /// Seconds for that brightness to melt away.
+        index_decay: log 0.01..=2.0 = 0.12, "s";
+        /// Cents between the two carriers: a slow shimmer as they beat.
+        detune: lin 0.0..=50.0 = 6.0, "cents";
+        /// Seconds.
+        attack: log 0.0005..=0.5 = 0.004, "s";
+        /// Seconds, amplitude.
+        decay: log 0.05..=10.0 = 1.6, "s";
+        /// Seconds after the note ends, so arpeggios ring into each other.
+        release: log 0.01..=10.0 = 0.6, "s";
+        /// Level of a 3 ms high tick at the start: the mallet touching the glass.
+        strike: lin 0.0..=1.0 = 0.12, "";
+        /// Cents of slow pitch drift, like tape running unevenly.
+        wow_depth: lin 0.0..=50.0 = 0.0, "cents";
+        /// Hz of that drift.
+        wow_rate: log 0.01..=5.0 = 0.25, "Hz";
     }
 }
 

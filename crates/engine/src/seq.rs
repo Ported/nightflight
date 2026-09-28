@@ -7,6 +7,7 @@
 //! from `grid()`; here it is just the length of a slice.
 
 use dsp::inst::{bass, glass, hat, kick, strings};
+use dsp::params::{ParamSpec, Parameters};
 use dsp::space::Position;
 use serde::{Deserialize, Serialize};
 
@@ -127,7 +128,50 @@ impl Length {
 }
 
 impl Voicing {
-    /// Which instrument this is, for an interface to label and for a preset to
+    /// What this patch's parameters are: name, range, unit and scale. An
+    /// interface draws faders from this without knowing one instrument from
+    /// another.
+    #[must_use]
+    pub fn spec(self) -> &'static [ParamSpec] {
+        match self {
+            Self::Kick(_) => kick::Params::SPEC,
+            Self::Hat(_) => hat::Params::SPEC,
+            Self::Bass(_) => bass::Params::SPEC,
+            Self::Glass(_) => glass::Params::SPEC,
+            Self::Strings(_) => strings::Params::SPEC,
+        }
+    }
+
+    /// Every parameter's current value, in the order of the spec.
+    #[must_use]
+    pub fn values(self) -> Vec<f32> {
+        (0..self.spec().len()).map(|i| self.param(i)).collect()
+    }
+
+    #[must_use]
+    pub fn param(self, index: usize) -> f32 {
+        match self {
+            Self::Kick(p) => p.get(index),
+            Self::Hat(p) => p.get(index),
+            Self::Bass(p) => p.get(index),
+            Self::Glass(p) => p.get(index),
+            Self::Strings(p) => p.get(index),
+        }
+    }
+
+    /// Change one parameter. Clamped to its declared range by the setter, so
+    /// nothing an interface sends can make an instrument misbehave.
+    pub fn set_param(&mut self, index: usize, value: f32) {
+        match self {
+            Self::Kick(p) => p.set(index, value),
+            Self::Hat(p) => p.set(index, value),
+            Self::Bass(p) => p.set(index, value),
+            Self::Glass(p) => p.set(index, value),
+            Self::Strings(p) => p.set(index, value),
+        }
+    }
+
+    /// Which instrument this is, for an interface to label and for a patch to
     /// be filed under.
     #[must_use]
     pub fn instrument(self) -> &'static str {
@@ -363,6 +407,8 @@ impl Set {
                         })
                         .collect(),
                     gate_depth: lane.gate.as_ref().map(|gate| gate.depth),
+                    params: lane.voicing.spec().to_vec(),
+                    values: lane.voicing.values(),
                 })
                 .collect(),
             macros: self

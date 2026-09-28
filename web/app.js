@@ -207,6 +207,13 @@ function buildClip(name) {
     patch.className = "patch";
     patch.textContent = lane.instrument;
 
+    // A patch's parameters, hidden until asked for: a drum grid is about
+    // rhythm, and ten faders per lane would bury it.
+    const toggle = document.createElement("button");
+    toggle.className = "expand";
+    toggle.textContent = `${lane.params.length} ▸`;
+    toggle.title = "show this patch's parameters";
+
     const cells = document.createElement("div");
     cells.className = "steps";
     lane.steps.forEach(([velocity, offset], step) => {
@@ -225,9 +232,76 @@ function buildClip(name) {
       cells.append(cell);
     });
 
-    row.append(label, patch, cells);
+    row.append(label, patch, toggle, cells);
     host.append(row);
+
+    const panel = buildPatch(lane);
+    panel.hidden = true;
+    host.append(panel);
+    toggle.onclick = () => {
+      panel.hidden = !panel.hidden;
+      toggle.classList.toggle("on", !panel.hidden);
+      toggle.textContent = `${lane.params.length} ${panel.hidden ? "▸" : "▾"}`;
+    };
   }
+}
+
+/**
+ * One fader per parameter of a lane's patch.
+ *
+ * The fader moves in the scale the parameter declared. A cutoff from 20 Hz to
+ * 8 kHz on a linear fader spends nine tenths of its travel above 800 Hz, where
+ * the ear hears almost nothing change; on a logarithmic one every octave gets
+ * equal room, which is how pitch works.
+ */
+function buildPatch(lane) {
+  const panel = document.createElement("div");
+  panel.className = "patch";
+
+  lane.params.forEach((spec, index) => {
+    const value = lane.values[index];
+    const box = document.createElement("div");
+    box.className = "param";
+    box.title = spec.doc;
+
+    const name = document.createElement("span");
+    name.className = "pname";
+    name.textContent = spec.name.replace(/_/g, " ");
+
+    const fader = document.createElement("input");
+    Object.assign(fader, { type: "range", min: 0, max: 1, step: 0.001 });
+    const readout = document.createElement("span");
+    readout.className = "pvalue";
+
+    // A logarithmic parameter is held as its position along the fader, 0 to 1,
+    // and converted at the edges.
+    const toFader = (v) =>
+      spec.logarithmic
+        ? Math.log(Math.max(v, spec.min) / spec.min) / Math.log(spec.max / spec.min)
+        : (v - spec.min) / (spec.max - spec.min);
+    const fromFader = (f) =>
+      spec.logarithmic
+        ? spec.min * (spec.max / spec.min) ** f
+        : spec.min + f * (spec.max - spec.min);
+
+    const show = (v) => {
+      const decimals = Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 1 ? 2 : 3;
+      readout.textContent = `${v.toFixed(decimals)}${spec.unit ? " " + spec.unit : ""}`.padStart(9);
+      box.classList.toggle("moved", Math.abs(v - spec.default) > 1e-6);
+    };
+
+    fader.value = toFader(value);
+    show(value);
+    fader.oninput = () => {
+      const now = fromFader(Number(fader.value));
+      show(now);
+      send({ t: "set_param", lane: lane.index, param: index, value: now });
+    };
+
+    box.append(name, fader, readout);
+    panel.append(box);
+  });
+  return panel;
 }
 
 function paint(cell, velocity) {

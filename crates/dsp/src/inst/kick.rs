@@ -13,54 +13,37 @@
 //! `drive` saturates the lot. The defaults are the "punch" preset from the
 //! Python studio it was ported from, chosen by ear from four candidates.
 
-use serde::{Deserialize, Serialize};
-
 use crate::env::{Amp, Decay};
 use crate::filter::{Mode, Svf};
 use crate::noise::Noise;
 use crate::osc::{Phasor, sine};
+use crate::parameters;
 use crate::shape::saturate;
 use crate::{Voice, hz};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct Params {
-    /// Starts this many times above the note's pitch, then falls to it.
-    pub sweep: f32,
-    /// Seconds: how fast that fall happens. The "doom".
-    pub pitch_decay: f32,
-    /// Extra fast drop from `punch` x the pitch on top. 6 starts near 350 Hz on G1.
-    pub punch: f32,
-    /// Seconds: how fast the punch falls.
-    pub punch_decay: f32,
-    /// Seconds: body amplitude decay.
-    pub decay: f32,
-    /// Seconds at full level before the decay starts.
-    pub hold: f32,
-    /// Level of the beater transient.
-    pub click: f32,
-    /// Seconds.
-    pub click_decay: f32,
-    /// Level of a short 1-4 kHz knock over the click.
-    pub knock: f32,
-    /// Saturation amount.
-    pub drive: f32,
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        Self {
-            sweep: 5.0,
-            pitch_decay: 0.03,
-            punch: 6.0,
-            punch_decay: 0.004,
-            decay: 0.32,
-            hold: 0.04,
-            click: 0.35,
-            click_decay: 0.002,
-            knock: 0.3,
-            drive: 3.0,
-        }
+parameters! {
+    /// The kick's three layers and what drives them.
+    pub struct Params {
+        /// Starts this many times above the note's pitch, then falls to it.
+        sweep: lin 1.0..=16.0 = 5.0, "x";
+        /// Seconds: how fast that fall happens. The "doom".
+        pitch_decay: log 0.005..=0.3 = 0.03, "s";
+        /// Extra fast drop from this many times the pitch on top. 6 starts near 350 Hz on G1.
+        punch: lin 0.0..=20.0 = 6.0, "x";
+        /// Seconds: how fast the punch falls.
+        punch_decay: log 0.001..=0.05 = 0.004, "s";
+        /// Seconds: body amplitude decay.
+        decay: log 0.05..=2.0 = 0.32, "s";
+        /// Seconds at full level before the decay starts.
+        hold: lin 0.0..=0.3 = 0.04, "s";
+        /// Level of the beater transient.
+        click: lin 0.0..=1.0 = 0.35, "";
+        /// Seconds.
+        click_decay: log 0.0005..=0.05 = 0.002, "s";
+        /// Level of a short 1-4 kHz knock over the click.
+        knock: lin 0.0..=1.0 = 0.3, "";
+        /// Saturation amount.
+        drive: lin 0.5..=8.0 = 3.0, "";
     }
 }
 
