@@ -75,6 +75,12 @@ impl Pattern {
         self.steps[(step % self.steps.len() as u64) as usize]
     }
 
+    /// Every step, for an interface that wants to draw the loop.
+    #[must_use]
+    pub fn all(&self) -> &[Step] {
+        &self.steps
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.steps.len()
@@ -105,6 +111,21 @@ impl Length {
         match self {
             Self::Seconds(s) => s,
             Self::Steps(n) => n * (samples_per_step / f64::from(sr)) as f32,
+        }
+    }
+}
+
+impl Voicing {
+    /// Which instrument this is, for an interface to label and for a preset to
+    /// be filed under.
+    #[must_use]
+    pub fn instrument(self) -> &'static str {
+        match self {
+            Self::Kick(_) => "kick",
+            Self::Hat(_) => "hat",
+            Self::Bass(_) => "bass",
+            Self::Glass(_) => "glass",
+            Self::Strings(_) => "strings",
         }
     }
 }

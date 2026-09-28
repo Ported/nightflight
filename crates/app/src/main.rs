@@ -6,26 +6,12 @@
 //! making any trip to the allocator inside the callback abort the program
 //! instead of quietly stealing time from it.
 
-mod audio;
 mod panels;
 mod plan;
 
 #[cfg(debug_assertions)]
 #[global_allocator]
-static ALLOCATOR: assert_no_alloc::AllocDisabler = assert_no_alloc::AllocDisabler;
-
-/// Run `f` under the audio thread's rules.
-#[inline]
-pub fn realtime<T>(f: impl FnOnce() -> T) -> T {
-    #[cfg(debug_assertions)]
-    {
-        assert_no_alloc::assert_no_alloc(f)
-    }
-    #[cfg(not(debug_assertions))]
-    {
-        f()
-    }
-}
+static ALLOCATOR: host::AllocDisabler = host::AllocDisabler;
 
 fn main() -> eframe::Result {
     let name = std::env::args()
@@ -40,7 +26,7 @@ fn main() -> eframe::Result {
     // scrub bar reaches.
     let length = set.length_bars;
 
-    let link = match audio::start(set) {
+    let link = match host::start(set) {
         Ok(link) => link,
         Err(err) => {
             eprintln!("could not open the audio device: {err}");

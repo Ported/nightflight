@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>nightflight</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>nightflight</h1>
+  <span id="set" class="set">connecting…</span>
+  <span class="spacer"></span>
+  <span id="device" class="weak mono"></span>
+</header>
+
+<section class="transport">
+  <button id="play" title="space">play</button>
+  <button id="start" title="back to the beginning">start</button>
+  <input id="scrub" type="range" min="0" max="34" step="0.01" value="0">
+  <span id="position" class="mono"></span>
+</section>
+
+<section class="health">
+  <span class="label">load</span>
+  <span class="meter wide"><i id="load"></i></span>
+  <span id="loadText" class="mono"></span>
+  <span id="voices" class="mono"></span>
+  <span id="peak" class="mono"></span>
+  <span id="dropouts" class="mono"></span>
+  <span id="bpmLabel" class="label">bpm</span>
+  <input id="bpm" type="range" min="60" max="180" step="0.5" value="126">
+  <span id="bpmText" class="mono"></span>
+  <span class="label">master</span>
+  <input id="master" type="range" min="0" max="1.5" step="0.01" value="0.5">
+</section>
+
+<section class="timeline">
+  <canvas id="timeline"></canvas>
+</section>
+
+<main>
+  <div class="column">
+    <h2>parts</h2>
+    <div id="parts" class="parts"></div>
+  </div>
+  <div class="column">
+    <h2>where things are</h2>
+    <canvas id="plan"></canvas>
+    <h2>macros</h2>
+    <div id="macros" class="macros"></div>
+  </div>
+</main>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>

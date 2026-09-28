@@ -34,6 +34,12 @@ impl Curve {
         Self { points }
     }
 
+    /// The keyframes, for an interface that wants to draw or edit the curve.
+    #[must_use]
+    pub fn points(&self) -> &[(f32, f32)] {
+        &self.points
+    }
+
     #[must_use]
     pub fn at(&self, bar: f64) -> f32 {
         let bar = bar as f32;
@@ -145,6 +151,18 @@ pub struct Play {
     pub end: f32,
     pub enter: Transition,
     pub leave: Transition,
+}
+
+impl Transition {
+    /// A word for an interface to draw with.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Cut => "cut",
+            Self::Fade(_) => "fade",
+            Self::Fly(_) => "fly",
+        }
+    }
 }
 
 impl Play {

@@ -12,13 +12,15 @@
 //! window keeps its own copy of the names, read once before the engine was
 //! handed over.
 
+use serde::{Deserialize, Serialize};
+
 /// More parts than any set has. Costs 80 bytes each in a telemetry frame.
 pub const MAX_PARTS: usize = 16;
 /// More macros than a hand can hold anyway.
 pub const MAX_MACROS: usize = 8;
 
 /// One part, as the window sees it.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Serialize)]
 pub struct PartState {
     /// Peak of this part's own contribution since the last frame.
     pub level: f32,
@@ -33,7 +35,7 @@ pub struct PartState {
     pub gain: f32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct Telemetry {
     pub bar: f32,
     pub bpm: f32,
@@ -75,7 +77,13 @@ impl Default for Telemetry {
 }
 
 /// A hand on a control.
-#[derive(Clone, Copy, Debug)]
+///
+/// Tagged on the wire, so the browser sends `{"t":"mute","index":0,"muted":true}`
+/// and it arrives as this enum with no hand-written parsing in between. The JSON
+/// is deliberately the same shape as the Rust, so a message in devtools reads as
+/// the thing it does.
+#[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(tag = "t", rename_all = "snake_case")]
 pub enum Command {
     /// `None` gives the macro back to its curve.
     Macro {
@@ -90,10 +98,81 @@ pub enum Command {
         index: u8,
         gain: f32,
     },
-    Bpm(f32),
-    Master(f32),
+    // These are struct variants rather than newtypes because serde's internally
+    // tagged representation cannot carry a bare primitive: `Bpm(f32)` compiles
+    // and then fails at run time on the first message. Named fields also read
+    // better on the wire.
+    Bpm {
+        value: f32,
+    },
+    Master {
+        value: f32,
+    },
     /// Jump the transport to this bar.
-    Seek(f32),
+    Seek {
+        bar: f32,
+    },
     /// Run the transport, or stop it.
-    Playing(bool),
+    Playing {
+        value: bool,
+    },
+}
+
+// ── Describing a set, so an interface can draw it ────────────────────────────
+
+/// Everything about a set that does not change while it plays.
+///
+/// Sent once, when an interface connects. The window needs the names to label
+/// anything, and a timeline needs the patterns and the spans and the curves —
+/// which is the gap telemetry alone cannot close: telemetry says where `energy`
+/// *is*, and only this says where it is going.
+#[derive(Clone, Debug, Serialize)]
+pub struct Description {
+    pub bpm: f32,
+    pub length_bars: f32,
+    pub parts: Vec<PartDescription>,
+    pub macros: Vec<MacroDescription>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PartDescription {
+    pub name: &'static str,
+    /// Which instrument plays it: kick, hat, bass, glass, strings.
+    pub instrument: &'static str,
+    pub gain: f32,
+    pub send: f32,
+    pub muted: bool,
+    /// Whether it is placed in space at all.
+    pub placed: bool,
+    /// Whether the kick ducks it.
+    pub ducked: bool,
+    /// The loop, as velocity and semitone offset per step. Velocity 0 is a rest.
+    pub steps: Vec<(f32, i8)>,
+    /// The part's root note, which the offsets are relative to.
+    pub root: f32,
+    /// When it plays. Empty means always, which is what a set for jamming wants.
+    pub spans: Vec<SpanDescription>,
+    /// Whether it has a gate, and how hard it is currently chopping.
+    pub gate_depth: Option<f32>,
+}
+
+/// A span, flattened to what a timeline needs to draw it.
+#[derive(Clone, Copy, Debug, Serialize)]
+pub struct SpanDescription {
+    pub start: f32,
+    pub end: f32,
+    /// Where the part first makes a sound — earlier than `start` if it flies in.
+    pub first_bar: f32,
+    /// "cut", "fade" or "fly".
+    pub enter: &'static str,
+    pub leave: &'static str,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct MacroDescription {
+    pub name: &'static str,
+    /// Whether a curve is driving it rather than a hand.
+    pub automated: bool,
+    /// The curve's keyframes, as (bar, value). Empty if it has none.
+    pub curve: Vec<(f32, f32)>,
 }

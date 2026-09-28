@@ -12,8 +12,8 @@
 use egui::{Color32, RichText, Slider};
 use engine::telemetry::{Command, Telemetry};
 
-use crate::audio::Link;
 use crate::plan;
+use host::Link;
 
 const GOOD: Color32 = Color32::from_rgb(120, 200, 150);
 const WARN: Color32 = Color32::from_rgb(230, 190, 110);
@@ -99,7 +99,7 @@ impl App {
                 .on_hover_text(hover)
                 .clicked();
             if pressed || toggled {
-                self.link.send(Command::Playing(!playing));
+                self.link.send(Command::Playing { value: !playing });
             }
             if ui
                 .button("start")
@@ -107,7 +107,7 @@ impl App {
                 .clicked()
             {
                 self.scrub = None;
-                self.link.send(Command::Seek(0.0));
+                self.link.send(Command::Seek { bar: 0.0 });
             }
             let mut bar = self.scrub.unwrap_or(self.latest.bar);
             let response = ui.add_sized(
@@ -119,7 +119,7 @@ impl App {
             }
             if response.changed() {
                 self.scrub = Some(bar);
-                self.link.send(Command::Seek(bar));
+                self.link.send(Command::Seek { bar });
             }
             if response.drag_stopped() {
                 self.scrub = None;
@@ -153,13 +153,13 @@ impl App {
                 .add(Slider::new(&mut self.bpm, 60.0..=180.0).text("BPM"))
                 .changed()
             {
-                self.link.send(Command::Bpm(self.bpm));
+                self.link.send(Command::Bpm { value: self.bpm });
             }
             if ui
                 .add(Slider::new(&mut self.master, 0.0..=1.5).text("master"))
                 .changed()
             {
-                self.link.send(Command::Master(self.master));
+                self.link.send(Command::Master { value: self.master });
             }
         });
     }

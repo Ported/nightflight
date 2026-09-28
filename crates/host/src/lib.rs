@@ -1,5 +1,9 @@
 //! The audio device, and the only thread with a deadline.
 //!
+//! Shared by every front end: the window and the server both start a stream this
+//! way and then talk to it through the two queues. Nothing here knows which one
+//! it is serving, which is the point.
+//!
 //! cpal hands us Core Audio's callback: a function the system calls every few
 //! milliseconds asking for the next block of samples. It runs on a thread that
 //! must finish inside the time the block it is filling will take to play — miss
@@ -27,7 +31,35 @@ const WANTED_BUFFER: u32 = 128;
 /// Telemetry frames a second. Faster than a screen refresh is wasted work.
 const TELEMETRY_HZ: f32 = 60.0;
 
-/// The window's end of the connection.
+/// Whatever the audio thread is playing, as the caller sees it: `assert_no_alloc`
+/// has to be installed by the binary, since a program may only have one
+/// allocator. One line in `main`:
+///
+/// ```ignore
+/// #[cfg(debug_assertions)]
+/// #[global_allocator]
+/// static ALLOCATOR: host::AllocDisabler = host::AllocDisabler;
+/// ```
+/// Only exists in debug builds: `assert_no_alloc` compiles its allocator out of
+/// release builds, which is why the binaries gate the declaration the same way.
+#[cfg(debug_assertions)]
+pub use assert_no_alloc::AllocDisabler;
+
+/// Run `f` under the audio thread's rules: in a debug build, any trip to the
+/// allocator aborts the program rather than quietly stealing time.
+#[inline]
+pub fn realtime<T>(f: impl FnOnce() -> T) -> T {
+    #[cfg(debug_assertions)]
+    {
+        assert_no_alloc::assert_no_alloc(f)
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        f()
+    }
+}
+
+/// A front end's end of the connection.
 pub struct Link {
     pub commands: rtrb::Producer<Command>,
     pub telemetry: rtrb::Consumer<Telemetry>,
@@ -35,6 +67,10 @@ pub struct Link {
     /// carry indices into these.
     pub part_names: Vec<&'static str>,
     pub macro_names: Vec<&'static str>,
+    /// Everything about the set that does not change while it plays. Read before
+    /// the engine was handed over, which is also why editing it later means the
+    /// front end keeping its own copy.
+    pub description: engine::telemetry::Description,
     pub device: String,
     pub buffer_frames: u32,
     /// Dropping this stops the stream, so the window has to hold it.
@@ -93,6 +129,7 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     let mut engine = Box::new(Engine::new(dsp::SR, 126.0, set));
     let part_names = engine.part_names();
     let macro_names = engine.macro_names();
+    let description = engine.describe();
 
     let (command_tx, mut command_rx) = rtrb::RingBuffer::new(256);
     let (mut telemetry_tx, telemetry_rx) = rtrb::RingBuffer::new(8);
@@ -108,7 +145,7 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
         config,
         move |out: &mut [f32], _| {
             let started = Instant::now();
-            crate::realtime(|| {
+            realtime(|| {
                 while let Ok(command) = command_rx.pop() {
                     engine.apply(command);
                 }
@@ -150,6 +187,7 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
         telemetry: telemetry_rx,
         part_names,
         macro_names,
+        description,
         device: name,
         buffer_frames,
         _stream: stream,

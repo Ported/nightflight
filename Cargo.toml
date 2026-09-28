@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/dsp", "crates/engine", "crates/app"]
+members = ["crates/dsp", "crates/engine", "crates/host", "crates/server", "crates/app"]
 
 [workspace.package]
 edition = "2024"
@@ -10,12 +10,18 @@ publish = false
 [workspace.dependencies]
 dsp = { path = "crates/dsp" }
 engine = { path = "crates/engine" }
+host = { path = "crates/host" }
 cpal = "0.18"
 eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu"] }
 egui = "0.36"
 rtrb = "0.4"
 hound = "3.5"
 assert_no_alloc = "1.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# `handshake` is what provides `accept`; the TLS features are not wanted,
+# since this only ever listens on localhost.
+tungstenite = { version = "0.30", default-features = false, features = ["handshake"] }
 
 # Clippy lints worth having on an audio thread. Each crate opts in with
 # `[lints] workspace = true`.

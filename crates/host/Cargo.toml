@@ -1,16 +1,15 @@
 [package]
-name = "engine"
+name = "host"
 edition.workspace = true
 version.workspace = true
 publish.workspace = true
 
 [dependencies]
 dsp.workspace = true
-serde.workspace = true
-
-[dev-dependencies]
-hound.workspace = true
-serde_json.workspace = true
+engine.workspace = true
+cpal.workspace = true
+rtrb.workspace = true
+assert_no_alloc.workspace = true
 
 [lints]
 workspace = true

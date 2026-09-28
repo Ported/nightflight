@@ -25,7 +25,7 @@ fn play(engine: &mut Engine, frames: usize) -> Vec<f32> {
 fn seeking_moves_the_transport() {
     let mut engine = engine();
     play(&mut engine, 4096);
-    engine.apply(Command::Seek(20.0));
+    engine.apply(Command::Seek { bar: 20.0 });
     // The fade has to close before the jump, so give it a moment.
     play(&mut engine, 2048);
     let bar = engine.state().bar;
@@ -35,7 +35,7 @@ fn seeking_moves_the_transport() {
     );
 
     // And back to the start.
-    engine.apply(Command::Seek(0.0));
+    engine.apply(Command::Seek { bar: 0.0 });
     play(&mut engine, 2048);
     assert!(engine.state().bar < 0.2, "did not return to the start");
 }
@@ -47,10 +47,10 @@ fn a_seek_does_not_click() {
     // click — the loudest thing in the session, on headphones.
     let mut engine = engine();
     // Well into the arrival, where plenty is ringing.
-    engine.apply(Command::Seek(24.0));
+    engine.apply(Command::Seek { bar: 24.0 });
     play(&mut engine, (2.0 * BAR_SAMPLES) as usize);
 
-    engine.apply(Command::Seek(2.0));
+    engine.apply(Command::Seek { bar: 2.0 });
     let after = play(&mut engine, (0.5 * BAR_SAMPLES) as usize);
 
     let jump = after
@@ -76,7 +76,7 @@ fn a_seek_stops_what_was_ringing() {
     let before = engine.state().voices;
     assert!(before > 0, "nothing was playing to begin with");
 
-    engine.apply(Command::Seek(1.0));
+    engine.apply(Command::Seek { bar: 1.0 });
     // Long enough for the fade to close and the jump to happen, short enough
     // that few new notes have started.
     play(&mut engine, 1024);
@@ -92,7 +92,7 @@ fn seeking_keeps_the_pattern_in_phase() {
     // Seek to the bar the beat lands on and the kick should be right there on
     // the downbeat, not wherever the step counter happened to be.
     let mut engine = engine();
-    engine.apply(Command::Seek(26.0));
+    engine.apply(Command::Seek { bar: 26.0 });
     let out = play(&mut engine, (1.2 * BAR_SAMPLES) as usize);
     let left: Vec<f32> = out.chunks(2).map(|f| f[0]).collect();
 
@@ -200,7 +200,7 @@ fn the_playhead_can_be_moved_while_stopped() {
     // The useful combination: stop, scrub to the bar you want to hear, play.
     let mut engine = engine();
     engine.set_playing(false);
-    engine.apply(Command::Seek(24.0));
+    engine.apply(Command::Seek { bar: 24.0 });
     play(&mut engine, 4096);
     let bar = engine.state().bar;
     assert!(

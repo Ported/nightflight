@@ -24,7 +24,9 @@ use dsp::smooth::Smoothed;
 use dsp::space::{Ears, Motion, Placer, Position};
 use mix::Duck;
 use seq::{Home, Part, Set, Voicing};
-use telemetry::{Command, PartState, Telemetry};
+use telemetry::{
+    Command, Description, MacroDescription, PartDescription, PartState, SpanDescription, Telemetry,
+};
 use voices::{AnyVoice, Pool};
 
 /// The control rate: how often positions, faders and filter coefficients are
@@ -98,6 +100,8 @@ pub struct Engine {
     send_bus: [f32; MAX_BLOCK],
     duck_curve: [f32; MAX_BLOCK],
     master: f32,
+    /// How long the piece is, in bars. Only an interface uses it.
+    length_bars: f32,
 }
 
 impl Engine {
@@ -148,6 +152,7 @@ impl Engine {
             send_bus: [0.0; MAX_BLOCK],
             duck_curve: [0.0; MAX_BLOCK],
             master: 0.5,
+            length_bars: set.length_bars,
         }
     }
 
@@ -652,6 +657,65 @@ impl Engine {
     }
 
     /// Bar position, voice count and dropped-voice count, for the UI.
+    /// Everything about the set that does not change while it plays.
+    ///
+    /// Read once, before the engine is handed to the audio thread. Telemetry can
+    /// say where a macro *is*; only this says where it is going, which is the
+    /// difference between a fader and a timeline.
+    #[must_use]
+    pub fn describe(&self) -> Description {
+        Description {
+            bpm: self.clock.bpm(),
+            length_bars: self.length_bars,
+            parts: self
+                .parts
+                .iter()
+                .enumerate()
+                .map(|(index, part)| PartDescription {
+                    name: part.name,
+                    instrument: part.voicing.instrument(),
+                    gain: part.gain,
+                    send: part.send,
+                    muted: part.muted,
+                    placed: self.placers[index].is_some(),
+                    ducked: part.ducked,
+                    steps: part
+                        .pattern
+                        .all()
+                        .iter()
+                        .map(|s| (s.velocity, s.offset))
+                        .collect(),
+                    root: part.root,
+                    spans: part
+                        .spans
+                        .iter()
+                        .map(|play| SpanDescription {
+                            start: play.start,
+                            end: play.end,
+                            first_bar: play.first_bar(),
+                            enter: play.enter.name(),
+                            leave: play.leave.name(),
+                        })
+                        .collect(),
+                    gate_depth: part.gate.as_ref().map(|g| g.depth),
+                })
+                .collect(),
+            macros: self
+                .macros
+                .iter()
+                .map(|m| MacroDescription {
+                    name: m.name,
+                    automated: m.manual.is_none(),
+                    curve: m
+                        .automation
+                        .as_ref()
+                        .map(|c| c.points().to_vec())
+                        .unwrap_or_default(),
+                })
+                .collect(),
+        }
+    }
+
     /// Everything the window draws. Reading it clears the peak meters, so each
     /// frame reports the loudest moment since the last one — which is what a
     /// meter should show, rather than whatever happened to be true at the
@@ -755,10 +819,10 @@ impl Engine {
                     part.gain = gain.clamp(0.0, 4.0);
                 }
             }
-            Command::Bpm(bpm) => self.clock.set_bpm(bpm),
-            Command::Seek(bar) => self.seek(bar),
-            Command::Playing(playing) => self.playing = playing,
-            Command::Master(gain) => self.set_master(gain),
+            Command::Bpm { value } => self.clock.set_bpm(value),
+            Command::Seek { bar } => self.seek(bar),
+            Command::Playing { value } => self.playing = value,
+            Command::Master { value } => self.set_master(value),
         }
     }
 
