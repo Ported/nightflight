@@ -1,0 +1,303 @@
+{
+  "version": 1,
+  "name": "beat",
+  "lanes": [
+    {
+      "name": "kick",
+      "clip": "beat",
+      "voicing": {
+        "instrument": "kick",
+        "sweep": 5.0,
+        "pitch_decay": 0.03,
+        "punch": 6.0,
+        "punch_decay": 0.004,
+        "decay": 0.32,
+        "hold": 0.04,
+        "click": 0.35,
+        "click_decay": 0.002,
+        "knock": 0.3,
+        "drive": 3.0
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 1.0,
+      "length": {
+        "seconds": 0.4
+      },
+      "root": 31.0,
+      "home": {
+        "kind": "centre"
+      },
+      "send": 0.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "closed hat",
+      "clip": "beat",
+      "voicing": {
+        "instrument": "hat",
+        "decay": 0.04,
+        "tone": 10000.0,
+        "noise": 0.3,
+        "release": 0.008
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.35,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.45,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.35,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.45,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.35,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.45,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.35,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.45,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.6,
+      "length": {
+        "seconds": 0.06
+      },
+      "root": 0.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 1.5,
+        "bars_per_lap": 4.0,
+        "phase": 0.0,
+        "elevation": 0.0,
+        "height": 0.4,
+        "height_bars": 6.0
+      },
+      "send": 0.15,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "open hat",
+      "clip": "beat",
+      "voicing": {
+        "instrument": "hat",
+        "decay": 0.3,
+        "tone": 10000.0,
+        "noise": 0.3,
+        "release": 0.008
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.6,
+      "length": {
+        "steps": 1.0
+      },
+      "root": 0.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 1.5,
+        "bars_per_lap": 4.0,
+        "phase": 0.5,
+        "elevation": 0.0,
+        "height": 0.4,
+        "height_bars": 6.0
+      },
+      "send": 0.2,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    }
+  ]
+}

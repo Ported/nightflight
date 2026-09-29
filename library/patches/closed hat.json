@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "name": "closed hat",
+  "instrument": "hat",
+  "decay": 0.04,
+  "tone": 10000.0,
+  "noise": 0.3,
+  "release": 0.008
+}

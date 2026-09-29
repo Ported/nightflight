@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "name": "kick",
+  "instrument": "kick",
+  "sweep": 5.0,
+  "pitch_decay": 0.03,
+  "punch": 6.0,
+  "punch_decay": 0.004,
+  "decay": 0.32,
+  "hold": 0.04,
+  "click": 0.35,
+  "click_decay": 0.002,
+  "knock": 0.3,
+  "drive": 3.0
+}

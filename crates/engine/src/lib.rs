@@ -12,6 +12,7 @@ pub mod audition;
 pub mod automation;
 pub mod clock;
 pub mod document;
+pub mod library;
 pub mod mix;
 pub mod seq;
 pub mod sets;

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "name": "bass",
+  "instrument": "bass",
+  "cutoff": 200.0,
+  "env_amount": 4.0,
+  "env_decay": 0.05,
+  "resonance": 0.6,
+  "sub": 0.35,
+  "drive": 2.5,
+  "attack": 0.003,
+  "decay": 0.25,
+  "release": 0.03
+}

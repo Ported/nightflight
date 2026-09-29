@@ -45,14 +45,39 @@ pub struct Piece {
     pub set: Set,
 }
 
-/// Where pieces live, next to the workspace rather than wherever the program was
-/// started from.
+/// The workspace, so saved things land next to the code rather than wherever the
+/// program happened to be started from.
+#[must_use]
+pub fn root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from("."))
+}
+
+/// Where pieces live. Patches and clips are saved separately, under `library`.
 #[must_use]
 pub fn directory() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../pieces")
-        .canonicalize()
-        .unwrap_or_else(|_| PathBuf::from("pieces"))
+    root().join("pieces")
+}
+
+/// Write any serialisable thing to `path`, atomically.
+///
+/// Beside the target and renamed over it: a save interrupted halfway leaves the
+/// previous file intact rather than half of the new one. Indented, because the
+/// whole reason for a file is that a person can read the change it makes.
+///
+/// # Errors
+/// If the value cannot be serialised, or the file cannot be written.
+pub fn write_atomically<T: Serialize>(path: &Path, value: &T) -> io::Result<()> {
+    let text = serde_json::to_string_pretty(value)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let temporary = path.with_extension("json.writing");
+    std::fs::write(&temporary, text.as_bytes())?;
+    std::fs::rename(&temporary, path)
 }
 
 /// # Errors
@@ -80,22 +105,12 @@ pub fn load(path: &Path) -> io::Result<Piece> {
 /// # Errors
 /// If the directory cannot be created or the file cannot be written.
 pub fn save(path: &Path, name: &str, set: &Set) -> io::Result<()> {
-    let piece = Piece {
-        version: VERSION,
-        name: name.to_string(),
-        set: set.clone(),
-    };
-    // Indented, because the whole reason for a file is that a person can read
-    // the change it makes.
-    let text = serde_json::to_string_pretty(&piece)
-        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
-
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    // Written beside the target and renamed over it: a save interrupted halfway
-    // leaves the previous piece intact rather than half of the new one.
-    let temporary = path.with_extension("json.writing");
-    std::fs::write(&temporary, text.as_bytes())?;
-    std::fs::rename(&temporary, path)
+    write_atomically(
+        path,
+        &Piece {
+            version: VERSION,
+            name: name.to_string(),
+            set: set.clone(),
+        },
+    )
 }

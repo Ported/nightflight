@@ -21,7 +21,8 @@
 //! The room stays, because how much of a lane goes to the reverb is part of how
 //! that lane sounds, not part of the arrangement.
 
-use crate::seq::{Set, STEPS_PER_BAR};
+use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, Set, Voicing, STEPS_PER_BAR};
+use crate::sets::ROOT;
 
 /// Bars this set's longest pattern occupies, at least one.
 #[must_use]
@@ -68,6 +69,72 @@ pub fn clip(set: &Set, name: &str) -> (Set, Vec<usize>) {
     (alone, indices)
 }
 
+
+/// One lane, alone, looping — the lane a patch is being edited through.
+///
+/// Editing a patch from inside a clip auditions it through the lane that plays
+/// it, so you hear it at the notes, the length and the placement it will
+/// actually have. That is more useful than a neutral test bench, and it is free:
+/// the lane is already there.
+#[must_use]
+pub fn lane(set: &Set, index: usize) -> Option<(Set, Vec<usize>)> {
+    let source = set.lanes.get(index)?;
+    let mut one = source.clone();
+    one.spans.clear();
+    one.muted = false;
+
+    let mut alone = Set {
+        bpm: set.bpm,
+        lanes: vec![one],
+        reverb: set.reverb,
+        macros: Vec::new(),
+        length_bars: 1.0,
+    };
+    alone.length_bars = bars(&alone);
+    Some((alone, vec![index]))
+}
+
+/// A patch with no lane behind it: one opened from the index, before anything in
+/// the piece plays it.
+///
+/// The test line is per instrument and deliberately plain — four to the bar for
+/// a drum, eighths for a hat, a held note for anything pitched. It exists to let
+/// you hear the patch, not to be musical; the moment a patch is in a clip you
+/// audition it through that lane instead.
+#[must_use]
+pub fn patch(voicing: Voicing, bpm: f32, room: Option<ReverbSettings>) -> Set {
+    let (steps, length, root, send) = match voicing {
+        Voicing::Kick(_) => ("X...X...X...X...", Length::Seconds(0.4), ROOT, 0.0),
+        Voicing::Hat(_) => ("X.X.X.X.X.X.X.X.", Length::Seconds(0.1), 0.0, 0.15),
+        Voicing::Bass(_) => ("X...X...X...X...", Length::Steps(3.5), ROOT, 0.1),
+        // Long notes: one a bar, so its whole shape is audible before the next.
+        Voicing::Glass(_) => ("X...............", Length::Steps(16.0), ROOT + 24.0, 0.5),
+        Voicing::Strings(_) => ("X...............", Length::Steps(16.0), ROOT + 12.0, 0.4),
+    };
+    Set {
+        bpm,
+        lanes: vec![Lane {
+            name: voicing.instrument().to_string(),
+            clip: "audition".to_string(),
+            voicing,
+            patch: None,
+            pattern: Pattern::grid(steps),
+            gain: 1.0,
+            length,
+            root,
+            home: Home::Centre,
+            send,
+            gate: None,
+            spans: Vec::new(),
+            velocity_scale: 1.0,
+            ducked: false,
+            muted: false,
+        }],
+        reverb: room,
+        macros: Vec::new(),
+        length_bars: 1.0,
+    }
+}
 
 #[cfg(test)]
 mod tests {

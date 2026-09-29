@@ -97,6 +97,7 @@ fn groove_lanes() -> Vec<Lane> {
             name: "kick".into(),
             clip: "beat".into(),
             voicing: Voicing::Kick(kick::Params::default()),
+            patch: None,
             pattern: Pattern::grid("X...X...X...X..."),
             gain: 1.0,
             // Seconds, not steps: a drum's ring is a physical fact.
@@ -114,6 +115,7 @@ fn groove_lanes() -> Vec<Lane> {
             name: "closed hat".into(),
             clip: "beat".into(),
             voicing: Voicing::Hat(hat::Params::default()),
+            patch: None,
             pattern: closed_hats(),
             gain: 0.6,
             length: Length::Seconds(0.06),
@@ -134,6 +136,7 @@ fn groove_lanes() -> Vec<Lane> {
                 ..hat::Params::default()
             }),
             // The disco "tss" between the kicks.
+            patch: None,
             pattern: Pattern::grid("..x...x...x...x."),
             gain: 0.6,
             // One step: the next closed hat cuts it off, which is exactly what
@@ -153,6 +156,7 @@ fn groove_lanes() -> Vec<Lane> {
             name: "bass".into(),
             clip: "bass".into(),
             voicing: Voicing::Bass(bass::Params::default()),
+            patch: None,
             pattern: rolling_bass(),
             gain: 0.8,
             length: Length::Steps(0.8),
@@ -287,6 +291,7 @@ pub fn prelude() -> Set {
             name: names[voice].into(),
             clip: "prelude".into(),
             voicing: Voicing::Glass(dreaming()),
+            patch: None,
             pattern: bach_voice(voice, 0),
             // Measured, not chosen: at 1.2/1.0 the mix peaked at +3.5 dBFS.
             // Three voices ringing for seconds each, all sending most of
@@ -385,6 +390,7 @@ pub fn pad() -> Set {
             name: NAMES[voice].into(),
             clip: "pad".into(),
             voicing: Voicing::Strings(strings::dark()),
+            patch: None,
             pattern: pad_voice(voice),
             // Measured for a standalone listen: at 0.3 the five voices peaked
             // at -19.7 dBFS, far too quiet to judge. This puts the peak near
@@ -484,6 +490,7 @@ pub fn intro() -> Set {
             name: glass_names[voice].into(),
             clip: "prelude".into(),
             voicing: Voicing::Glass(dreaming()),
+            patch: None,
             pattern: bach_voice(voice, PEDAL_BARS),
             gain: if voice == 0 { 0.3 } else { 0.25 },
             length: lengths[voice],
@@ -512,6 +519,7 @@ pub fn intro() -> Set {
         voicing: Voicing::Strings(strings::dark()),
         // Bach's chords held, one per Bach bar: the harmony the glass
         // arpeggiates, so the pad is never a second idea.
+        patch: None,
         pattern: held_chord(voice + 1, PEDAL_BARS),
         gain: 0.32,
         length: Length::Steps(32.0),

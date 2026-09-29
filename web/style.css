@@ -195,3 +195,49 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
   color: var(--warn);
   font-size: 0.85rem;
 }
+
+/* The library index: one row per saved thing, name first because the name is
+   what you are looking for. */
+.library { display: grid; gap: 2px; }
+.libitem {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 8px;
+  align-items: center; padding: 3px 6px; border-radius: 4px;
+}
+.libitem:hover { background: #ffffff08; }
+.libitem.sounding { background: #78c8ff14; }
+.libitem .name { font-weight: 500; }
+.libitem button { font-size: 11px; padding: 2px 8px; }
+.newthing { display: flex; gap: 6px; margin-top: 10px; }
+.newthing input { flex: 1; min-width: 0; }
+.newthing input, .newthing select {
+  background: var(--bg); color: var(--text); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 6px; font: inherit; font-size: 12px;
+}
+
+/* What can be done to one patch, above its faders. */
+.patchhead {
+  grid-column: 1 / -1; display: flex; gap: 6px; align-items: center;
+  padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+}
+.patchhead .pname { flex: 0 0 auto; color: var(--accent); }
+.patchhead button { font-size: 11px; padding: 2px 8px; }
+.patchhead select {
+  margin-left: auto; background: var(--bg); color: var(--text);
+  border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px;
+  font: inherit; font-size: 11px;
+}
+
+/* Said and then forgotten: a save that worked, a name that was refused. */
+.notice { font-size: 12px; color: var(--good); margin-right: 10px; }
+.notice.bad { color: var(--bad); }
+
+/* A button that became a text box, asking for a name. */
+.namebox {
+  background: var(--bg); color: var(--text); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 2px 6px; font: inherit; font-size: 11px;
+  width: 12ch;
+}
+
+/* A class selector beats the user agent's `[hidden]`, and this page hides things
+   by setting `hidden`. Stated once, here, rather than remembered at each rule. */
+[hidden] { display: none !important; }

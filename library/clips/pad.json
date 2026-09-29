@@ -1,7 +1,6 @@
 {
   "version": 1,
   "name": "pad",
-  "bpm": 126.0,
   "lanes": [
     {
       "name": "pad voice 1",
@@ -2888,13 +2887,5 @@
       "ducked": false,
       "muted": false
     }
-  ],
-  "reverb": {
-    "rt60": 7.0,
-    "damping": 1.0,
-    "predelay": 0.04,
-    "lowcut": 100.0
-  },
-  "macros": [],
-  "length_bars": 8.0
+  ]
 }

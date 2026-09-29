@@ -5156,7 +5156,7 @@
       "clip": "pad",
       "voicing": {
         "instrument": "strings",
-        "copies": 3,
+        "copies": 3.0,
         "detune": 7.0,
         "depth": 12.0,
         "cutoff": 1100.0,
@@ -6897,7 +6897,7 @@
       "clip": "pad",
       "voicing": {
         "instrument": "strings",
-        "copies": 3,
+        "copies": 3.0,
         "detune": 7.0,
         "depth": 12.0,
         "cutoff": 1100.0,
@@ -8638,7 +8638,7 @@
       "clip": "pad",
       "voicing": {
         "instrument": "strings",
-        "copies": 3,
+        "copies": 3.0,
         "detune": 7.0,
         "depth": 12.0,
         "cutoff": 1100.0,
@@ -10379,7 +10379,7 @@
       "clip": "pad",
       "voicing": {
         "instrument": "strings",
-        "copies": 3,
+        "copies": 3.0,
         "detune": 7.0,
         "depth": 12.0,
         "cutoff": 1100.0,

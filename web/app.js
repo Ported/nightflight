@@ -11,8 +11,10 @@
 
 const $ = (id) => document.getElementById(id);
 
-/** What the engine is playing: a clip's name while an editor is open, else null. */
-let stage = null;
+/** What the engine is playing: {kind, name}. kind is piece, clip, lane or patch. */
+let stage = { kind: "piece", name: "" };
+/** The library index, as the server last listed it. */
+let library = { patches: [], clips: [] };
 /** Bars the staged material runs for — the piece's length, or one clip's. */
 let stageBars = 0;
 
@@ -41,17 +43,46 @@ function connect() {
       buildLanes(message.lanes);
       buildMacros(message.macros);
       buildTabs();
+      buildInstruments(message.instruments);
+      send({ t: "library" });
       $("save").classList.toggle("dirty", message.dirty);
     } else if (message.t === "document") {
       $("save").classList.toggle("dirty", message.dirty);
-      if (message.saved) $("set").title = `saved to ${message.saved}`;
+      if (message.saved) {
+        $("set").title = `saved to ${message.saved}`;
+        say(`saved ${message.saved.split("/").slice(-2).join("/")}`);
+        // Anything written may have changed what the library holds.
+        send({ t: "library" });
+      }
     } else if (message.t === "stage") {
-      stage = message.clip;
+      stage = { kind: message.kind, name: message.name };
       stageBars = message.bars;
       $("scrub").max = stageBars;
-      $("stage").textContent = stage
-        ? `playing this clip alone · ${stageBars} ${stageBars === 1 ? "bar" : "bars"}`
-        : "";
+      const bars = `${stageBars} ${stageBars === 1 ? "bar" : "bars"}`;
+      $("stage").textContent =
+        { piece: "", clip: `playing this clip alone · ${bars}`,
+          lane: `playing ${message.name} alone · ${bars}`,
+          patch: `auditioning the ${message.name} patch · ${bars}` }[message.kind] ?? "";
+      paintStage();
+    } else if (message.t === "described") {
+      // The document changed shape under the page: a patch swapped in, a clip
+      // renamed. Take the new description and redraw what is open, without
+      // touching what is playing.
+      description = message;
+      $("save").classList.toggle("dirty", message.dirty);
+      if (message.saved) {
+        say(`saved ${message.saved.split("/").slice(-2).join("/")}`);
+        send({ t: "library" });
+      }
+      redraw();
+    } else if (message.t === "library") {
+      library = { patches: message.patches, clips: message.clips };
+      // A clip editor draws a "swap in" list from this, so it is stale until
+      // the library lands — which is after the hello, always.
+      if (tab === "library") buildLibrary();
+      if (isClip(tab)) buildClip(tab);
+    } else if (message.t === "complaint") {
+      say(message.why, true);
     } else if (message.t === "telemetry") {
       telemetry = message.Telemetry ?? message;
     }
@@ -170,7 +201,7 @@ function clips() {
 function buildTabs() {
   const host = $("tabs");
   host.replaceChildren();
-  const names = ["conductor", ...clips().keys()];
+  const names = ["conductor", "library", ...clips().keys()];
   for (const name of names) {
     const button = document.createElement("button");
     button.textContent = name;
@@ -180,19 +211,166 @@ function buildTabs() {
   }
 }
 
+// ── The library ─────────────────────────────────────────────────────────────
+
+/**
+ * A line of feedback, shown where the work is rather than in an alert.
+ *
+ * A save that worked and a name that was refused are both things you want to
+ * read and then forget, so they say so for a few seconds and go. An alert would
+ * block the page, which with audio running is exactly wrong.
+ */
+let noticeTimer = null;
+function say(words, bad = false) {
+  const notice = $("notice");
+  notice.textContent = words;
+  notice.classList.toggle("bad", bad);
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => (notice.textContent = ""), bad ? 8000 : 4000);
+}
+
+function buildInstruments(instruments) {
+  const select = $("newInstrument");
+  select.replaceChildren();
+  for (const name of instruments ?? []) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.append(option);
+  }
+}
+
+/** Everything saved under a name, each row a way into its editor. */
+function buildLibrary() {
+  const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  $("libraryInfo").textContent =
+    `${count(library.patches.length, "patch", "patches")} · ` +
+    `${count(library.clips.length, "clip", "clips")}`;
+
+  const patches = $("libraryPatches");
+  patches.replaceChildren();
+  for (const patch of library.patches) {
+    const row = document.createElement("div");
+    row.className = "libitem";
+    row.dataset.patch = patch.name;
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = patch.name;
+    const what = document.createElement("span");
+    what.className = "weak";
+    what.textContent = patch.instrument;
+
+    // Hearing it is the only way to know what a saved patch is, so that is the
+    // click: a plain test line, looping, nothing else playing.
+    const hear = document.createElement("button");
+    hear.textContent = "hear it";
+    hear.title = "play this patch on a test line";
+    hear.onclick = () => send({ t: "audition", patch: patch.name });
+
+    row.append(name, what, hear);
+    patches.append(row);
+  }
+  if (!library.patches.length) {
+    patches.append(empty("nothing saved yet — open a clip, turn a fader, save the patch"));
+  }
+
+  const host = $("libraryClips");
+  host.replaceChildren();
+  const inPiece = new Set(clips().keys());
+  for (const clip of library.clips) {
+    const row = document.createElement("div");
+    row.className = "libitem";
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = clip.name;
+    const what = document.createElement("span");
+    what.className = "weak";
+    what.textContent =
+      `${count(clip.lanes, "lane", "lanes")} · ${count(clip.steps, "step", "steps")}`;
+
+    // A clip in the library that this piece does not use has no editor tab to
+    // open: the piece is what an editor edits. Say so rather than offer a
+    // button that cannot work.
+    const open = document.createElement("button");
+    if (inPiece.has(clip.name)) {
+      open.textContent = "open";
+      open.onclick = () => show(clip.name);
+    } else {
+      open.textContent = "not in this piece";
+      open.disabled = true;
+      open.title = "this piece does not use that clip";
+    }
+
+    row.append(name, what, open);
+    host.append(row);
+  }
+  if (!library.clips.length) {
+    host.append(empty("nothing saved yet — open a clip editor and save it"));
+  }
+  paintStage();
+}
+
+function empty(words) {
+  const line = document.createElement("div");
+  line.className = "weak";
+  line.textContent = words;
+  return line;
+}
+
+/** Mark whatever is currently sounding, wherever it is drawn. */
+function paintStage() {
+  document.querySelectorAll("[data-patch]").forEach((row) => {
+    row.classList.toggle(
+      "sounding",
+      stage.kind === "patch" && row.dataset.patch === stage.name,
+    );
+  });
+}
+
 function show(name) {
   // An editor is not a view onto the piece, it is the only thing playing. The
   // server builds a small piece from this clip alone and hands it to the engine
   // in place of the real one; asking for the conductor hands the piece back, at
   // the bar it had reached.
-  const wanted = name === "conductor" ? null : name;
-  if (wanted !== stage) send({ t: "audition", clip: wanted });
+  //
+  // The library is an index, not an editor: it plays whatever you press "hear
+  // it" on, so arriving there leaves the piece running.
+  if (name === "conductor" && stage.kind !== "piece") {
+    send({ t: "audition" });
+  } else if (isClip(name) && !(stage.kind === "clip" && stage.name === name)) {
+    send({ t: "audition", clip: name });
+  }
   tab = name;
-  $("view-conductor").classList.toggle("hidden", name !== "conductor");
-  $("view-clip").classList.toggle("hidden", name === "conductor");
-  if (name !== "conductor") buildClip(name);
+  for (const view of ["conductor", "clip", "library"]) {
+    $(`view-${view}`).classList.toggle("hidden", view !== viewFor(name));
+  }
+  if (isClip(name)) buildClip(name);
+  if (name === "library") {
+    send({ t: "library" });
+    buildLibrary();
+  }
   buildTabs();
 }
+
+/** Rebuild whatever view is open, leaving the transport and the stage alone. */
+function redraw() {
+  // Saving a clip as new renames the piece's lanes onto the new clip, so the
+  // tab that was open no longer exists. The stage message that follows says
+  // what it became; until then, follow it there.
+  if (isClip(tab) && !clips().has(tab)) {
+    tab = clips().has(stage.name) ? stage.name : ([...clips().keys()][0] ?? "conductor");
+  }
+  if (isClip(tab)) buildClip(tab);
+  if (tab === "library") buildLibrary();
+  buildLanes(description.lanes);
+  buildMacros(description.macros);
+  buildTabs();
+}
+
+const isClip = (name) => name !== "conductor" && name !== "library";
+const viewFor = (name) => (isClip(name) ? "clip" : name);
 
 /**
  * The step grid: one row per lane of the clip, one cell per step.
@@ -271,6 +449,7 @@ function buildClip(name) {
 function buildPatch(lane) {
   const panel = document.createElement("div");
   panel.className = "patch";
+  panel.append(patchHead(lane));
 
   lane.params.forEach((spec, index) => {
     const value = lane.values[index];
@@ -318,6 +497,128 @@ function buildPatch(lane) {
   return panel;
 }
 
+/**
+ * What you can do to a lane's patch: hear it alone, save it, fork it, or swap
+ * in another one of the same instrument.
+ *
+ * "Save" writes back to the name the patch already has, and every lane playing
+ * that name changes with it — that is what makes it a patch rather than a copy.
+ * "Save as" writes a new name and repoints only this lane, which is how a
+ * second kick comes to exist without disturbing the beat that had the first.
+ */
+function patchHead(lane) {
+  const head = document.createElement("div");
+  head.className = "patchhead";
+
+  const label = document.createElement("span");
+  label.className = "pname";
+  label.textContent = lane.patch ?? `${lane.instrument} · unsaved`;
+  label.title = lane.patch
+    ? `saved as ${lane.patch} — saving changes every lane playing it`
+    : "this patch has no name yet; save it as one to reuse it";
+
+  // Hearing one lane by itself is the patch editor's whole point: the clip's
+  // other lanes are not what you are judging.
+  const solo = document.createElement("button");
+  solo.textContent = "hear it";
+  solo.title = "play this lane alone";
+  solo.onclick = () => send({ t: "audition", lane: lane.index });
+
+  const save = document.createElement("button");
+  save.textContent = "save";
+  save.disabled = !lane.patch;
+  save.title = lane.patch
+    ? `write it back to ${lane.patch}`
+    : "no name yet — use save as";
+  save.onclick = () => send({ t: "save_patch", lane: lane.index });
+
+  const saveAs = document.createElement("button");
+  saveAs.textContent = "save as…";
+  saveAs.title = "save these settings under a new name";
+  const saveAsBox = nameBox(
+    saveAs,
+    () => suggest(lane),
+    (name) => send({ t: "save_patch", lane: lane.index, name }),
+  );
+
+  // Only patches of the same instrument: a hat's parameters mean nothing to a
+  // kick, and the server refuses the swap anyway.
+  const swap = document.createElement("select");
+  swap.title = "play a different saved patch on this lane";
+  const mine = library.patches.filter((p) => p.instrument === lane.instrument);
+  const blank = document.createElement("option");
+  blank.textContent = mine.length ? "swap in…" : "no saved patches";
+  blank.value = "";
+  swap.append(blank);
+  for (const patch of mine) {
+    const option = document.createElement("option");
+    option.value = patch.name;
+    option.textContent = patch.name;
+    swap.append(option);
+  }
+  swap.disabled = !mine.length;
+  swap.onchange = () => {
+    if (swap.value) send({ t: "use_patch", lane: lane.index, name: swap.value });
+    swap.value = "";
+  };
+
+  head.append(label, solo, save, saveAs, saveAsBox, swap);
+  return head;
+}
+
+/**
+ * Ask for a name, in place.
+ *
+ * Not `prompt()`: a modal dialog stops the page's event loop, and this page has
+ * audio running behind it and a socket to keep answering.
+ *
+ * The button and the box both live in the page from the start and only their
+ * visibility changes. Swapping the nodes instead — which is the obvious way to
+ * write this — races: blur, Enter and a redraw triggered by the save itself can
+ * each want to put the button back, and whichever loses throws on a node that
+ * has already moved. Two nodes and a `hidden` flag have no such state.
+ */
+function nameBox(button, suggest, done) {
+  const box = document.createElement("input");
+  Object.assign(box, { type: "text", maxLength: 64, hidden: true });
+  box.className = "namebox";
+  box.title = "enter to save · escape to cancel";
+
+  const close = () => {
+    box.hidden = true;
+    button.hidden = false;
+  };
+  box.onkeydown = (event) => {
+    if (event.key === "Enter") {
+      const name = box.value.trim();
+      close();
+      if (name) done(name);
+    } else if (event.key === "Escape") {
+      close();
+    }
+    event.stopPropagation();
+  };
+  box.onblur = close;
+
+  button.onclick = () => {
+    box.value = suggest();
+    box.hidden = false;
+    button.hidden = true;
+    box.focus();
+    box.select();
+  };
+  return box;
+}
+
+/** A name that is probably free: "punch 2" after "punch". */
+function suggest(lane) {
+  const base = lane.patch ?? lane.name;
+  const taken = new Set(library.patches.map((p) => p.name));
+  if (!taken.has(base)) return base;
+  for (let n = 2; n < 100; n += 1) if (!taken.has(`${base} ${n}`)) return `${base} ${n}`;
+  return base;
+}
+
 function paint(cell, velocity) {
   cell.dataset.velocity = velocity;
   cell.classList.toggle("on", velocity > 0);
@@ -327,6 +628,35 @@ function paint(cell, velocity) {
 // ── Transport ───────────────────────────────────────────────────────────────
 
 $("save").onclick = () => send({ t: "save" });
+
+$("clipSave").onclick = () => send({ t: "save_clip", clip: tab });
+// Saving as new moves the piece onto the new clip: the thing you were editing is
+// the thing you want to keep editing.
+$("clipSaveAs").after(
+  nameBox(
+    $("clipSaveAs"),
+    () => {
+      const taken = new Set(library.clips.map((c) => c.name));
+      let name = tab;
+      for (let n = 2; taken.has(name); n += 1) name = `${tab} ${n}`;
+      return name;
+    },
+    (chosen) => send({ t: "save_clip", clip: tab, name: chosen }),
+  ),
+);
+
+$("newPatch").onclick = () => {
+  const name = $("newPatchName").value.trim();
+  if (!name) {
+    say("give the new patch a name", true);
+    return;
+  }
+  send({ t: "new_patch", instrument: $("newInstrument").value, name });
+  $("newPatchName").value = "";
+};
+$("newPatchName").onkeydown = (event) => {
+  if (event.key === "Enter") $("newPatch").click();
+};
 
 $("play").onclick = () => send({ t: "playing", value: !(telemetry?.playing ?? true) });
 $("start").onclick = () => send({ t: "seek", bar: 0 });

@@ -11,6 +11,7 @@
   <span id="set" class="set">connecting…</span>
   <nav id="tabs" class="tabs"></nav>
   <span class="spacer"></span>
+  <span id="notice" class="notice"></span>
   <button id="save" title="write the piece to disk">save</button>
   <span id="device" class="weak mono"></span>
 </header>
@@ -60,10 +61,36 @@
     <span id="clipName" class="set"></span>
     <span id="clipInfo" class="weak mono fixed"></span>
     <span id="stage" class="stage" title="what the engine is playing"></span>
+    <button id="clipSave" title="write this clip to the library">save clip</button>
+    <button id="clipSaveAs" title="fork this clip under a new name">save as…</button>
     <span class="spacer"></span>
     <span class="weak">click a cell to place or clear a step · shift-click for an accent</span>
   </section>
   <div class="column"><div id="clipLanes" class="clip"></div></div>
+</div>
+
+<div id="view-library" class="view hidden">
+  <section class="clip-head">
+    <span class="set">library</span>
+    <span id="libraryInfo" class="weak mono fixed"></span>
+    <span class="spacer"></span>
+    <span class="weak">everything saved under a name · a patch is an instrument, a clip is material</span>
+  </section>
+  <main>
+    <div class="column">
+      <h2>patches</h2>
+      <div id="libraryPatches" class="library"></div>
+      <div class="newthing">
+        <select id="newInstrument" title="what the new patch plays"></select>
+        <input id="newPatchName" type="text" placeholder="name it" maxlength="64">
+        <button id="newPatch">new patch</button>
+      </div>
+    </div>
+    <div class="column">
+      <h2>clips</h2>
+      <div id="libraryClips" class="library"></div>
+    </div>
+  </main>
 </div>
 
 <script src="app.js" type="module"></script>

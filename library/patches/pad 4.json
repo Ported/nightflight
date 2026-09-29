@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "name": "pad 4",
+  "instrument": "strings",
+  "copies": 3.0,
+  "detune": 7.0,
+  "depth": 12.0,
+  "cutoff": 1100.0,
+  "breathe": 0.8,
+  "breathe_rate": 0.07,
+  "attack": 2.5,
+  "release": 4.0,
+  "phaser": 0.7,
+  "phaser_rate": 0.07
+}

@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "name": "bass",
+  "lanes": [
+    {
+      "name": "bass",
+      "clip": "bass",
+      "voicing": {
+        "instrument": "bass",
+        "cutoff": 200.0,
+        "env_amount": 4.0,
+        "env_decay": 0.05,
+        "resonance": 0.6,
+        "sub": 0.35,
+        "drive": 2.5,
+        "attack": 0.003,
+        "decay": 0.25,
+        "release": 0.03
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 12
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 3
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.8,
+      "length": {
+        "steps": 0.8
+      },
+      "root": 31.0,
+      "home": {
+        "kind": "centre"
+      },
+      "send": 0.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": true,
+      "muted": false
+    }
+  ]
+}

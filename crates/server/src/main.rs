@@ -46,15 +46,56 @@ const ADDRESS: &str = "127.0.0.1:8730";
 /// macro off its curve: all of that reaches the engine and none of it touches the
 /// document, which is the same distinction a mixing desk makes between playing
 /// and authoring.
+/// What the engine is playing.
+///
+/// Every editor in this tool wants the same thing — to hear what it is editing
+/// and nothing else — so "what is playing" is a small closed set rather than a
+/// flag. Opening any editor swaps the engine for one built from just that
+/// material; closing it puts the piece back where it was.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Stage {
+    /// The piece as written.
+    Piece,
+    /// One clip, looping.
+    Clip(String),
+    /// One lane of the piece, looping — how a patch is heard while it is being
+    /// edited inside a clip.
+    Lane(usize),
+    /// A saved patch with nothing in the piece playing it, on a plain test line.
+    Patch(String),
+}
+
+impl Stage {
+    /// A word and a name for the page, so it can say what it is hearing.
+    fn kind(&self) -> &'static str {
+        match self {
+            Self::Piece => "piece",
+            Self::Clip(_) => "clip",
+            Self::Lane(_) => "lane",
+            Self::Patch(_) => "patch",
+        }
+    }
+
+    fn label(&self, document: &Set) -> String {
+        match self {
+            Self::Piece => String::new(),
+            Self::Clip(name) | Self::Patch(name) => name.clone(),
+            Self::Lane(index) => document
+                .lanes
+                .get(*index)
+                .map_or_else(String::new, |lane| lane.name.clone()),
+        }
+    }
+}
+
 struct Session {
     link: Link,
     document: Set,
     name: String,
     /// Whether the document has changed since it was last written.
     dirty: bool,
-    /// What the engine is playing: the whole piece, or one clip on its own while
-    /// its editor is open.
-    stage: Option<String>,
+    /// What the engine is playing.
+    stage: Stage,
     /// For each of the engine's lanes, which of the document's it came from.
     /// While the piece is playing this is the identity; while a clip is being
     /// auditioned it is that clip's lanes.
@@ -64,6 +105,8 @@ struct Session {
     /// piece whether or not it is the seventh thing sounding; every translation
     /// happens on this side, once, in the two places below.
     on_stage: Vec<usize>,
+    /// Bars the staged material runs for.
+    stage_bars: f32,
     /// The bar the piece had reached when an audition took over, so leaving the
     /// editor puts you back where you were rather than at the beginning.
     resume_at: f32,
@@ -104,7 +147,7 @@ impl Session {
         let at = |document: usize| self.on_stage.iter().position(|&d| d == document);
         Some(match command {
             // Macros belong to a piece, and an audition has none.
-            Command::Macro { .. } if self.stage.is_some() => return None,
+            Command::Macro { .. } if self.stage != Stage::Piece => return None,
             Command::Mute { index, muted } => Command::Mute {
                 index: u8::try_from(at(index as usize)?).ok()?,
                 muted,
@@ -133,48 +176,177 @@ impl Session {
         })
     }
 
-    /// Play one clip by itself, or `None` to go back to the piece.
+    /// Put something on the stage.
     ///
-    /// The engine is built here, off the audio thread, and swapped in over a
-    /// ten-millisecond fade. Nothing is torn down in the callback: the engine it
-    /// replaces comes back to be dropped on this side.
-    fn audition(&mut self, clip: Option<&str>) {
-        let (set, on_stage, bar) = match clip {
-            Some(name) => {
-                let (set, on_stage) = engine::audition::clip(&self.document, name);
-                if set.lanes.is_empty() {
-                    eprintln!("nothing to audition: no lane belongs to clip {name:?}");
-                    return;
-                }
-                (set, on_stage, 0.0)
-            }
-            None => (
+    /// The engine for it is built here, off the audio thread, and swapped in
+    /// over a ten-millisecond fade. Nothing is torn down in the callback: the
+    /// engine it replaces comes back to be dropped on this side.
+    fn stage(&mut self, wanted: &Stage) -> Result<(), String> {
+        let (set, on_stage, bar) = match wanted {
+            Stage::Piece => (
                 self.document.clone(),
                 (0..self.document.lanes.len()).collect(),
                 self.resume_at,
             ),
+            Stage::Clip(name) => {
+                let (set, on_stage) = engine::audition::clip(&self.document, name);
+                if set.lanes.is_empty() {
+                    return Err(format!("no lane belongs to clip {name:?}"));
+                }
+                (set, on_stage, 0.0)
+            }
+            Stage::Lane(index) => {
+                let (set, on_stage) = engine::audition::lane(&self.document, *index)
+                    .ok_or_else(|| format!("there is no lane {index}"))?;
+                (set, on_stage, 0.0)
+            }
+            Stage::Patch(name) => {
+                let patch = engine::library::load_patch(name)
+                    .map_err(|err| format!("could not read patch {name:?}: {err}"))?;
+                let set = engine::audition::patch(
+                    patch.voicing,
+                    self.document.bpm,
+                    self.document.reverb,
+                );
+                // Nothing in the document is sounding, so no lane of it is on
+                // stage and every meter reads silent. Correct: none of them is
+                // what you are hearing.
+                (set, Vec::new(), 0.0)
+            }
         };
 
+        let loop_to = set.length_bars;
         let mut next = Box::new(Engine::new(dsp::SR, set.bpm, set));
         next.start_at(bar);
-        if let Some(name) = clip {
+        if *wanted != Stage::Piece {
             // The loop is what makes it an audition rather than a single pass.
             next.apply(Command::Loop {
                 from: 0.0,
-                to: self.document_clip_bars(name),
+                to: loop_to,
                 on: true,
             });
         }
         if self.link.load(next) {
-            self.stage = clip.map(str::to_string);
+            self.stage = wanted.clone();
             self.on_stage = on_stage;
+            self.stage_bars = loop_to;
+        }
+        Ok(())
+    }
+
+    /// Give the engine every parameter of one lane, after its patch changed
+    /// underneath it.
+    ///
+    /// One command per parameter rather than one per patch: the engine's whole
+    /// authoring vocabulary is "set this parameter of this lane to this", and a
+    /// handful of twelve-byte messages is nothing next to inventing a second way
+    /// in that the audio thread would have to understand.
+    fn push_voicing(&mut self, index: usize) {
+        let Some(lane) = self.document.lanes.get(index) else {
+            return;
+        };
+        let values = lane.voicing.values();
+        for (param, value) in values.into_iter().enumerate() {
+            let Ok(param) = u8::try_from(param) else {
+                break;
+            };
+            let Ok(lane) = u8::try_from(index) else { break };
+            if let Some(command) = self.for_engine(Command::SetParam { lane, param, value }) {
+                self.link.send(command);
+            }
         }
     }
 
-    /// How long a clip runs, in bars.
-    fn document_clip_bars(&self, clip: &str) -> f32 {
-        let (set, _) = engine::audition::clip(&self.document, clip);
-        set.length_bars
+    /// Write a lane's instrument to the library.
+    ///
+    /// Saving under the name the lane already carries updates **every** lane
+    /// playing that patch, here and in the engine — that is what a shared patch
+    /// is for. Saving under a new name repoints only this lane, which is how you
+    /// fork a kick without disturbing the beat that had the old one.
+    fn save_patch(&mut self, index: usize, name: &str) -> Result<String, String> {
+        let lane = self
+            .document
+            .lanes
+            .get(index)
+            .ok_or_else(|| format!("there is no lane {index}"))?;
+        let voicing = lane.voicing;
+        let path = engine::library::save_patch(name, voicing).map_err(|err| err.to_string())?;
+
+        // Everyone on this name takes the new values.
+        let sharing: Vec<usize> = self
+            .document
+            .lanes
+            .iter()
+            .enumerate()
+            .filter(|(i, lane)| *i != index && lane.patch.as_deref() == Some(name))
+            .map(|(i, _)| i)
+            .collect();
+        for &other in &sharing {
+            self.document.lanes[other].voicing = voicing;
+            self.push_voicing(other);
+        }
+        if self.document.lanes[index].patch.as_deref() != Some(name) {
+            self.document.lanes[index].patch = Some(name.to_string());
+            // The piece now names a different patch, which is a change to the
+            // piece — saving the patch does not save the piece.
+            self.dirty = true;
+        }
+        Ok(path.display().to_string())
+    }
+
+    /// Point a lane at a saved patch: a different kick on this beat.
+    fn use_patch(&mut self, index: usize, name: &str) -> Result<(), String> {
+        let patch = engine::library::load_patch(name)
+            .map_err(|err| format!("could not read patch {name:?}: {err}"))?;
+        let lane = self
+            .document
+            .lanes
+            .get_mut(index)
+            .ok_or_else(|| format!("there is no lane {index}"))?;
+        if patch.voicing.instrument() != lane.voicing.instrument() {
+            return Err(format!(
+                "{name:?} is a {} patch and {} plays {}",
+                patch.voicing.instrument(),
+                lane.name,
+                lane.voicing.instrument()
+            ));
+        }
+        lane.voicing = patch.voicing;
+        lane.patch = Some(name.to_string());
+        self.dirty = true;
+        self.push_voicing(index);
+        Ok(())
+    }
+
+    /// Write a clip's lanes to the library.
+    ///
+    /// Saving as new also moves the piece onto the new clip, because the thing
+    /// you were editing is the thing you want to keep editing. The old clip is
+    /// still in the library, unchanged, for whatever else uses it.
+    fn save_clip(&mut self, clip: &str, name: &str) -> Result<String, String> {
+        let lanes: Vec<_> = self
+            .document
+            .lanes
+            .iter()
+            .filter(|lane| lane.clip == clip)
+            .cloned()
+            .collect();
+        if lanes.is_empty() {
+            return Err(format!("no lane belongs to clip {clip:?}"));
+        }
+        let path = engine::library::save_clip(name, &lanes).map_err(|err| err.to_string())?;
+        if name != clip {
+            for lane in &mut self.document.lanes {
+                if lane.clip == clip {
+                    lane.clip = name.to_string();
+                }
+            }
+            self.dirty = true;
+            if self.stage == Stage::Clip(clip.to_string()) {
+                self.stage = Stage::Clip(name.to_string());
+            }
+        }
+        Ok(path.display().to_string())
     }
 
     /// The engine's telemetry, put back into document order.
@@ -184,7 +356,7 @@ impl Session {
     /// along by one every time an editor opens.
     fn in_document_order(&self, frame: &Telemetry) -> Telemetry {
         let mut out = *frame;
-        if self.stage.is_none() {
+        if self.stage == Stage::Piece {
             return out;
         }
         out.lanes = [LaneState::default(); telemetry::MAX_PARTS];
@@ -204,11 +376,44 @@ impl Session {
         Ok(path)
     }
 
+    fn stage_message(&self) -> String {
+        serde_json::to_string(&Outgoing::Stage {
+            kind: self.stage.kind(),
+            name: self.stage.label(&self.document),
+            bars: if self.stage == Stage::Piece {
+                self.document.length_bars
+            } else {
+                self.stage_bars
+            },
+        })
+        .expect("a stage serialises")
+    }
+
+    /// The document as it now stands, for a page whose copy is stale.
+    fn described_message(&self, saved: Option<String>) -> String {
+        serde_json::to_string(&Outgoing::Described {
+            dirty: self.dirty,
+            saved,
+            description: &self.document.describe(),
+        })
+        .expect("a description serialises")
+    }
+
+    /// The document's state after something was written, or changed.
+    fn saved_message(&self, saved: Option<String>) -> String {
+        serde_json::to_string(&Outgoing::Document {
+            dirty: self.dirty,
+            saved,
+        })
+        .expect("a document message serialises")
+    }
+
     fn hello(&self) -> String {
         serde_json::to_string(&Outgoing::Hello {
             set: &self.name,
             device: &self.link.device,
             buffer_frames: self.link.buffer_frames,
+            instruments: engine::seq::Voicing::INSTRUMENTS,
             dirty: self.dirty,
             description: &self.document.describe(),
         })
@@ -227,6 +432,8 @@ enum Outgoing<'a> {
         set: &'a str,
         device: &'a str,
         buffer_frames: u32,
+        /// Every instrument a new patch can be made of.
+        instruments: &'static [&'static str],
         /// Whether the piece has unsaved changes.
         dirty: bool,
         #[serde(flatten)]
@@ -234,12 +441,33 @@ enum Outgoing<'a> {
     },
     /// Sent whenever the document changes or is written down.
     Document { dirty: bool, saved: Option<String> },
-    /// What the engine is playing now: a clip on its own, or the whole piece.
+    /// What the engine is playing now.
     Stage {
-        clip: Option<String>,
+        /// "piece", "clip", "lane" or "patch".
+        kind: &'static str,
+        /// Which one, for the page to show. Empty for the piece.
+        name: String,
         /// Bars it loops over, so the page can draw the right length.
         bars: f32,
     },
+    /// The document again, after something changed that the page cannot work out
+    /// for itself: a patch swapped in, a clip renamed. Saves re-sending the
+    /// hello, which would also reset things the page is in the middle of.
+    Described {
+        dirty: bool,
+        /// Where it was written, if this followed a save.
+        saved: Option<String>,
+        #[serde(flatten)]
+        description: &'a Description,
+    },
+    /// Everything saved under a name, for the index.
+    Library {
+        #[serde(flatten)]
+        index: &'a engine::library::Index,
+    },
+    /// Something the page asked for could not be done, in words meant to be
+    /// read. Not an error code: there is one user and they are looking at it.
+    Complaint { why: String },
     /// About sixty times a second. By reference: this enum exists for one line
     /// of serialisation and is never stored, and a telemetry frame is 448 bytes
     /// against the hello's handful of pointers.
@@ -281,6 +509,15 @@ fn main() {
         }
     };
 
+    // Named patches come from the library, overwriting whatever the piece
+    // remembers of them: that is what makes a patch shared rather than copied.
+    // A name with no file behind it is reported and left alone — a piece that
+    // arrived without its library still plays.
+    let mut set = set;
+    for missing in engine::library::resolve(&mut set) {
+        eprintln!("patch not found: {missing}");
+    }
+
     // The engine is given a copy; the original stays here as the document.
     let document = set.clone();
     let link = match host::start(set) {
@@ -310,7 +547,8 @@ fn main() {
         document,
         name: set_name,
         dirty: false,
-        stage: None,
+        stage: Stage::Piece,
+        stage_bars: 0.0,
         resume_at: 0.0,
         link,
     }));
@@ -429,7 +667,7 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
     }
 
     loop {
-        let mut reply = None;
+        let mut reply = Vec::new();
         match socket.read() {
             Ok(Message::Text(text)) => {
                 reply = handle(&text, session);
@@ -439,10 +677,10 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             Err(tungstenite::Error::Io(err)) if err.kind() == std::io::ErrorKind::WouldBlock => {}
             Err(_) => return,
         }
-        if let Some(reply) = reply
-            && socket.send(Message::Text(reply.into())).is_err()
-        {
-            return;
+        for message in reply {
+            if socket.send(Message::Text(message.into())).is_err() {
+                return;
+            }
         }
 
         // Only the newest frame is of interest: an old one is of no use to a
@@ -456,7 +694,7 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             // Where the piece had got to, kept only while the piece is what is
             // playing — an audition's bar count says nothing about the score.
             if let Some(frame) = latest
-                && session.stage.is_none()
+                && session.stage == Stage::Piece
             {
                 session.resume_at = frame.bar;
             }
@@ -480,16 +718,37 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
     }
 }
 
+/// Something went wrong, said in a sentence.
+fn complaint(why: &str) -> String {
+    eprintln!("{why}");
+    serde_json::to_string(&Outgoing::Complaint {
+        why: why.to_string(),
+    })
+    .expect("a complaint serialises")
+}
+
 /// One message from the page. Returns something to send back, if anything.
 ///
 /// `save` is handled here rather than being a `Command`, because it is the
 /// server's job and the engine has no business knowing the word.
-fn handle(text: &str, session: &Mutex<Session>) -> Option<String> {
+/// A reply, or nothing if it could not be serialised — which would be a bug
+/// here, not something the page can do anything about.
+fn one(message: serde_json::Result<String>) -> Vec<String> {
+    match message {
+        Ok(message) => vec![message],
+        Err(err) => {
+            eprintln!("could not serialise a reply: {err}");
+            Vec::new()
+        }
+    }
+}
+
+fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
     let value: serde_json::Value = match serde_json::from_str(text) {
         Ok(value) => value,
         Err(err) => {
             eprintln!("could not read {text:?}: {err}");
-            return None;
+            return Vec::new();
         }
     };
 
@@ -506,48 +765,132 @@ fn handle(text: &str, session: &Mutex<Session>) -> Option<String> {
                     None
                 }
             };
-            serde_json::to_string(&Outgoing::Document {
+            one(serde_json::to_string(&Outgoing::Document {
                 dirty: session.dirty,
                 saved,
-            })
-            .ok()
+            }))
         }
         // Opening an editor is not a command to the engine, it is a change of
-        // what the engine *is*. A clip is built into a small piece of its own
-        // and swapped in; `null` puts the real one back.
+        // what the engine *is*. The material is built into a small piece of its
+        // own and swapped in; an empty audition puts the real one back.
         Some("audition") => {
-            let clip = value
-                .get("clip")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_string);
-            session.audition(clip.as_deref());
-            let bars = match &session.stage {
-                Some(name) => session.document_clip_bars(name),
-                None => session.document.length_bars,
+            let text = |key: &str| {
+                value
+                    .get(key)
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_string)
             };
-            serde_json::to_string(&Outgoing::Stage {
-                clip: session.stage.clone(),
-                bars,
-            })
-            .ok()
+            let wanted = if let Some(name) = text("clip") {
+                Stage::Clip(name)
+            } else if let Some(name) = text("patch") {
+                Stage::Patch(name)
+            } else if let Some(index) = value.get("lane").and_then(serde_json::Value::as_u64) {
+                Stage::Lane(index as usize)
+            } else {
+                Stage::Piece
+            };
+            match session.stage(&wanted) {
+                Ok(()) => vec![session.stage_message()],
+                Err(why) => vec![complaint(&why)],
+            }
+        }
+        Some("library") => one(serde_json::to_string(&Outgoing::Library {
+            index: &engine::library::index(),
+        })),
+        Some("save_patch") => {
+            let Some(index) = value.get("lane").and_then(serde_json::Value::as_u64) else {
+                return vec![complaint("save_patch needs a lane")];
+            };
+            let index = index as usize;
+            // No name given means "save it where it came from".
+            let name = value
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string)
+                .or_else(|| {
+                    session
+                        .document
+                        .lanes
+                        .get(index)
+                        .and_then(|lane| lane.patch.clone())
+                });
+            let Some(name) = name else {
+                return vec![complaint("this lane has no patch name yet — save it as new")];
+            };
+            match session.save_patch(index, &name) {
+                Ok(path) => {
+                    println!("saved patch {name} · {path}");
+                    vec![session.described_message(Some(path))]
+                }
+                Err(why) => vec![complaint(&why)],
+            }
+        }
+        Some("use_patch") => {
+            let lane = value.get("lane").and_then(serde_json::Value::as_u64);
+            let name = value.get("name").and_then(serde_json::Value::as_str);
+            match (lane, name) {
+                (Some(lane), Some(name)) => match session.use_patch(lane as usize, name) {
+                    Ok(()) => vec![session.described_message(None)],
+                    Err(why) => vec![complaint(&why)],
+                },
+                _ => vec![complaint("use_patch needs a lane and a name")],
+            }
+        }
+        Some("save_clip") => {
+            let Some(clip) = value.get("clip").and_then(serde_json::Value::as_str) else {
+                return vec![complaint("save_clip needs a clip")];
+            };
+            let clip = clip.to_string();
+            let name = value
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(&clip)
+                .to_string();
+            match session.save_clip(&clip, &name) {
+                Ok(path) => {
+                    println!("saved clip {name} · {path}");
+                    // Saving as new renamed the clip, which renamed the stage:
+                    // the page needs both the new document and the new name of
+                    // what it is listening to.
+                    vec![session.described_message(Some(path)), session.stage_message()]
+                }
+                Err(why) => vec![complaint(&why)],
+            }
+        }
+        Some("new_patch") => {
+            let instrument = value.get("instrument").and_then(serde_json::Value::as_str);
+            let name = value.get("name").and_then(serde_json::Value::as_str);
+            match (instrument, name) {
+                (Some(instrument), Some(name)) => {
+                    let Some(voicing) = engine::seq::Voicing::fresh(instrument) else {
+                        return vec![complaint(&format!("there is no {instrument} instrument"))];
+                    };
+                    match engine::library::save_patch(name, voicing) {
+                        Ok(path) => {
+                            println!("new patch {name} · {}", path.display());
+                            vec![session.saved_message(Some(path.display().to_string()))]
+                        }
+                        Err(err) => vec![complaint(&err.to_string())],
+                    }
+                }
+                _ => vec![complaint("new_patch needs an instrument and a name")],
+            }
         }
         _ => match serde_json::from_value::<Command>(value) {
             Ok(command) => {
                 let was = session.dirty;
                 session.apply(command);
-                (session.dirty != was)
-                    .then(|| {
-                        serde_json::to_string(&Outgoing::Document {
-                            dirty: true,
-                            saved: None,
-                        })
-                        .ok()
-                    })
-                    .flatten()
+                if session.dirty == was {
+                    return Vec::new();
+                }
+                one(serde_json::to_string(&Outgoing::Document {
+                    dirty: true,
+                    saved: None,
+                }))
             }
             Err(err) => {
                 eprintln!("could not read {text:?}: {err}");
-                None
+                Vec::new()
             }
         },
     }

@@ -82,6 +82,36 @@ telemetry comes back permuted into document order. A lane the audition is not
 playing simply reports as silent. Editing one still changes the document — you
 can turn a knob on something you cannot hear, and it is written down.
 
+## The library
+
+Patches and clips are **material**: worth more than the piece that first needed
+them, and worth editing on their own. So they are files with names of their own,
+and a piece refers to them.
+
+```text
+library/patches/punch.json   an instrument with its parameters
+library/clips/beat.json      lanes of steps, each on a patch
+pieces/intro.json            tracks placing clips, macros, a room
+```
+
+A lane names its patch **and** keeps the values inline. That looks redundant and
+is deliberate: a piece file stays whole and plays with no library present, which
+matters because a piece is the thing you would send someone. What keeps the two
+from drifting is a rule — **the library wins on load**, and the copy in the piece
+is rewritten every time the piece is saved. So the copy is a cache, and editing a
+patch changes every lane playing it.
+
+**Save, and save as new.** Saving writes back to the name the thing already has,
+and everything on that name moves with it. Saving as new writes a different name
+and repoints only what you were editing. That pair is the whole of how a library
+grows: fork a kick, push it around, and the beat that had the old one still has
+the old one. It is also what makes "a different kick on this beat" mean anything
+— two clips naming two patches.
+
+A name is checked rather than escaped. Patch names come from a text box and a
+text box can contain a slash; telling someone to pick another name is kinder than
+quietly saving `drums/punch` as `drums_punch` and then failing to find it.
+
 ## What exists today, and what does not
 
 Lanes, steps, clips, pieces and macros are real. A lane names the clip it belongs
@@ -94,17 +124,18 @@ yet and the shape is there when it does.
 Each clip editor plays its clip alone, looping, and leaving it puts the piece
 back where it was.
 
-**Patches are two thirds real.** Every parameter is declared once — field,
-default, range, unit and scale together — so an interface can draw a fader for any
-instrument without knowing which one it is looking at, and a turned fader is saved
-with the piece. What is still missing is the *naming*: a patch cannot yet be saved
-under its own name and shared between lanes, so changing it in one place changes
-it in one place. Until then they are settings that travel with a lane.
+**Patches are real.** Every parameter is declared once — field, default, range,
+unit and scale together — so an interface can draw a fader for any instrument
+without knowing which one it is looking at. A patch is saved under its own name,
+shared between lanes, swapped in from a list, forked with *save as*, and created
+from nothing by picking an instrument. The index tab lists everything saved and
+plays a patch on a plain test line so you can hear what a name means.
 
-**There is no library yet.** Patches and clips exist only inside the piece that
-uses them, so a patch cannot be reused across pieces and a clip cannot be
-auditioned before some piece contains it. The index of everything saved, and
-*save as new* to fork one, come with that.
+**Clips are saved but not yet reused.** A clip is written to the library and can
+be forked, but a piece still cannot pull one *in* from the library — only edit
+and save the ones it already has, which is why the index shows the others as "not
+in this piece". Adding a clip to a running piece means adding lanes to a running
+engine, and that waits on the same swap this release built.
 
 **Pieces are saved; edits are not yet.** A piece is a JSON file in `pieces/`,
 the engine plays what it is given, and the built-in Rust generators are now only

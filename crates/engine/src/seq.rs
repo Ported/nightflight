@@ -175,6 +175,23 @@ impl Voicing {
         }
     }
 
+    /// Every instrument there is, for an interface offering to make a new patch.
+    pub const INSTRUMENTS: &'static [&'static str] =
+        &["kick", "hat", "bass", "glass", "strings"];
+
+    /// A new patch of a named instrument, at its defaults.
+    #[must_use]
+    pub fn fresh(instrument: &str) -> Option<Self> {
+        Some(match instrument {
+            "kick" => Self::Kick(kick::Params::default()),
+            "hat" => Self::Hat(hat::Params::default()),
+            "bass" => Self::Bass(bass::Params::default()),
+            "glass" => Self::Glass(glass::Params::default()),
+            "strings" => Self::Strings(strings::Params::default()),
+            _ => return None,
+        })
+    }
+
     /// Which instrument this is, for an interface to label and for a patch to
     /// be filed under.
     #[must_use]
@@ -208,6 +225,16 @@ pub struct Lane {
     /// and drawn as one row on the timeline: "kick" is a lane of "beat".
     pub clip: String,
     pub voicing: Voicing,
+    /// The name of the patch this lane plays, if it plays a saved one.
+    ///
+    /// The values are still here in `voicing` as well, so a piece file is whole
+    /// on its own and plays with no library present. The library wins when both
+    /// exist: on load a named patch is read from `patches/` and overwrites what
+    /// the piece happens to remember, which is what makes changing a patch
+    /// change every lane using it rather than one. Think of the copy in the
+    /// piece as a cache, written every time the piece is saved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub patch: Option<String>,
     pub pattern: Pattern,
     /// Linear level, relative to the other lanes.
     pub gain: f32,
@@ -385,6 +412,7 @@ impl Set {
                     name: lane.name.clone(),
                     clip: lane.clip.clone(),
                     instrument: lane.voicing.instrument(),
+                    patch: lane.patch.clone(),
                     gain: lane.gain,
                     send: lane.send,
                     muted: lane.muted,
