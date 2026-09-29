@@ -15,6 +15,10 @@ use crate::automation::{Flight, Macro, Play, Transition};
 use crate::mix::Gate;
 use crate::telemetry::{Description, LaneDescription, MacroDescription, SpanDescription};
 
+/// Sixteenths. Every pattern in this tool is read on a sixteenth grid, so the
+/// number appears here once rather than as a 16 in four files.
+pub const STEPS_PER_BAR: usize = 16;
+
 /// One step of a pattern. Velocity 0 is a rest.
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 pub struct Step {

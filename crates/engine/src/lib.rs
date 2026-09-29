@@ -8,6 +8,7 @@
 //! It knows nothing about audio devices, windows or files, which is also what
 //! makes it testable on a machine with no sound card.
 
+pub mod audition;
 pub mod automation;
 pub mod clock;
 pub mod document;
@@ -414,7 +415,7 @@ impl Engine {
         // size. Stopped, they hold: a source's place is musical time, not
         // wall-clock time.
         if offset + n == CONTROL_BLOCK && self.playing {
-            let bars = CONTROL_BLOCK as f64 / (self.clock.samples_per_step() * 16.0);
+            let bars = CONTROL_BLOCK as f64 / (self.clock.samples_per_step() * seq::STEPS_PER_BAR as f64);
             for (laps, lane) in self.laps.iter_mut().zip(&self.lanes) {
                 *laps += lane.home.laps_per_bar() * bars;
             }
@@ -747,6 +748,17 @@ impl Engine {
     #[must_use]
     pub fn playing(&self) -> bool {
         self.playing
+    }
+
+    /// Put the transport at `bar` before the engine is playing.
+    ///
+    /// Not a scrub: there is nothing to fade, because nothing is sounding yet.
+    /// Used when an engine is built to replace another one — whoever does the
+    /// swap is responsible for the fade across it.
+    pub fn start_at(&mut self, bar: f32) {
+        self.jump_to(f64::from(bar.max(0.0)));
+        self.seek_gain = 1.0;
+        self.seek_step = 0.0;
     }
 
     /// Loop between two bars, or stop looping.

@@ -11,6 +11,11 @@
 
 const $ = (id) => document.getElementById(id);
 
+/** What the engine is playing: a clip's name while an editor is open, else null. */
+let stage = null;
+/** Bars the staged material runs for — the piece's length, or one clip's. */
+let stageBars = 0;
+
 /** The last frame that arrived, and the set description from the hello. */
 let telemetry = null;
 let description = null;
@@ -31,7 +36,8 @@ function connect() {
       description = message;
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
-      $("scrub").max = message.length_bars;
+      stageBars = message.length_bars;
+      $("scrub").max = stageBars;
       buildLanes(message.lanes);
       buildMacros(message.macros);
       buildTabs();
@@ -39,6 +45,13 @@ function connect() {
     } else if (message.t === "document") {
       $("save").classList.toggle("dirty", message.dirty);
       if (message.saved) $("set").title = `saved to ${message.saved}`;
+    } else if (message.t === "stage") {
+      stage = message.clip;
+      stageBars = message.bars;
+      $("scrub").max = stageBars;
+      $("stage").textContent = stage
+        ? `playing this clip alone · ${stageBars} ${stageBars === 1 ? "bar" : "bars"}`
+        : "";
     } else if (message.t === "telemetry") {
       telemetry = message.Telemetry ?? message;
     }
@@ -168,11 +181,12 @@ function buildTabs() {
 }
 
 function show(name) {
-  // Leaving an editor stops auditioning: a loop left running would be a
-  // mysterious four bars for ever.
-  if (tab !== "conductor" && name === "conductor") {
-    send({ t: "loop", from: 0, to: 0, on: false });
-  }
+  // An editor is not a view onto the piece, it is the only thing playing. The
+  // server builds a small piece from this clip alone and hands it to the engine
+  // in place of the real one; asking for the conductor hands the piece back, at
+  // the bar it had reached.
+  const wanted = name === "conductor" ? null : name;
+  if (wanted !== stage) send({ t: "audition", clip: wanted });
   tab = name;
   $("view-conductor").classList.toggle("hidden", name !== "conductor");
   $("view-clip").classList.toggle("hidden", name === "conductor");
@@ -313,22 +327,6 @@ function paint(cell, velocity) {
 // ── Transport ───────────────────────────────────────────────────────────────
 
 $("save").onclick = () => send({ t: "save" });
-
-/**
- * Audition the open clip: loop over one pass of it, from where it actually
- * plays. A clip's steps start at zero but the clip itself may not begin until
- * bar 26, so looping bars 0 to 1 would audition silence.
- */
-$("audition").onclick = () => {
-  const lanes = clips().get(tab) ?? [];
-  if (!lanes.length) return;
-  const steps = Math.max(...lanes.map((lane) => lane.steps.length));
-  const start = Math.min(...lanes.map((lane) => lane.spans[0]?.start ?? 0));
-  const to = start + steps / 16;
-  send({ t: "loop", from: start, to, on: true });
-  send({ t: "seek", bar: start });
-  send({ t: "playing", value: true });
-};
 
 $("play").onclick = () => send({ t: "playing", value: !(telemetry?.playing ?? true) });
 $("start").onclick = () => send({ t: "seek", bar: 0 });
@@ -601,7 +599,7 @@ function frame() {
     const seconds = (t.bar * 4 * 60) / Math.max(t.bpm, 1);
     const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
     $("position").textContent =
-      `bar ${t.bar.toFixed(2).padStart(7)} / ${String(description?.length_bars ?? 0).padEnd(3)}` +
+      `bar ${t.bar.toFixed(2).padStart(7)} / ${String(stageBars).padEnd(3)}` +
       ` ${minutes}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
 
     const load = Math.min(t.load, 1);

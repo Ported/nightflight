@@ -27,7 +27,8 @@ use std::thread;
 use std::time::Duration;
 
 use engine::seq::{Set, Step};
-use engine::telemetry::{Command, Description, Telemetry};
+use engine::telemetry::{self, Command, Description, LaneState, Telemetry};
+use engine::Engine;
 use host::Link;
 use serde::Serialize;
 use tungstenite::{Message, accept};
@@ -51,6 +52,21 @@ struct Session {
     name: String,
     /// Whether the document has changed since it was last written.
     dirty: bool,
+    /// What the engine is playing: the whole piece, or one clip on its own while
+    /// its editor is open.
+    stage: Option<String>,
+    /// For each of the engine's lanes, which of the document's it came from.
+    /// While the piece is playing this is the identity; while a clip is being
+    /// auditioned it is that clip's lanes.
+    ///
+    /// The point of holding it here is that *the wire stays in document
+    /// coordinates*. The page says "lane 7" and means the seventh lane of the
+    /// piece whether or not it is the seventh thing sounding; every translation
+    /// happens on this side, once, in the two places below.
+    on_stage: Vec<usize>,
+    /// The bar the piece had reached when an audition took over, so leaving the
+    /// editor puts you back where you were rather than at the beginning.
+    resume_at: f32,
 }
 
 impl Session {
@@ -74,7 +90,111 @@ impl Session {
             lane.pattern.set(step as usize, Step::new(velocity, offset));
             self.dirty = true;
         }
-        self.link.send(command);
+        // Performance and authoring alike reach the engine by *engine* index.
+        // A lane that is not on stage simply does not: the document keeps the
+        // edit, and the engine is not told about a lane it does not have.
+        if let Some(command) = self.for_engine(command) {
+            self.link.send(command);
+        }
+    }
+
+    /// The same command in engine coordinates, or nothing if it refers to
+    /// something the engine is not currently playing.
+    fn for_engine(&self, command: Command) -> Option<Command> {
+        let at = |document: usize| self.on_stage.iter().position(|&d| d == document);
+        Some(match command {
+            // Macros belong to a piece, and an audition has none.
+            Command::Macro { .. } if self.stage.is_some() => return None,
+            Command::Mute { index, muted } => Command::Mute {
+                index: u8::try_from(at(index as usize)?).ok()?,
+                muted,
+            },
+            Command::Level { index, gain } => Command::Level {
+                index: u8::try_from(at(index as usize)?).ok()?,
+                gain,
+            },
+            Command::SetParam { lane, param, value } => Command::SetParam {
+                lane: u8::try_from(at(lane as usize)?).ok()?,
+                param,
+                value,
+            },
+            Command::SetStep {
+                lane,
+                step,
+                velocity,
+                offset,
+            } => Command::SetStep {
+                lane: u8::try_from(at(lane as usize)?).ok()?,
+                step,
+                velocity,
+                offset,
+            },
+            other => other,
+        })
+    }
+
+    /// Play one clip by itself, or `None` to go back to the piece.
+    ///
+    /// The engine is built here, off the audio thread, and swapped in over a
+    /// ten-millisecond fade. Nothing is torn down in the callback: the engine it
+    /// replaces comes back to be dropped on this side.
+    fn audition(&mut self, clip: Option<&str>) {
+        let (set, on_stage, bar) = match clip {
+            Some(name) => {
+                let (set, on_stage) = engine::audition::clip(&self.document, name);
+                if set.lanes.is_empty() {
+                    eprintln!("nothing to audition: no lane belongs to clip {name:?}");
+                    return;
+                }
+                (set, on_stage, 0.0)
+            }
+            None => (
+                self.document.clone(),
+                (0..self.document.lanes.len()).collect(),
+                self.resume_at,
+            ),
+        };
+
+        let mut next = Box::new(Engine::new(dsp::SR, set.bpm, set));
+        next.start_at(bar);
+        if let Some(name) = clip {
+            // The loop is what makes it an audition rather than a single pass.
+            next.apply(Command::Loop {
+                from: 0.0,
+                to: self.document_clip_bars(name),
+                on: true,
+            });
+        }
+        if self.link.load(next) {
+            self.stage = clip.map(str::to_string);
+            self.on_stage = on_stage;
+        }
+    }
+
+    /// How long a clip runs, in bars.
+    fn document_clip_bars(&self, clip: &str) -> f32 {
+        let (set, _) = engine::audition::clip(&self.document, clip);
+        set.length_bars
+    }
+
+    /// The engine's telemetry, put back into document order.
+    ///
+    /// A lane the audition is not playing reports as silent rather than as
+    /// missing, so the page's meters stay where they are instead of shuffling
+    /// along by one every time an editor opens.
+    fn in_document_order(&self, frame: &Telemetry) -> Telemetry {
+        let mut out = *frame;
+        if self.stage.is_none() {
+            return out;
+        }
+        out.lanes = [LaneState::default(); telemetry::MAX_PARTS];
+        for (engine_index, &document_index) in self.on_stage.iter().enumerate() {
+            if let Some(slot) = out.lanes.get_mut(document_index) {
+                *slot = frame.lanes[engine_index];
+            }
+        }
+        out.lane_count = u8::try_from(self.document.lanes.len()).unwrap_or(u8::MAX);
+        out
     }
 
     fn save(&mut self) -> std::io::Result<PathBuf> {
@@ -114,6 +234,12 @@ enum Outgoing<'a> {
     },
     /// Sent whenever the document changes or is written down.
     Document { dirty: bool, saved: Option<String> },
+    /// What the engine is playing now: a clip on its own, or the whole piece.
+    Stage {
+        clip: Option<String>,
+        /// Bars it loops over, so the page can draw the right length.
+        bars: f32,
+    },
     /// About sixty times a second. By reference: this enum exists for one line
     /// of serialisation and is never stored, and a telemetry frame is 448 bytes
     /// against the hello's handful of pointers.
@@ -180,9 +306,12 @@ fn main() {
     println!("open http://{ADDRESS}");
 
     let session = Arc::new(Mutex::new(Session {
+        on_stage: (0..document.lanes.len()).collect(),
         document,
         name: set_name,
         dirty: false,
+        stage: None,
+        resume_at: 0.0,
         link,
     }));
     for stream in listener.incoming() {
@@ -324,7 +453,17 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             while let Ok(frame) = session.link.telemetry.pop() {
                 latest = Some(frame);
             }
-            latest
+            // Where the piece had got to, kept only while the piece is what is
+            // playing — an audition's bar count says nothing about the score.
+            if let Some(frame) = latest
+                && session.stage.is_none()
+            {
+                session.resume_at = frame.bar;
+            }
+            // Engines the audio thread has finished with are freed here, where a
+            // deadline does not apply.
+            session.link.collect();
+            latest.map(|frame| session.in_document_order(&frame))
         };
         match latest {
             Some(frame) => match serde_json::to_string(&Outgoing::Telemetry(&frame)) {
@@ -370,6 +509,25 @@ fn handle(text: &str, session: &Mutex<Session>) -> Option<String> {
             serde_json::to_string(&Outgoing::Document {
                 dirty: session.dirty,
                 saved,
+            })
+            .ok()
+        }
+        // Opening an editor is not a command to the engine, it is a change of
+        // what the engine *is*. A clip is built into a small piece of its own
+        // and swapped in; `null` puts the real one back.
+        Some("audition") => {
+            let clip = value
+                .get("clip")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string);
+            session.audition(clip.as_deref());
+            let bars = match &session.stage {
+                Some(name) => session.document_clip_bars(name),
+                None => session.document.length_bars,
+            };
+            serde_json::to_string(&Outgoing::Stage {
+                clip: session.stage.clone(),
+                bars,
             })
             .ok()
         }

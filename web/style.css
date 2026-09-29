@@ -187,3 +187,11 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
   border-color: transparent;
 }
 .lane .expand.on { color: var(--accent); border-color: var(--line); }
+
+/* What the engine is playing, while an editor has taken it over. The same amber
+   as an unsaved change and a moved fader: all three say "not the piece as
+   written". */
+.stage {
+  color: var(--warn);
+  font-size: 0.85rem;
+}

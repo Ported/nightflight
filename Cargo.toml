@@ -16,7 +16,13 @@ eframe = { version = "0.36", default-features = false, features = ["default_font
 egui = "0.36"
 rtrb = "0.4"
 hound = "3.5"
-assert_no_alloc = "1.1"
+# `default-features = false` drops its `disable_release`, which compiles
+# `AllocDisabler` out of release builds — and rustdoc builds doctests with debug
+# assertions on against a release rlib, so the type it wants is not there and
+# `cargo test --release` fails to compile before running a thing. Keeping the
+# type in both profiles costs nothing: `realtime` and the binaries both gate on
+# `debug_assertions` themselves, so nothing installs it in a release build.
+assert_no_alloc = { version = "1.1", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 # `handshake` is what provides `accept`; the TLS features are not wanted,

@@ -30,6 +30,74 @@ use engine::telemetry::{Command, Telemetry};
 const WANTED_BUFFER: u32 = 128;
 /// Telemetry frames a second. Faster than a screen refresh is wasted work.
 const TELEMETRY_HZ: f32 = 60.0;
+/// Samples the output takes to close and open around an engine being replaced.
+/// Ten milliseconds: long enough not to click, short enough that switching to an
+/// editor feels immediate.
+const SWAP_FADE: f32 = 480.0;
+
+/// The fade either side of an engine swap.
+///
+/// A piece being exchanged for a clip's audition is a discontinuity in every
+/// sample of the output — different notes, different reverb tails, different
+/// everything — so it has to happen in silence. This closes the output, reports
+/// when it is safe to exchange, and opens it again.
+///
+/// It is a type rather than four variables in the callback because it is the one
+/// part of the swap that fails quietly: get it wrong and you do not crash, you
+/// get a click, or silence for ever. As a type it can be tested without an audio
+/// device.
+#[derive(Debug)]
+struct Fade {
+    /// 1 is open, 0 is closed.
+    gain: f32,
+    /// Per sample; 0 when it has arrived.
+    step: f32,
+}
+
+impl Fade {
+    const fn open() -> Self {
+        Self {
+            gain: 1.0,
+            step: 0.0,
+        }
+    }
+
+    /// Closed and holding: the moment to exchange engines.
+    const fn silent(&self) -> bool {
+        self.gain <= 0.0
+    }
+
+    /// Fully open and not moving, so the ramp can be skipped entirely.
+    const fn resting(&self) -> bool {
+        self.step == 0.0 && self.gain >= 1.0
+    }
+
+    fn start_closing(&mut self) {
+        self.step = -1.0 / SWAP_FADE;
+    }
+
+    fn start_opening(&mut self) {
+        self.step = 1.0 / SWAP_FADE;
+    }
+
+    /// Ramp across one buffer of interleaved stereo.
+    fn apply(&mut self, out: &mut [f32]) {
+        for frame in out.chunks_mut(2) {
+            if self.step != 0.0 {
+                self.gain = (self.gain + self.step).clamp(0.0, 1.0);
+                // Stop at either end. Closing stops *at* zero and waits there
+                // to be reopened; nothing restarts it on its own, which is what
+                // keeps the exchange from happening halfway through a buffer.
+                if (self.step > 0.0 && self.gain >= 1.0) || (self.step < 0.0 && self.gain <= 0.0) {
+                    self.step = 0.0;
+                }
+            }
+            for sample in frame {
+                *sample *= self.gain;
+            }
+        }
+    }
+}
 
 /// Whatever the audio thread is playing, as the caller sees it: `assert_no_alloc`
 /// has to be installed by the binary, since a program may only have one
@@ -63,6 +131,13 @@ pub fn realtime<T>(f: impl FnOnce() -> T) -> T {
 pub struct Link {
     pub commands: rtrb::Producer<Command>,
     pub telemetry: rtrb::Consumer<Telemetry>,
+    /// Engines built off the audio thread, waiting to take over.
+    swap: rtrb::Producer<Box<Engine>>,
+    /// The ones they replaced, coming back to be dropped somewhere a deadline
+    /// does not apply. Freeing an engine means freeing a reverb and several
+    /// delay lines, which is exactly the kind of work the audio thread must
+    /// never be asked to do.
+    retired: rtrb::Consumer<Box<Engine>>,
     /// Read once, before the engine was handed to the audio thread. Commands
     /// carry indices into these.
     pub lane_names: Vec<String>,
@@ -78,6 +153,25 @@ pub struct Link {
 }
 
 impl Link {
+    /// Hand the audio thread a different engine.
+    ///
+    /// Built here, where allocating is allowed, and swapped there by moving one
+    /// pointer. The output fades down before the swap and back up after, so a
+    /// piece can be exchanged for a clip's audition without a click.
+    ///
+    /// Returns false if a swap is already waiting, in which case this one is
+    /// dropped: the newest intent wins, and an editor clicked through quickly
+    /// should not queue up five pieces to play in turn.
+    pub fn load(&mut self, engine: Box<Engine>) -> bool {
+        self.collect();
+        self.swap.push(engine).is_ok()
+    }
+
+    /// Drop any engines the audio thread has finished with.
+    pub fn collect(&mut self) {
+        while self.retired.pop().is_ok() {}
+    }
+
     pub fn send(&mut self, command: Command) {
         // If the queue is full the audio thread is not keeping up with us, which
         // cannot really happen at hand speed. Dropping is the right failure:
@@ -137,6 +231,10 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
 
     let (command_tx, mut command_rx) = rtrb::RingBuffer::new(256);
     let (mut telemetry_tx, telemetry_rx) = rtrb::RingBuffer::new(8);
+    // One at a time in each direction: there is never a reason to have two
+    // pieces queued, and a second slot would only let them pile up.
+    let (swap_tx, mut swap_rx) = rtrb::RingBuffer::<Box<Engine>>::new(1);
+    let (mut retired_tx, retired_rx) = rtrb::RingBuffer::<Box<Engine>>::new(2);
 
     let xruns = Arc::new(AtomicU32::new(0));
     let reported = Arc::clone(&xruns);
@@ -144,16 +242,39 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     let report_every = (dsp::SR / buffer_frames as f32 / TELEMETRY_HZ).max(1.0) as u32;
     let mut blocks = 0u32;
     let mut load = 0.0f32;
+    let mut fade = Fade::open();
+    let mut waiting: Option<Box<Engine>> = None;
 
     let stream = device.build_output_stream(
         config,
         move |out: &mut [f32], _| {
             let started = Instant::now();
             realtime(|| {
+                // Closed and something waiting: take over. Moving two boxes,
+                // which is two pointers, and the old one goes back to be freed
+                // where freeing is allowed.
+                if fade.silent()
+                    && let Some(next) = waiting.take()
+                {
+                    let previous = std::mem::replace(&mut engine, next);
+                    let _ = retired_tx.push(previous);
+                    fade.start_opening();
+                }
+                if waiting.is_none()
+                    && let Ok(next) = swap_rx.pop()
+                {
+                    waiting = Some(next);
+                    fade.start_closing();
+                }
+
                 while let Ok(command) = command_rx.pop() {
                     engine.apply(command);
                 }
                 engine.process(out);
+
+                if !fade.resting() {
+                    fade.apply(out);
+                }
             });
 
             // How much of the deadline that took. Kept as the worst of the
@@ -189,6 +310,8 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     Ok(Link {
         commands: command_tx,
         telemetry: telemetry_rx,
+        swap: swap_tx,
+        retired: retired_rx,
         lane_names,
         macro_names,
         description,
@@ -196,4 +319,102 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
         buffer_frames,
         _stream: stream,
     })
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::{Fade, SWAP_FADE};
+
+    /// One buffer of ones, ramped, returned.
+    fn run(fade: &mut Fade, frames: usize) -> Vec<f32> {
+        let mut out = vec![1.0f32; frames * 2];
+        fade.apply(&mut out);
+        out
+    }
+
+    #[test]
+    fn closing_reaches_silence_and_waits_there() {
+        let mut fade = Fade::open();
+        assert!(fade.resting());
+        fade.start_closing();
+
+        // Buffer by buffer, as the callback would.
+        let mut all = Vec::new();
+        for _ in 0..8 {
+            all.extend(run(&mut fade, 128));
+        }
+        assert!(fade.silent(), "480 samples fit in 1024");
+
+        // Monotone down, and no step bigger than one sample's worth of ramp —
+        // which is what "no click" means.
+        let mut previous = 1.0;
+        for &sample in &all {
+            assert!(sample <= previous + 1e-6, "went back up: {sample} > {previous}");
+            assert!((previous - sample) <= 1.0 / SWAP_FADE + 1e-6, "a jump of {}", previous - sample);
+            previous = sample;
+        }
+        assert_eq!(all[all.len() - 1], 0.0);
+
+        // It holds at zero: nothing but an exchange reopens it, so the swap can
+        // never land halfway through a buffer.
+        for _ in 0..4 {
+            assert!(run(&mut fade, 128).iter().all(|&s| s == 0.0));
+            assert!(fade.silent());
+        }
+    }
+
+    #[test]
+    fn opening_returns_to_full() {
+        let mut fade = Fade::open();
+        fade.start_closing();
+        while !fade.silent() {
+            run(&mut fade, 128);
+        }
+        fade.start_opening();
+
+        let mut all = Vec::new();
+        for _ in 0..8 {
+            all.extend(run(&mut fade, 128));
+        }
+        assert!(fade.resting(), "open again, and not moving");
+
+        let mut previous = 0.0;
+        for &sample in &all {
+            assert!(sample >= previous - 1e-6, "went back down");
+            assert!((sample - previous) <= 1.0 / SWAP_FADE + 1e-6);
+            previous = sample;
+        }
+        assert_eq!(all[all.len() - 1], 1.0);
+    }
+
+    #[test]
+    fn the_ramp_is_the_same_whatever_the_buffer_size() {
+        // The audio device picks the buffer size; the fade must not depend on it.
+        let reference = {
+            let mut fade = Fade::open();
+            fade.start_closing();
+            run(&mut fade, 2048)
+        };
+        for frames in [1, 7, 64, 128, 480, 1024] {
+            let mut fade = Fade::open();
+            fade.start_closing();
+            let mut all = Vec::new();
+            while all.len() < reference.len() {
+                all.extend(run(&mut fade, frames));
+            }
+            assert_eq!(
+                all[..reference.len()],
+                reference[..],
+                "buffer of {frames} frames ramps differently"
+            );
+        }
+    }
+
+    #[test]
+    fn a_resting_fade_changes_nothing() {
+        let mut fade = Fade::open();
+        assert!(fade.resting());
+        assert!(run(&mut fade, 64).iter().all(|&s| s == 1.0));
+    }
 }
