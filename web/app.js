@@ -38,13 +38,16 @@ function connect() {
       description = message;
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
-      stageBars = message.length_bars;
-      $("scrub").max = stageBars;
       buildLanes(message.lanes);
       buildMacros(message.macros);
-      buildTabs();
       buildInstruments(message.instruments);
       send({ t: "library" });
+      // The engine outlives the page, so it may already be looping a clip some
+      // earlier page opened. Adopt what it is doing rather than assume: `show`
+      // sends an audition only when the stage would change, so following it here
+      // costs nothing and interrupts nothing.
+      adoptStage(message.stage);
+      show(stage.kind === "clip" && clips().has(stage.name) ? stage.name : tab);
       $("save").classList.toggle("dirty", message.dirty);
     } else if (message.t === "document") {
       $("save").classList.toggle("dirty", message.dirty);
@@ -55,15 +58,7 @@ function connect() {
         send({ t: "library" });
       }
     } else if (message.t === "stage") {
-      stage = { kind: message.kind, name: message.name };
-      stageBars = message.bars;
-      $("scrub").max = stageBars;
-      const bars = `${stageBars} ${stageBars === 1 ? "bar" : "bars"}`;
-      $("stage").textContent =
-        { piece: "", clip: `playing this clip alone · ${bars}`,
-          lane: `playing ${message.name} alone · ${bars}`,
-          patch: `auditioning the ${message.name} patch · ${bars}` }[message.kind] ?? "";
-      paintStage();
+      adoptStage(message);
     } else if (message.t === "described") {
       // The document changed shape under the page: a patch swapped in, a clip
       // renamed. Take the new description and redraw what is open, without
@@ -354,6 +349,22 @@ function show(name) {
   buildTabs();
 }
 
+/** Take the server's word for what is playing, and say so. */
+function adoptStage({ kind, name, bars }) {
+  stage = { kind, name };
+  stageBars = bars;
+  $("scrub").max = bars;
+  const length = `${bars} ${bars === 1 ? "bar" : "bars"}`;
+  $("stage").textContent =
+    {
+      piece: "",
+      clip: `playing this clip alone · ${length}`,
+      lane: `playing ${name} alone · ${length}`,
+      patch: `auditioning the ${name} patch · ${length}`,
+    }[kind] ?? "";
+  paintStage();
+}
+
 /** Rebuild whatever view is open, leaving the transport and the stage alone. */
 function redraw() {
   // Saving a clip as new renames the piece's lanes onto the new clip, so the
@@ -382,8 +393,22 @@ const viewFor = (name) => (isClip(name) ? "clip" : name);
 function buildClip(name) {
   const lanes = clips().get(name) ?? [];
   $("clipName").textContent = name;
-  const steps = lanes[0]?.steps.length ?? 0;
-  $("clipInfo").textContent = `${lanes.length} lanes · ${steps} steps`;
+  const steps = Math.max(0, ...lanes.map((lane) => lane.steps.length));
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  $("clipInfo").textContent =
+    `${plural(lanes.length, "lane", "lanes")} · ${plural(steps, "step", "steps")}`;
+  $("barsNow").textContent = plural(clipBars(lanes), "bar", "bars");
+
+  // Only patches, and only ones that exist: a lane has to play something.
+  const add = $("addPatch");
+  add.replaceChildren();
+  for (const patch of library.patches) {
+    const option = document.createElement("option");
+    option.value = patch.name;
+    option.textContent = `${patch.name} · ${patch.instrument}`;
+    add.append(option);
+  }
+  $("addLane").disabled = !library.patches.length;
 
   const host = $("clipLanes");
   host.replaceChildren();
@@ -424,7 +449,15 @@ function buildClip(name) {
       cells.append(cell);
     });
 
-    row.append(label, patch, toggle, cells);
+    // Removing a lane is a real deletion of its steps, so it is a small
+    // target at the end of the row rather than a button beside the name.
+    const drop = document.createElement("button");
+    drop.className = "drop";
+    drop.textContent = "×";
+    drop.title = `take ${lane.name} out of this clip`;
+    drop.onclick = () => send({ t: "remove_lane", lane: lane.index });
+
+    row.append(label, patch, toggle, cells, drop);
     host.append(row);
 
     const panel = buildPatch(lane);
@@ -619,6 +652,12 @@ function suggest(lane) {
   return base;
 }
 
+/** Bars a clip's longest lane covers, rounded up to a whole one. */
+function clipBars(lanes) {
+  const steps = Math.max(0, ...lanes.map((lane) => lane.steps.length));
+  return Math.max(1, Math.ceil(steps / 16));
+}
+
 function paint(cell, velocity) {
   cell.dataset.velocity = velocity;
   cell.classList.toggle("on", velocity > 0);
@@ -644,6 +683,20 @@ $("clipSaveAs").after(
     (chosen) => send({ t: "save_clip", clip: tab, name: chosen }),
   ),
 );
+
+$("addLane").onclick = () =>
+  send({ t: "add_lane", clip: tab, patch: $("addPatch").value });
+
+// Growing a loop fills the new bar with rests, so you can hear what you put in
+// it; shrinking drops the tail, and those steps are gone.
+const setBars = (by) => {
+  const now = clipBars(clips().get(tab) ?? []);
+  const wanted = now + by;
+  if (wanted < 1 || wanted > 64) return;
+  send({ t: "set_bars", clip: tab, bars: wanted });
+};
+$("barsMore").onclick = () => setBars(1);
+$("barsFewer").onclick = () => setBars(-1);
 
 $("newPatch").onclick = () => {
   const name = $("newPatchName").value.trim();

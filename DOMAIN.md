@@ -33,6 +33,22 @@ that is not the notes.
 is a patch of the kick instrument. Changing a patch changes every lane using it;
 that is what makes it a patch rather than a copy.
 
+### Where variation lives
+
+Three places, and it is worth knowing which is which.
+
+**Within a step**: velocity and a semitone offset. A kick a touch flatter on the
+off-beats is an offset, not a second sound.
+
+**Within a lane**: length. A line of steps that does not divide the bar drifts
+against everything else, which is most of what makes hypnotic music hypnotic.
+
+**Across lanes**: a different patch. Two kicks alternating in a beat is *two
+lanes*, because a lane is one patch playing one line of steps. That is also why
+a step does not carry a patch reference of its own: it would buy the same thing
+while hiding the variation from the grid, and the second kick would have no
+level, no placement, no send and no mute of its own.
+
 **steps** — the notes. A velocity and a semitone offset per step, velocity 0
 being a rest. Sixteen steps is a bar of sixteenths, but a lane's steps can be any
 length, and one that does not divide the bar drifts against it — which is most

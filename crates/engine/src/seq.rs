@@ -90,6 +90,16 @@ impl Pattern {
         }
     }
 
+    /// Grow or trim the loop, in steps.
+    ///
+    /// Growing fills with rests rather than repeating what is there: a bar you
+    /// just added should be empty, so you can hear what you put in it. Trimming
+    /// drops the tail, and the steps that went are gone — which is why this is a
+    /// structural edit the document records rather than a view setting.
+    pub fn resize(&mut self, steps: usize) {
+        self.steps.resize(steps, Step::REST);
+    }
+
     /// Every step, for an interface that wants to draw the loop.
     #[must_use]
     pub fn all(&self) -> &[Step] {

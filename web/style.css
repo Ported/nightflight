@@ -241,3 +241,16 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 /* A class selector beats the user agent's `[hidden]`, and this page hides things
    by setting `hidden`. Stated once, here, rather than remembered at each rule. */
 [hidden] { display: none !important; }
+
+/* How long the clip is, in the header where its size belongs. */
+.bars { display: inline-flex; align-items: center; gap: 4px; }
+.bars button { font-size: 12px; padding: 1px 8px; min-width: 0; }
+#barsNow { width: 7ch; text-align: center; color: var(--weak); }
+
+/* Taking a lane out: at the end of the row, away from everything else, because
+   it deletes that lane's steps. */
+.lane .drop {
+  border: 0; background: none; color: var(--weak); padding: 0 6px;
+  font-size: 14px; line-height: 1; cursor: pointer;
+}
+.lane .drop:hover { color: var(--bad); }

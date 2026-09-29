@@ -107,6 +107,11 @@ struct Session {
     on_stage: Vec<usize>,
     /// Bars the staged material runs for.
     stage_bars: f32,
+    /// The bar whatever is staged has reached — the piece or an audition alike.
+    /// Kept apart from `resume_at` because they answer different questions: this
+    /// one is for rebuilding what is playing without it jumping, and that one is
+    /// for going back to the piece after an editor borrowed the engine.
+    stage_bar: f32,
     /// The bar the piece had reached when an audition took over, so leaving the
     /// editor puts you back where you were rather than at the beginning.
     resume_at: f32,
@@ -182,6 +187,28 @@ impl Session {
     /// over a ten-millisecond fade. Nothing is torn down in the callback: the
     /// engine it replaces comes back to be dropped on this side.
     fn stage(&mut self, wanted: &Stage) -> Result<(), String> {
+        self.stage_at(wanted, None)
+    }
+
+    /// Rebuild what is playing, from a document that changed shape.
+    ///
+    /// Adding a lane or changing a loop's length cannot be a message to the
+    /// engine: it has no slot to put a lane in and no room to grow a pattern
+    /// into, and making one on the audio thread would mean allocating there. So
+    /// the whole engine is built again here and swapped in — the same path an
+    /// editor opening takes, which is why that path was worth building.
+    ///
+    /// It keeps its place: the transport picks up at the bar it had reached, so
+    /// adding a hat while a loop runs does not restart the loop.
+    fn restage(&mut self) {
+        let wanted = self.stage.clone();
+        let at = self.stage_bar;
+        if let Err(why) = self.stage_at(&wanted, Some(at)) {
+            eprintln!("could not rebuild the engine: {why}");
+        }
+    }
+
+    fn stage_at(&mut self, wanted: &Stage, at: Option<f32>) -> Result<(), String> {
         let (set, on_stage, bar) = match wanted {
             Stage::Piece => (
                 self.document.clone(),
@@ -216,6 +243,9 @@ impl Session {
         };
 
         let loop_to = set.length_bars;
+        // A rebuild resumes; an editor opening starts at the top. Wrapped to the
+        // loop's length so a clip that just shrank does not resume past its end.
+        let bar = at.map_or(bar, |at| if loop_to > 0.0 { at % loop_to } else { 0.0 });
         let mut next = Box::new(Engine::new(dsp::SR, set.bpm, set));
         next.start_at(bar);
         if *wanted != Stage::Piece {
@@ -349,6 +379,149 @@ impl Session {
         Ok(path.display().to_string())
     }
 
+    /// Add a lane to a clip, playing a saved patch.
+    ///
+    /// This is how one drum gets a variation: a beat with two kicks is two
+    /// lanes on two patches, alternating in the grid. A lane is one patch
+    /// playing one line of steps, so a second sound is a second lane — and it
+    /// arrives with its own level, placement, send and mute, which a per-step
+    /// patch reference could never have.
+    ///
+    /// The new lane copies its shape from a sibling where it can: a second kick
+    /// in the beat should sit where the first kick sits and last as long,
+    /// because what you are changing is the sound, not the arrangement.
+    fn add_lane(&mut self, clip: &str, patch: &str, name: Option<&str>) -> Result<(), String> {
+        let patch = engine::library::load_patch(patch)
+            .map_err(|err| format!("could not read patch {patch:?}: {err}"))?;
+
+        let siblings: Vec<usize> = self
+            .document
+            .lanes
+            .iter()
+            .enumerate()
+            .filter(|(_, lane)| lane.clip == clip)
+            .map(|(index, _)| index)
+            .collect();
+        let Some(&last) = siblings.last() else {
+            return Err(format!("no clip named {clip:?}"));
+        };
+        // Prefer a sibling playing the same instrument — its length and root
+        // are the ones that will suit.
+        let model = siblings
+            .iter()
+            .find(|&&i| {
+                self.document.lanes[i].voicing.instrument() == patch.voicing.instrument()
+            })
+            .copied()
+            .unwrap_or(last);
+
+        let steps = siblings
+            .iter()
+            .map(|&i| self.document.lanes[i].pattern.all().len())
+            .max()
+            .unwrap_or(engine::seq::STEPS_PER_BAR);
+
+        let mut lane = self.document.lanes[model].clone();
+        lane.name = self.free_lane_name(name.unwrap_or(&patch.name));
+        lane.clip = clip.to_string();
+        lane.voicing = patch.voicing;
+        lane.patch = Some(patch.name.clone());
+        lane.pattern = engine::seq::Pattern::steps(vec![engine::seq::Step::REST; steps]);
+        lane.muted = false;
+        lane.velocity_scale = 1.0;
+
+        self.document.lanes.insert(last + 1, lane);
+        self.dirty = true;
+        self.restage();
+        Ok(())
+    }
+
+    /// A lane name not already in the document, because names are how macros
+    /// find their targets and two "kick"s would be one macro's guess.
+    fn free_lane_name(&self, wanted: &str) -> String {
+        let taken: Vec<&str> = self
+            .document
+            .lanes
+            .iter()
+            .map(|lane| lane.name.as_str())
+            .collect();
+        if !taken.contains(&wanted) {
+            return wanted.to_string();
+        }
+        (2..100)
+            .map(|n| format!("{wanted} {n}"))
+            .find(|name| !taken.contains(&name.as_str()))
+            .unwrap_or_else(|| wanted.to_string())
+    }
+
+    /// Take a lane out of the document.
+    ///
+    /// The last lane of a clip is refused: a clip with no lanes is not an empty
+    /// clip, it is a clip that has stopped existing, along with its tab and the
+    /// timeline row you were looking at. Deleting a clip should be its own
+    /// deliberate act, not what happens when you remove one drum too many.
+    fn remove_lane(&mut self, index: usize) -> Result<(), String> {
+        let lane = self
+            .document
+            .lanes
+            .get(index)
+            .ok_or_else(|| format!("there is no lane {index}"))?;
+        let clip = lane.clip.clone();
+        let name = lane.name.clone();
+        if self.document.lanes.iter().filter(|l| l.clip == clip).count() <= 1 {
+            return Err(format!("{name} is the only lane of {clip} — a clip needs one"));
+        }
+
+        // A macro pointing at a lane that no longer exists is not an error the
+        // engine will notice: wires are resolved by name at load and an unknown
+        // name simply finds nothing. Saying so is still worth it.
+        let wired: Vec<&str> = self
+            .document
+            .macros
+            .iter()
+            .filter(|m| m.mappings.iter().any(|mapping| mapping.lane == name))
+            .map(|m| m.name.as_str())
+            .collect();
+        if !wired.is_empty() {
+            println!("removing {name}, which {} mapped", wired.join(", "));
+        }
+
+        self.document.lanes.remove(index);
+        self.dirty = true;
+        self.restage();
+        Ok(())
+    }
+
+    /// Change how long a clip runs, in bars.
+    ///
+    /// Every lane of the clip is resized together, which is what a "bars"
+    /// control should mean. Lanes can still hold different lengths — a line that
+    /// does not divide the bar drifts against it, and that is most of what makes
+    /// hypnotic music hypnotic — but that is a per-lane edit, not this.
+    fn set_clip_bars(&mut self, clip: &str, bars: f32) -> Result<(), String> {
+        if !(0.0..=64.0).contains(&bars) || bars < 0.25 {
+            return Err(format!("{bars} bars is outside a quarter bar to 64"));
+        }
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        let steps = (bars * engine::seq::STEPS_PER_BAR as f32).round() as usize;
+        if steps == 0 {
+            return Err("that is no steps at all".to_string());
+        }
+        let mut found = false;
+        for lane in &mut self.document.lanes {
+            if lane.clip == clip {
+                lane.pattern.resize(steps);
+                found = true;
+            }
+        }
+        if !found {
+            return Err(format!("no clip named {clip:?}"));
+        }
+        self.dirty = true;
+        self.restage();
+        Ok(())
+    }
+
     /// The engine's telemetry, put back into document order.
     ///
     /// A lane the audition is not playing reports as silent rather than as
@@ -377,7 +550,7 @@ impl Session {
     }
 
     fn stage_message(&self) -> String {
-        serde_json::to_string(&Outgoing::Stage {
+        serde_json::to_string(&Outgoing::Stage(Staged {
             kind: self.stage.kind(),
             name: self.stage.label(&self.document),
             bars: if self.stage == Stage::Piece {
@@ -385,7 +558,7 @@ impl Session {
             } else {
                 self.stage_bars
             },
-        })
+        }))
         .expect("a stage serialises")
     }
 
@@ -414,11 +587,31 @@ impl Session {
             device: &self.link.device,
             buffer_frames: self.link.buffer_frames,
             instruments: engine::seq::Voicing::INSTRUMENTS,
+            stage: Staged {
+                kind: self.stage.kind(),
+                name: self.stage.label(&self.document),
+                bars: if self.stage == Stage::Piece {
+                    self.document.length_bars
+                } else {
+                    self.stage_bars
+                },
+            },
             dirty: self.dirty,
             description: &self.document.describe(),
         })
         .expect("a description serialises")
     }
+}
+
+/// What the engine is playing, as the page needs to know it.
+#[derive(Serialize)]
+struct Staged {
+    /// "piece", "clip", "lane" or "patch".
+    kind: &'static str,
+    /// Which one, for the page to show. Empty for the piece.
+    name: String,
+    /// Bars it loops over, so the page can draw the right length.
+    bars: f32,
 }
 
 /// What the server sends, tagged the same way commands are — so a message in
@@ -434,6 +627,15 @@ enum Outgoing<'a> {
         buffer_frames: u32,
         /// Every instrument a new patch can be made of.
         instruments: &'static [&'static str],
+        /// What the engine is playing right now.
+        ///
+        /// A page that reloads must not assume the piece is on: the engine
+        /// outlives the page — which is most of the reason the interface is a
+        /// separate process — so it may well be looping a clip an earlier page
+        /// opened. Without this the transport reads against the wrong length and
+        /// the first tab click does nothing, because the page thinks it is
+        /// already where it is being asked to go.
+        stage: Staged,
         /// Whether the piece has unsaved changes.
         dirty: bool,
         #[serde(flatten)]
@@ -442,14 +644,7 @@ enum Outgoing<'a> {
     /// Sent whenever the document changes or is written down.
     Document { dirty: bool, saved: Option<String> },
     /// What the engine is playing now.
-    Stage {
-        /// "piece", "clip", "lane" or "patch".
-        kind: &'static str,
-        /// Which one, for the page to show. Empty for the piece.
-        name: String,
-        /// Bars it loops over, so the page can draw the right length.
-        bars: f32,
-    },
+    Stage(Staged),
     /// The document again, after something changed that the page cannot work out
     /// for itself: a patch swapped in, a clip renamed. Saves re-sending the
     /// hello, which would also reset things the page is in the middle of.
@@ -549,6 +744,7 @@ fn main() {
         dirty: false,
         stage: Stage::Piece,
         stage_bars: 0.0,
+        stage_bar: 0.0,
         resume_at: 0.0,
         link,
     }));
@@ -693,10 +889,11 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             }
             // Where the piece had got to, kept only while the piece is what is
             // playing — an audition's bar count says nothing about the score.
-            if let Some(frame) = latest
-                && session.stage == Stage::Piece
-            {
-                session.resume_at = frame.bar;
+            if let Some(frame) = latest {
+                session.stage_bar = frame.bar;
+                if session.stage == Stage::Piece {
+                    session.resume_at = frame.bar;
+                }
             }
             // Engines the audio thread has finished with are freed here, where a
             // deadline does not apply.
@@ -855,6 +1052,41 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
                     vec![session.described_message(Some(path)), session.stage_message()]
                 }
                 Err(why) => vec![complaint(&why)],
+            }
+        }
+        // Structural edits: the engine has no slot for a lane it was not built
+        // with, so each of these rebuilds it and swaps it in where it was.
+        Some("add_lane") => {
+            let clip = value.get("clip").and_then(serde_json::Value::as_str);
+            let patch = value.get("patch").and_then(serde_json::Value::as_str);
+            let name = value.get("name").and_then(serde_json::Value::as_str);
+            match (clip, patch) {
+                (Some(clip), Some(patch)) => match session.add_lane(clip, patch, name) {
+                    Ok(()) => vec![session.described_message(None)],
+                    Err(why) => vec![complaint(&why)],
+                },
+                _ => vec![complaint("add_lane needs a clip and a patch")],
+            }
+        }
+        Some("remove_lane") => match value.get("lane").and_then(serde_json::Value::as_u64) {
+            Some(index) => match session.remove_lane(index as usize) {
+                Ok(()) => vec![session.described_message(None)],
+                Err(why) => vec![complaint(&why)],
+            },
+            None => vec![complaint("remove_lane needs a lane")],
+        },
+        Some("set_bars") => {
+            let clip = value.get("clip").and_then(serde_json::Value::as_str);
+            let bars = value.get("bars").and_then(serde_json::Value::as_f64);
+            match (clip, bars) {
+                #[allow(clippy::cast_possible_truncation)]
+                (Some(clip), Some(bars)) => match session.set_clip_bars(clip, bars as f32) {
+                    // The stage message too: the clip is a different length now,
+                    // so the scrub bar and the loop are as well.
+                    Ok(()) => vec![session.described_message(None), session.stage_message()],
+                    Err(why) => vec![complaint(&why)],
+                },
+                _ => vec![complaint("set_bars needs a clip and a number of bars")],
             }
         }
         Some("new_patch") => {

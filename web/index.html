@@ -61,12 +61,24 @@
     <span id="clipName" class="set"></span>
     <span id="clipInfo" class="weak mono fixed"></span>
     <span id="stage" class="stage" title="what the engine is playing"></span>
+    <span class="bars">
+      <button id="barsFewer" title="one bar shorter">−</button>
+      <span id="barsNow" class="mono fixed"></span>
+      <button id="barsMore" title="one bar longer">+</button>
+    </span>
     <button id="clipSave" title="write this clip to the library">save clip</button>
     <button id="clipSaveAs" title="fork this clip under a new name">save as…</button>
     <span class="spacer"></span>
     <span class="weak">click a cell to place or clear a step · shift-click for an accent</span>
   </section>
-  <div class="column"><div id="clipLanes" class="clip"></div></div>
+  <div class="column">
+    <div id="clipLanes" class="clip"></div>
+    <div class="newthing">
+      <select id="addPatch" title="which saved patch the new lane plays"></select>
+      <button id="addLane" title="another sound in this clip — a second kick, say">add lane</button>
+      <span class="weak">a lane is one patch playing one line of steps · two kicks is two lanes</span>
+    </div>
+  </div>
 </div>
 
 <div id="view-library" class="view hidden">

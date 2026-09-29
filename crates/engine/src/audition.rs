@@ -170,6 +170,42 @@ mod tests {
     }
 
     #[test]
+    fn growing_a_loop_adds_rests_and_shrinking_drops_the_tail() {
+        let mut pattern = crate::seq::Pattern::grid("X...X...X...X...");
+        let before: Vec<_> = pattern.all().iter().map(|s| (s.velocity, s.offset)).collect();
+        let now = |p: &crate::seq::Pattern| -> Vec<(f32, i8)> {
+            p.all().iter().map(|s| (s.velocity, s.offset)).collect()
+        };
+
+        pattern.resize(32);
+        assert_eq!(pattern.all().len(), 32);
+        assert_eq!(now(&pattern)[..16], before[..], "the first bar is untouched");
+        assert!(
+            pattern.all()[16..].iter().all(|step| step.velocity == 0.0),
+            "a bar you just added should be empty"
+        );
+
+        pattern.resize(8);
+        assert_eq!(pattern.all().len(), 8);
+        assert_eq!(now(&pattern), before[..8]);
+    }
+
+    #[test]
+    fn a_resized_clip_reports_its_new_length() {
+        let mut piece = crate::sets::by_name("rolling").expect("rolling exists");
+        let (before, _) = clip(&piece, "beat");
+        assert_eq!(before.length_bars, 1.0);
+
+        for lane in &mut piece.lanes {
+            if lane.clip == "beat" {
+                lane.pattern.resize(STEPS_PER_BAR * 2);
+            }
+        }
+        let (after, _) = clip(&piece, "beat");
+        assert_eq!(after.length_bars, 2.0, "the audition loops over the new length");
+    }
+
+    #[test]
     fn length_covers_the_longest_pattern() {
         let piece = crate::sets::by_name("rolling").expect("rolling exists");
         for name in piece.lanes.iter().map(|lane| lane.clip.clone()) {
