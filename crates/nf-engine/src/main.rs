@@ -269,8 +269,8 @@ fn render(args: &[&str]) -> Result<(), String> {
         bits_per_sample: 32,
         sample_format: hound::SampleFormat::Float,
     };
-    let mut writer =
-        hound::WavWriter::create(out, spec).map_err(|err| format!("could not write {out}: {err}"))?;
+    let mut writer = hound::WavWriter::create(out, spec)
+        .map_err(|err| format!("could not write {out}: {err}"))?;
 
     // Block by block, the same call the audio thread makes. The renderer is
     // not a second code path — that is the whole reason offline and live sound
