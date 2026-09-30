@@ -38,13 +38,14 @@ dsp      no dependencies at all. Oscillators, one filter, envelopes,
          instruments, binaural placement, a reverb. f32 blocks, no I/O,
          no allocation in any process path.
 
-engine   depends only on dsp. Clock, sequencer, parts, spans, curves,
-         macros, voice pool. `Engine::process(&mut [f32])` is the only
-         entry point — it knows nothing about audio devices, windows
-         or files.
-
-app      the window. cpal owns the audio thread; egui draws. They talk
-         through two lock-free ring buffers and two `Copy` structs.
+engine   depends only on dsp. Clock, sequencer, lanes, spans, curves,
+         macros, voice pool, and the tab format. `Engine::process(&mut
+         [f32])` is the only entry point — it knows nothing about audio
+         devices, windows or files.
+host     cpal owns the audio thread. Two lock-free ring buffers and two
+         Copy structs are the whole of what crosses into it.
+server   the engine over a WebSocket; the browser is the conductor.
+nf-engine the format and the renderer as one binary, under `nf`.
 ```
 
 Two consequences worth knowing, because most of the design follows from them:

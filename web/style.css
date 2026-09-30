@@ -188,13 +188,7 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
   border-left: 1px solid #6b7488; border-right: 1px solid #6b7488;
 }
 
-/* Save is only interesting when there is something to save. */
-#save { min-width: 0; padding: 3px 10px; font-size: 12px; margin-right: 10px; visibility: hidden; }
-#save.dirty { visibility: visible; color: var(--warn); border-color: var(--warn); }
-#save.dirty::after { content: " ●"; font-size: 8px; vertical-align: middle; }
 
-/* The loop region, drawn behind the playhead on the timeline. */
-.looping { color: var(--good); }
 
 /* ── Patch parameters ─────────────────────────────────────────────────────── */
 
@@ -241,12 +235,6 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .libitem.sounding { background: #78c8ff14; }
 .libitem .name { font-weight: 500; }
 .libitem button { font-size: 11px; padding: 2px 8px; }
-.newthing { display: flex; gap: 6px; margin-top: 10px; }
-.newthing input { flex: 1; min-width: 0; }
-.newthing input, .newthing select {
-  background: var(--bg); color: var(--text); border: 1px solid var(--line);
-  border-radius: 4px; padding: 3px 6px; font: inherit; font-size: 12px;
-}
 
 /* What can be done to one patch, above its faders. */
 .patchhead {
@@ -265,29 +253,12 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .notice { font-size: 12px; color: var(--good); margin-right: 10px; }
 .notice.bad { color: var(--bad); }
 
-/* A button that became a text box, asking for a name. */
-.namebox {
-  background: var(--bg); color: var(--text); border: 1px solid var(--accent);
-  border-radius: 4px; padding: 2px 6px; font: inherit; font-size: 11px;
-  width: 12ch;
-}
 
 /* A class selector beats the user agent's `[hidden]`, and this page hides things
    by setting `hidden`. Stated once, here, rather than remembered at each rule. */
 [hidden] { display: none !important; }
 
-/* How long the clip is, in the header where its size belongs. */
-.bars { display: inline-flex; align-items: center; gap: 4px; }
-.bars button { font-size: 12px; padding: 1px 8px; min-width: 0; }
-#barsNow { width: 7ch; text-align: center; color: var(--weak); }
 
-/* Taking a lane out: at the end of the row, away from everything else, because
-   it deletes that lane's steps. */
-.lane .drop {
-  order: -1; border: 0; background: none; color: #444b58; padding: 0 2px;
-  font-size: 13px; line-height: 1; cursor: pointer;
-}
-.lane .drop:hover { color: var(--bad); }
 
 /* ── The piano roll ───────────────────────────────────────────────────────── */
 
@@ -326,13 +297,3 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .steps { flex-wrap: nowrap; }
 #clipLanes { overflow-x: auto; }
 
-/* How long a lane's notes ring, beside its patch. */
-.holds {
-  display: inline-flex; align-items: center; gap: 5px; margin-left: 14px;
-  font-size: 11px; color: var(--weak);
-}
-.holds input {
-  width: 5.5ch; background: var(--bg); color: var(--text);
-  border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px;
-  font: inherit; font-size: 11px;
-}

@@ -27,7 +27,7 @@ use std::thread;
 use std::time::Duration;
 
 use engine::Engine;
-use engine::seq::{Set, Step};
+use engine::seq::Set;
 use engine::telemetry::{self, Command, Description, LaneState, Telemetry};
 use host::Link;
 use serde::Serialize;
@@ -38,14 +38,11 @@ const ADDRESS: &str = "127.0.0.1:8730";
 
 /// The piece, and the one thing allowed to change it.
 ///
-/// The engine plays; this holds. Every authoring edit is applied here *and*
-/// forwarded to the engine, so what is heard and what would be written down can
-/// never disagree — and a save is then only a file write.
+/// The engine plays; this holds a copy of what it was given.
 ///
-/// A performance command is not an edit. Muting a lane, moving a fader, taking a
-/// macro off its curve: all of that reaches the engine and none of it touches the
-/// document, which is the same distinction a mixing desk makes between playing
-/// and authoring.
+/// Read-only, now that authoring lives in `nf`. The document is here so the
+/// server can build an audition from one clip, and so telemetry can be put
+/// back into document order — not so anything can change it.
 /// What the engine is playing.
 ///
 /// Every editor in this tool wants the same thing — to hear what it is editing
@@ -92,8 +89,6 @@ struct Session {
     link: Link,
     document: Set,
     name: String,
-    /// Whether the document has changed since it was last written.
-    dirty: bool,
     /// What the engine is playing.
     stage: Stage,
     /// For each of the engine's lanes, which of the document's it came from.
@@ -118,35 +113,19 @@ struct Session {
 }
 
 impl Session {
-    /// Apply one command: always to the engine, and to the document too if it
-    /// is an edit rather than a performance.
+    /// Send one command to the engine.
+    ///
+    /// **Nothing here writes a document.** Everything the page can send is a
+    /// performance: a fader moved, a lane muted, a macro taken off its curve,
+    /// a patch parameter turned while it plays. None of it is written down,
+    /// and reloading the piece puts it all back — which is the same thing a
+    /// mixing desk means by the distinction, and the reason moving a fader for
+    /// an hour leaves a piece unmodified.
+    ///
+    /// Authoring lives in `nf` and in the files it writes. The page used to do
+    /// both and the cost was a mutable document, a dirty flag, a save path and
+    /// eight message types; deleting the editors deleted all of it.
     fn apply(&mut self, command: Command) {
-        if let Command::SetParam { lane, param, value } = command
-            && let Some(lane) = self.document.lanes.get_mut(lane as usize)
-        {
-            lane.voicing.set_param(param as usize, value);
-            self.dirty = true;
-        }
-        if let Command::SetLength { lane, length } = command
-            && let Some(lane) = self.document.lanes.get_mut(lane as usize)
-        {
-            lane.length = length;
-            self.dirty = true;
-        }
-        if let Command::SetStep {
-            lane,
-            step,
-            velocity,
-            offset,
-        } = command
-            && let Some(lane) = self.document.lanes.get_mut(lane as usize)
-        {
-            lane.pattern.set(step as usize, Step::new(velocity, offset));
-            self.dirty = true;
-        }
-        // Performance and authoring alike reach the engine by *engine* index.
-        // A lane that is not on stage simply does not: the document keeps the
-        // edit, and the engine is not told about a lane it does not have.
         if let Some(command) = self.for_engine(command) {
             self.link.send(command);
         }
@@ -198,24 +177,6 @@ impl Session {
     /// engine it replaces comes back to be dropped on this side.
     fn stage(&mut self, wanted: &Stage) -> Result<(), String> {
         self.stage_at(wanted, None)
-    }
-
-    /// Rebuild what is playing, from a document that changed shape.
-    ///
-    /// Adding a lane or changing a loop's length cannot be a message to the
-    /// engine: it has no slot to put a lane in and no room to grow a pattern
-    /// into, and making one on the audio thread would mean allocating there. So
-    /// the whole engine is built again here and swapped in — the same path an
-    /// editor opening takes, which is why that path was worth building.
-    ///
-    /// It keeps its place: the transport picks up at the bar it had reached, so
-    /// adding a hat while a loop runs does not restart the loop.
-    fn restage(&mut self) {
-        let wanted = self.stage.clone();
-        let at = self.stage_bar;
-        if let Err(why) = self.stage_at(&wanted, Some(at)) {
-            eprintln!("could not rebuild the engine: {why}");
-        }
     }
 
     fn stage_at(&mut self, wanted: &Stage, at: Option<f32>) -> Result<(), String> {
@@ -271,271 +232,6 @@ impl Session {
         Ok(())
     }
 
-    /// Give the engine every parameter of one lane, after its patch changed
-    /// underneath it.
-    ///
-    /// One command per parameter rather than one per patch: the engine's whole
-    /// authoring vocabulary is "set this parameter of this lane to this", and a
-    /// handful of twelve-byte messages is nothing next to inventing a second way
-    /// in that the audio thread would have to understand.
-    fn push_voicing(&mut self, index: usize) {
-        let Some(lane) = self.document.lanes.get(index) else {
-            return;
-        };
-        let values = lane.voicing.values();
-        for (param, value) in values.into_iter().enumerate() {
-            let Ok(param) = u8::try_from(param) else {
-                break;
-            };
-            let Ok(lane) = u8::try_from(index) else { break };
-            if let Some(command) = self.for_engine(Command::SetParam { lane, param, value }) {
-                self.link.send(command);
-            }
-        }
-    }
-
-    /// Write a lane's instrument to the library.
-    ///
-    /// Saving under the name the lane already carries updates **every** lane
-    /// playing that patch, here and in the engine — that is what a shared patch
-    /// is for. Saving under a new name repoints only this lane, which is how you
-    /// fork a kick without disturbing the beat that had the old one.
-    fn save_patch(&mut self, index: usize, name: &str) -> Result<String, String> {
-        let lane = self
-            .document
-            .lanes
-            .get(index)
-            .ok_or_else(|| format!("there is no lane {index}"))?;
-        let voicing = lane.voicing;
-        let path = engine::library::save_patch(name, voicing).map_err(|err| err.to_string())?;
-
-        // Everyone on this name takes the new values.
-        let sharing: Vec<usize> = self
-            .document
-            .lanes
-            .iter()
-            .enumerate()
-            .filter(|(i, lane)| *i != index && lane.patch.as_deref() == Some(name))
-            .map(|(i, _)| i)
-            .collect();
-        for &other in &sharing {
-            self.document.lanes[other].voicing = voicing;
-            self.push_voicing(other);
-        }
-        if self.document.lanes[index].patch.as_deref() != Some(name) {
-            self.document.lanes[index].patch = Some(name.to_string());
-            // The piece now names a different patch, which is a change to the
-            // piece — saving the patch does not save the piece.
-            self.dirty = true;
-        }
-        Ok(path.display().to_string())
-    }
-
-    /// Point a lane at a saved patch: a different kick on this beat.
-    fn use_patch(&mut self, index: usize, name: &str) -> Result<(), String> {
-        let patch = engine::library::load_patch(name)
-            .map_err(|err| format!("could not read patch {name:?}: {err}"))?;
-        let lane = self
-            .document
-            .lanes
-            .get_mut(index)
-            .ok_or_else(|| format!("there is no lane {index}"))?;
-        if patch.voicing.instrument() != lane.voicing.instrument() {
-            return Err(format!(
-                "{name:?} is a {} patch and {} plays {}",
-                patch.voicing.instrument(),
-                lane.name,
-                lane.voicing.instrument()
-            ));
-        }
-        lane.voicing = patch.voicing;
-        lane.patch = Some(name.to_string());
-        self.dirty = true;
-        self.push_voicing(index);
-        Ok(())
-    }
-
-    /// Write a clip's lanes to the library.
-    ///
-    /// Saving as new also moves the piece onto the new clip, because the thing
-    /// you were editing is the thing you want to keep editing. The old clip is
-    /// still in the library, unchanged, for whatever else uses it.
-    fn save_clip(&mut self, clip: &str, name: &str) -> Result<String, String> {
-        let lanes: Vec<_> = self
-            .document
-            .lanes
-            .iter()
-            .filter(|lane| lane.clip == clip)
-            .cloned()
-            .collect();
-        if lanes.is_empty() {
-            return Err(format!("no lane belongs to clip {clip:?}"));
-        }
-        let path = engine::library::save_clip(name, &lanes).map_err(|err| err.to_string())?;
-        if name != clip {
-            for lane in &mut self.document.lanes {
-                if lane.clip == clip {
-                    lane.clip = name.to_string();
-                }
-            }
-            self.dirty = true;
-            if self.stage == Stage::Clip(clip.to_string()) {
-                self.stage = Stage::Clip(name.to_string());
-            }
-        }
-        Ok(path.display().to_string())
-    }
-
-    /// Add a lane to a clip, playing a saved patch.
-    ///
-    /// This is how one drum gets a variation: a beat with two kicks is two
-    /// lanes on two patches, alternating in the grid. A lane is one patch
-    /// playing one line of steps, so a second sound is a second lane — and it
-    /// arrives with its own level, placement, send and mute, which a per-step
-    /// patch reference could never have.
-    ///
-    /// The new lane copies its shape from a sibling where it can: a second kick
-    /// in the beat should sit where the first kick sits and last as long,
-    /// because what you are changing is the sound, not the arrangement.
-    fn add_lane(&mut self, clip: &str, patch: &str, name: Option<&str>) -> Result<(), String> {
-        let patch = engine::library::load_patch(patch)
-            .map_err(|err| format!("could not read patch {patch:?}: {err}"))?;
-
-        let siblings: Vec<usize> = self
-            .document
-            .lanes
-            .iter()
-            .enumerate()
-            .filter(|(_, lane)| lane.clip == clip)
-            .map(|(index, _)| index)
-            .collect();
-        let Some(&last) = siblings.last() else {
-            return Err(format!("no clip named {clip:?}"));
-        };
-        // Prefer a sibling playing the same instrument — its length and root
-        // are the ones that will suit.
-        let model = siblings
-            .iter()
-            .find(|&&i| self.document.lanes[i].voicing.instrument() == patch.voicing.instrument())
-            .copied()
-            .unwrap_or(last);
-
-        let steps = siblings
-            .iter()
-            .map(|&i| self.document.lanes[i].pattern.all().len())
-            .max()
-            .unwrap_or(engine::seq::STEPS_PER_BAR);
-
-        let mut lane = self.document.lanes[model].clone();
-        lane.name = self.free_lane_name(name.unwrap_or(&patch.name));
-        lane.clip = clip.to_string();
-        lane.voicing = patch.voicing;
-        lane.patch = Some(patch.name.clone());
-        lane.pattern = engine::seq::Pattern::steps(vec![engine::seq::Step::REST; steps]);
-        lane.muted = false;
-        lane.velocity_scale = 1.0;
-
-        self.document.lanes.insert(last + 1, lane);
-        self.dirty = true;
-        self.restage();
-        Ok(())
-    }
-
-    /// A lane name not already in the document, because names are how macros
-    /// find their targets and two "kick"s would be one macro's guess.
-    fn free_lane_name(&self, wanted: &str) -> String {
-        let taken: Vec<&str> = self
-            .document
-            .lanes
-            .iter()
-            .map(|lane| lane.name.as_str())
-            .collect();
-        if !taken.contains(&wanted) {
-            return wanted.to_string();
-        }
-        (2..100)
-            .map(|n| format!("{wanted} {n}"))
-            .find(|name| !taken.contains(&name.as_str()))
-            .unwrap_or_else(|| wanted.to_string())
-    }
-
-    /// Take a lane out of the document.
-    ///
-    /// The last lane of a clip is refused: a clip with no lanes is not an empty
-    /// clip, it is a clip that has stopped existing, along with its tab and the
-    /// timeline row you were looking at. Deleting a clip should be its own
-    /// deliberate act, not what happens when you remove one drum too many.
-    fn remove_lane(&mut self, index: usize) -> Result<(), String> {
-        let lane = self
-            .document
-            .lanes
-            .get(index)
-            .ok_or_else(|| format!("there is no lane {index}"))?;
-        let clip = lane.clip.clone();
-        let name = lane.name.clone();
-        if self
-            .document
-            .lanes
-            .iter()
-            .filter(|l| l.clip == clip)
-            .count()
-            <= 1
-        {
-            return Err(format!(
-                "{name} is the only lane of {clip} — a clip needs one"
-            ));
-        }
-
-        // A macro pointing at a lane that no longer exists is not an error the
-        // engine will notice: wires are resolved by name at load and an unknown
-        // name simply finds nothing. Saying so is still worth it.
-        let wired: Vec<&str> = self
-            .document
-            .macros
-            .iter()
-            .filter(|m| m.mappings.iter().any(|mapping| mapping.lane == name))
-            .map(|m| m.name.as_str())
-            .collect();
-        if !wired.is_empty() {
-            println!("removing {name}, which {} mapped", wired.join(", "));
-        }
-
-        self.document.lanes.remove(index);
-        self.dirty = true;
-        self.restage();
-        Ok(())
-    }
-
-    /// Change how long a clip runs, in bars.
-    ///
-    /// Every lane of the clip is resized together, which is what a "bars"
-    /// control should mean. Lanes can still hold different lengths — a line that
-    /// does not divide the bar drifts against it, and that is most of what makes
-    /// hypnotic music hypnotic — but that is a per-lane edit, not this.
-    fn set_clip_bars(&mut self, clip: &str, bars: f32) -> Result<(), String> {
-        if !(0.0..=64.0).contains(&bars) || bars < 0.25 {
-            return Err(format!("{bars} bars is outside a quarter bar to 64"));
-        }
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-        let steps = (bars * engine::seq::STEPS_PER_BAR as f32).round() as usize;
-        if steps == 0 {
-            return Err("that is no steps at all".to_string());
-        }
-        let mut found = false;
-        for lane in &mut self.document.lanes {
-            if lane.clip == clip {
-                lane.pattern.resize(steps);
-                found = true;
-            }
-        }
-        if !found {
-            return Err(format!("no clip named {clip:?}"));
-        }
-        self.dirty = true;
-        self.restage();
-        Ok(())
-    }
-
     /// The engine's telemetry, put back into document order.
     ///
     /// A lane the audition is not playing reports as silent rather than as
@@ -556,13 +252,6 @@ impl Session {
         out
     }
 
-    fn save(&mut self) -> std::io::Result<PathBuf> {
-        let path = engine::document::directory().join(format!("{}.json", self.name));
-        engine::document::save(&path, &self.name, &self.document)?;
-        self.dirty = false;
-        Ok(path)
-    }
-
     fn stage_message(&self) -> String {
         serde_json::to_string(&Outgoing::Stage(Staged {
             kind: self.stage.kind(),
@@ -574,25 +263,6 @@ impl Session {
             },
         }))
         .expect("a stage serialises")
-    }
-
-    /// The document as it now stands, for a page whose copy is stale.
-    fn described_message(&self, saved: Option<String>) -> String {
-        serde_json::to_string(&Outgoing::Described {
-            dirty: self.dirty,
-            saved,
-            description: &self.document.describe(),
-        })
-        .expect("a description serialises")
-    }
-
-    /// The document's state after something was written, or changed.
-    fn saved_message(&self, saved: Option<String>) -> String {
-        serde_json::to_string(&Outgoing::Document {
-            dirty: self.dirty,
-            saved,
-        })
-        .expect("a document message serialises")
     }
 
     fn hello(&self) -> String {
@@ -610,7 +280,6 @@ impl Session {
                     self.stage_bars
                 },
             },
-            dirty: self.dirty,
             description: &self.document.describe(),
         })
         .expect("a description serialises")
@@ -650,25 +319,11 @@ enum Outgoing<'a> {
         /// the first tab click does nothing, because the page thinks it is
         /// already where it is being asked to go.
         stage: Staged,
-        /// Whether the piece has unsaved changes.
-        dirty: bool,
         #[serde(flatten)]
         description: &'a Description,
     },
-    /// Sent whenever the document changes or is written down.
-    Document { dirty: bool, saved: Option<String> },
     /// What the engine is playing now.
     Stage(Staged),
-    /// The document again, after something changed that the page cannot work out
-    /// for itself: a patch swapped in, a clip renamed. Saves re-sending the
-    /// hello, which would also reset things the page is in the middle of.
-    Described {
-        dirty: bool,
-        /// Where it was written, if this followed a save.
-        saved: Option<String>,
-        #[serde(flatten)]
-        description: &'a Description,
-    },
     /// Everything saved under a name, for the index.
     Library {
         #[serde(flatten)]
@@ -755,7 +410,6 @@ fn main() {
         on_stage: (0..document.lanes.len()).collect(),
         document,
         name: set_name,
-        dirty: false,
         stage: Stage::Piece,
         stage_bars: 0.0,
         stage_bar: 0.0,
@@ -965,22 +619,6 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
 
     let mut session = session.lock().expect("no panics hold this");
     match value.get("t").and_then(serde_json::Value::as_str) {
-        Some("save") => {
-            let saved = match session.save() {
-                Ok(path) => {
-                    println!("saved {}", path.display());
-                    Some(path.display().to_string())
-                }
-                Err(err) => {
-                    eprintln!("could not save: {err}");
-                    None
-                }
-            };
-            one(serde_json::to_string(&Outgoing::Document {
-                dirty: session.dirty,
-                saved,
-            }))
-        }
         // Opening an editor is not a command to the engine, it is a change of
         // what the engine *is*. The material is built into a small piece of its
         // own and swapped in; an empty audition puts the real one back.
@@ -1008,136 +646,12 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
         Some("library") => one(serde_json::to_string(&Outgoing::Library {
             index: &engine::library::index(),
         })),
-        Some("save_patch") => {
-            let Some(index) = value.get("lane").and_then(serde_json::Value::as_u64) else {
-                return vec![complaint("save_patch needs a lane")];
-            };
-            let index = index as usize;
-            // No name given means "save it where it came from".
-            let name = value
-                .get("name")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_string)
-                .or_else(|| {
-                    session
-                        .document
-                        .lanes
-                        .get(index)
-                        .and_then(|lane| lane.patch.clone())
-                });
-            let Some(name) = name else {
-                return vec![complaint(
-                    "this lane has no patch name yet — save it as new",
-                )];
-            };
-            match session.save_patch(index, &name) {
-                Ok(path) => {
-                    println!("saved patch {name} · {path}");
-                    vec![session.described_message(Some(path))]
-                }
-                Err(why) => vec![complaint(&why)],
-            }
-        }
-        Some("use_patch") => {
-            let lane = value.get("lane").and_then(serde_json::Value::as_u64);
-            let name = value.get("name").and_then(serde_json::Value::as_str);
-            match (lane, name) {
-                (Some(lane), Some(name)) => match session.use_patch(lane as usize, name) {
-                    Ok(()) => vec![session.described_message(None)],
-                    Err(why) => vec![complaint(&why)],
-                },
-                _ => vec![complaint("use_patch needs a lane and a name")],
-            }
-        }
-        Some("save_clip") => {
-            let Some(clip) = value.get("clip").and_then(serde_json::Value::as_str) else {
-                return vec![complaint("save_clip needs a clip")];
-            };
-            let clip = clip.to_string();
-            let name = value
-                .get("name")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(&clip)
-                .to_string();
-            match session.save_clip(&clip, &name) {
-                Ok(path) => {
-                    println!("saved clip {name} · {path}");
-                    // Saving as new renamed the clip, which renamed the stage:
-                    // the page needs both the new document and the new name of
-                    // what it is listening to.
-                    vec![
-                        session.described_message(Some(path)),
-                        session.stage_message(),
-                    ]
-                }
-                Err(why) => vec![complaint(&why)],
-            }
-        }
-        // Structural edits: the engine has no slot for a lane it was not built
-        // with, so each of these rebuilds it and swaps it in where it was.
-        Some("add_lane") => {
-            let clip = value.get("clip").and_then(serde_json::Value::as_str);
-            let patch = value.get("patch").and_then(serde_json::Value::as_str);
-            let name = value.get("name").and_then(serde_json::Value::as_str);
-            match (clip, patch) {
-                (Some(clip), Some(patch)) => match session.add_lane(clip, patch, name) {
-                    Ok(()) => vec![session.described_message(None)],
-                    Err(why) => vec![complaint(&why)],
-                },
-                _ => vec![complaint("add_lane needs a clip and a patch")],
-            }
-        }
-        Some("remove_lane") => match value.get("lane").and_then(serde_json::Value::as_u64) {
-            Some(index) => match session.remove_lane(index as usize) {
-                Ok(()) => vec![session.described_message(None)],
-                Err(why) => vec![complaint(&why)],
-            },
-            None => vec![complaint("remove_lane needs a lane")],
-        },
-        Some("set_bars") => {
-            let clip = value.get("clip").and_then(serde_json::Value::as_str);
-            let bars = value.get("bars").and_then(serde_json::Value::as_f64);
-            match (clip, bars) {
-                #[allow(clippy::cast_possible_truncation)]
-                (Some(clip), Some(bars)) => match session.set_clip_bars(clip, bars as f32) {
-                    // The stage message too: the clip is a different length now,
-                    // so the scrub bar and the loop are as well.
-                    Ok(()) => vec![session.described_message(None), session.stage_message()],
-                    Err(why) => vec![complaint(&why)],
-                },
-                _ => vec![complaint("set_bars needs a clip and a number of bars")],
-            }
-        }
-        Some("new_patch") => {
-            let instrument = value.get("instrument").and_then(serde_json::Value::as_str);
-            let name = value.get("name").and_then(serde_json::Value::as_str);
-            match (instrument, name) {
-                (Some(instrument), Some(name)) => {
-                    let Some(voicing) = engine::seq::Voicing::fresh(instrument) else {
-                        return vec![complaint(&format!("there is no {instrument} instrument"))];
-                    };
-                    match engine::library::save_patch(name, voicing) {
-                        Ok(path) => {
-                            println!("new patch {name} · {}", path.display());
-                            vec![session.saved_message(Some(path.display().to_string()))]
-                        }
-                        Err(err) => vec![complaint(&err.to_string())],
-                    }
-                }
-                _ => vec![complaint("new_patch needs an instrument and a name")],
-            }
-        }
+        // Everything else is a performance command: it reaches the engine and
+        // nothing is written down, so there is nothing to reply.
         _ => match serde_json::from_value::<Command>(value) {
             Ok(command) => {
-                let was = session.dirty;
                 session.apply(command);
-                if session.dirty == was {
-                    return Vec::new();
-                }
-                one(serde_json::to_string(&Outgoing::Document {
-                    dirty: true,
-                    saved: None,
-                }))
+                Vec::new()
             }
             Err(err) => {
                 eprintln!("could not read {text:?}: {err}");

@@ -12,7 +12,6 @@
   <nav id="tabs" class="tabs"></nav>
   <span class="spacer"></span>
   <span id="notice" class="notice"></span>
-  <button id="save" title="write the piece to disk">save</button>
   <span id="device" class="weak mono"></span>
 </header>
 
@@ -30,7 +29,7 @@
   <span id="voices" class="mono fixed"></span>
   <span id="peak" class="mono fixed"></span>
   <span id="dropouts" class="mono fixed"></span>
-  <span id="bpmLabel" class="label">bpm</span>
+  <span class="label">bpm</span>
   <input id="bpm" type="range" min="60" max="180" step="0.5" value="126">
   <span id="bpmText" class="mono fixed"></span>
   <span class="label">master</span>
@@ -61,23 +60,11 @@
     <span id="clipName" class="set"></span>
     <span id="clipInfo" class="weak mono fixed"></span>
     <span id="stage" class="stage" title="what the engine is playing"></span>
-    <span class="bars">
-      <button id="barsFewer" title="one bar shorter">−</button>
-      <span id="barsNow" class="mono fixed"></span>
-      <button id="barsMore" title="one bar longer">+</button>
-    </span>
-    <button id="clipSave" title="write this clip to the library">save clip</button>
-    <button id="clipSaveAs" title="fork this clip under a new name">save as…</button>
     <span class="spacer"></span>
-    <span class="weak">click a cell to place or clear a step · shift-click for an accent</span>
+    <span class="weak">what this clip holds · edit it with <code>nf</code></span>
   </section>
   <div class="column">
     <div id="clipLanes" class="clip"></div>
-    <div class="newthing">
-      <select id="addPatch" title="which saved patch the new lane plays"></select>
-      <button id="addLane" title="another sound in this clip — a second kick, say">add lane</button>
-      <span class="weak">a lane is one patch playing one line of steps · two kicks is two lanes</span>
-    </div>
   </div>
 </div>
 
@@ -92,11 +79,6 @@
     <div class="column">
       <h2>patches</h2>
       <div id="libraryPatches" class="library"></div>
-      <div class="newthing">
-        <select id="newInstrument" title="what the new patch plays"></select>
-        <input id="newPatchName" type="text" placeholder="name it" maxlength="64">
-        <button id="newPatch">new patch</button>
-      </div>
     </div>
     <div class="column">
       <h2>clips</h2>

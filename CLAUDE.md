@@ -39,8 +39,10 @@ and diff the samples; bit-identical or explain why not.
 dsp      no dependencies. f32 blocks, no I/O, no allocation in process paths.
 engine   depends only on dsp. `Engine::process(&mut [f32])` is the only entry
          point: no audio device, no window, no files.
-app      cpal owns the audio thread, egui draws. Two lock-free ring buffers and
-         two Copy structs between them.
+host     cpal owns the audio thread. Two lock-free ring buffers and two Copy
+         structs between it and everything else.
+server   the engine over a WebSocket, and the browser as the conductor.
+nf-engine the format and the renderer as a binary, for the `nf` CLI.
 ```
 
 The audio thread never waits: no allocation, no locks, no I/O, no printing.
@@ -88,8 +90,6 @@ A debug build has `assert_no_alloc` armed and DSP too slow to keep up. Run
 - **A class selector beats `[hidden]`.** `.patch { display: grid }` overrides the
   browser's own `[hidden] { display: none }`, so setting `hidden` does nothing at
   all. Add `.patch[hidden] { display: none; }`.
-- **Missing glyphs.** egui's default fonts do not carry U+23F8 and friends, and a
-  button whose label is a missing glyph is an invisible button. Use words.
 - **serde's internally tagged enums cannot carry a bare primitive.** A variant
   like `Fade(f32)` under `#[serde(tag = "kind")]` compiles and then fails when a
   value is written or read. It has caught this project twice — once on a command

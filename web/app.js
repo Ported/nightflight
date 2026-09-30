@@ -40,42 +40,23 @@ function connect() {
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
       buildLanes(message.lanes);
       buildMacros(message.macros);
-      buildInstruments(message.instruments);
       send({ t: "library" });
       // The engine outlives the page, so it may already be looping a clip some
       // earlier page opened. Adopt what it is doing rather than assume: `show`
       // sends an audition only when the stage would change, so following it here
       // costs nothing and interrupts nothing.
       adoptStage(message.stage);
-      show(stage.kind === "clip" && clips().has(stage.name) ? stage.name : tab);
-      $("save").classList.toggle("dirty", message.dirty);
-    } else if (message.t === "document") {
-      $("save").classList.toggle("dirty", message.dirty);
-      if (message.saved) {
-        $("set").title = `saved to ${message.saved}`;
-        say(`saved ${message.saved.split("/").slice(-2).join("/")}`);
-        // Anything written may have changed what the library holds.
-        send({ t: "library" });
-      }
+      // A page survives a reconnect with the tab it had open, and the engine
+      // may have come back playing something else entirely — a different
+      // piece, with different clips. Follow what is actually there; asking for
+      // a clip that no longer exists just earns a complaint.
+      const open = clips().has(tab) ? tab : "conductor";
+      show(stage.kind === "clip" && clips().has(stage.name) ? stage.name : open);
     } else if (message.t === "stage") {
       adoptStage(message);
-    } else if (message.t === "described") {
-      // The document changed shape under the page: a patch swapped in, a clip
-      // renamed. Take the new description and redraw what is open, without
-      // touching what is playing.
-      description = message;
-      $("save").classList.toggle("dirty", message.dirty);
-      if (message.saved) {
-        say(`saved ${message.saved.split("/").slice(-2).join("/")}`);
-        send({ t: "library" });
-      }
-      redraw();
     } else if (message.t === "library") {
       library = { patches: message.patches, clips: message.clips };
-      // A clip editor draws a "swap in" list from this, so it is stale until
-      // the library lands — which is after the hello, always.
       if (tab === "library") buildLibrary();
-      if (isClip(tab)) buildClip(tab);
     } else if (message.t === "complaint") {
       say(message.why, true);
     } else if (message.t === "telemetry") {
@@ -224,16 +205,6 @@ function say(words, bad = false) {
   noticeTimer = setTimeout(() => (notice.textContent = ""), bad ? 8000 : 4000);
 }
 
-function buildInstruments(instruments) {
-  const select = $("newInstrument");
-  select.replaceChildren();
-  for (const name of instruments ?? []) {
-    const option = document.createElement("option");
-    option.value = name;
-    option.textContent = name;
-    select.append(option);
-  }
-}
 
 /** Everything saved under a name, each row a way into its editor. */
 function buildLibrary() {
@@ -365,20 +336,6 @@ function adoptStage({ kind, name, bars }) {
   paintStage();
 }
 
-/** Rebuild whatever view is open, leaving the transport and the stage alone. */
-function redraw() {
-  // Saving a clip as new renames the piece's lanes onto the new clip, so the
-  // tab that was open no longer exists. The stage message that follows says
-  // what it became; until then, follow it there.
-  if (isClip(tab) && !clips().has(tab)) {
-    tab = clips().has(stage.name) ? stage.name : ([...clips().keys()][0] ?? "conductor");
-  }
-  if (isClip(tab)) buildClip(tab);
-  if (tab === "library") buildLibrary();
-  buildLanes(description.lanes);
-  buildMacros(description.macros);
-  buildTabs();
-}
 
 const isClip = (name) => name !== "conductor" && name !== "library";
 const viewFor = (name) => (isClip(name) ? "clip" : name);
@@ -390,25 +347,27 @@ const viewFor = (name) => (isClip(name) ? "clip" : name);
  * a single `set_step` — the slot already exists there, so nothing has to be
  * allocated on the audio thread to change a loop while it plays.
  */
+/**
+ * A clip, drawn but not edited.
+ *
+ * The grid and the roll used to be editors — click a cell, place a step. They
+ * are a viewer now: writing music happens in tab files through `nf`, and a
+ * browser that could also write it meant the server owned a mutable document,
+ * a dirty flag and a save path for the privilege of being the worse of the two
+ * ways to do it.
+ *
+ * What is left is worth keeping. You cannot choose a clip to bring into a mix
+ * without seeing what is in it, and you cannot judge a patch without hearing
+ * it, so the shape stays and so does "hear it".
+ */
 function buildClip(name) {
   const lanes = clips().get(name) ?? [];
   $("clipName").textContent = name;
   const steps = Math.max(0, ...lanes.map((lane) => lane.steps.length));
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   $("clipInfo").textContent =
-    `${plural(lanes.length, "lane", "lanes")} · ${plural(steps, "step", "steps")}`;
-  $("barsNow").textContent = plural(clipBars(lanes), "bar", "bars");
-
-  // Only patches, and only ones that exist: a lane has to play something.
-  const add = $("addPatch");
-  add.replaceChildren();
-  for (const patch of library.patches) {
-    const option = document.createElement("option");
-    option.value = patch.name;
-    option.textContent = `${patch.name} · ${patch.instrument}`;
-    add.append(option);
-  }
-  $("addLane").disabled = !library.patches.length;
+    `${plural(lanes.length, "lane", "lanes")} · ` +
+    `${plural(clipBars(lanes), "bar", "bars")} · ${steps} steps`;
 
   const host = $("clipLanes");
   host.replaceChildren();
@@ -420,40 +379,25 @@ function buildClip(name) {
     const label = document.createElement("span");
     label.className = "name";
     label.textContent = lane.name;
-    const patch = document.createElement("span");
-    patch.className = "patch";
-    patch.textContent = lane.instrument;
+    const what = document.createElement("span");
+    what.className = "patch";
+    what.textContent = lane.patch ?? lane.instrument;
+    what.title = lane.patch
+      ? `${lane.instrument} · patch ${lane.patch}`
+      : `${lane.instrument} · no saved patch`;
 
-    // A patch's parameters, hidden until asked for: a drum grid is about
-    // rhythm, and ten faders per lane would bury it.
+    // A patch's parameters, hidden until asked for: a grid is about rhythm,
+    // and ten faders per lane would bury it.
     const toggle = document.createElement("button");
     toggle.className = "expand";
     toggle.textContent = "▸";
-    // The count used to be on the button, and a ten-parameter kick above a
-    // four-parameter hat pushed their grids out of line with each other. It is
-    // in the tooltip instead: the grids have to agree, and the number was never
-    // what anyone was reading.
     toggle.title = `show this patch's ${lane.params.length} parameters`;
 
-    const cells = lane.pitched ? pianoRoll(lane) : stepRow(lane);
-
-    // Removing a lane deletes its steps, so it stays a small dim target — at
-    // the far edge of the head, as far from the expander as the row allows.
-    const drop = document.createElement("button");
-    drop.className = "drop";
-    drop.textContent = "×";
-    drop.title = `take ${lane.name} out of this clip`;
-    drop.onclick = () => send({ t: "remove_lane", lane: lane.index });
-
-    // The name, what it plays, and the two things you can do to it, in a block
-    // that stays put while a long clip scrolls under it. A twenty-two bar roll
-    // is eight thousand pixels wide, and a row you cannot identify is a row you
-    // cannot edit.
     const head = document.createElement("div");
     head.className = "lanehead";
-    head.append(drop, label, patch, toggle);
+    head.append(label, what, toggle);
 
-    row.append(head, cells);
+    row.append(head, lane.pitched ? pianoRoll(lane) : stepRow(lane));
     row.classList.toggle("tall", lane.pitched);
     host.append(row);
 
@@ -469,7 +413,12 @@ function buildClip(name) {
 }
 
 /**
- * One fader per parameter of a lane's patch.
+ * One fader per parameter, and they move the engine rather than the file.
+ *
+ * Turning a knob while it plays is a performance, not an edit: nothing is
+ * written down and reloading the piece puts it back. That is the same thing a
+ * desk means by the distinction, and it is why these can stay when the save
+ * buttons went.
  *
  * The fader moves in the scale the parameter declared. A cutoff from 20 Hz to
  * 8 kHz on a linear fader spends nine tenths of its travel above 800 Hz, where
@@ -479,7 +428,18 @@ function buildClip(name) {
 function buildPatch(lane) {
   const panel = document.createElement("div");
   panel.className = "patch";
-  panel.append(patchHead(lane));
+
+  const head = document.createElement("div");
+  head.className = "patchhead";
+  const label = document.createElement("span");
+  label.className = "pname";
+  label.textContent = lane.patch ?? `${lane.instrument} · unsaved`;
+  const solo = document.createElement("button");
+  solo.textContent = "hear it";
+  solo.title = "play this lane alone";
+  solo.onclick = () => send({ t: "audition", lane: lane.index });
+  head.append(label, solo);
+  panel.append(head);
 
   lane.params.forEach((spec, index) => {
     const value = lane.values[index];
@@ -496,8 +456,6 @@ function buildPatch(lane) {
     const readout = document.createElement("span");
     readout.className = "pvalue";
 
-    // A logarithmic parameter is held as its position along the fader, 0 to 1,
-    // and converted at the edges.
     const toFader = (v) =>
       spec.logarithmic
         ? Math.log(Math.max(v, spec.min) / spec.min) / Math.log(spec.max / spec.min)
@@ -528,151 +486,6 @@ function buildPatch(lane) {
 }
 
 /**
- * What you can do to a lane's patch: hear it alone, save it, fork it, or swap
- * in another one of the same instrument.
- *
- * "Save" writes back to the name the patch already has, and every lane playing
- * that name changes with it — that is what makes it a patch rather than a copy.
- * "Save as" writes a new name and repoints only this lane, which is how a
- * second kick comes to exist without disturbing the beat that had the first.
- */
-function patchHead(lane) {
-  const head = document.createElement("div");
-  head.className = "patchhead";
-
-  const label = document.createElement("span");
-  label.className = "pname";
-  label.textContent = lane.patch ?? `${lane.instrument} · unsaved`;
-  label.title = lane.patch
-    ? `saved as ${lane.patch} — saving changes every lane playing it`
-    : "this patch has no name yet; save it as one to reuse it";
-
-  // Hearing one lane by itself is the patch editor's whole point: the clip's
-  // other lanes are not what you are judging.
-  const solo = document.createElement("button");
-  solo.textContent = "hear it";
-  solo.title = "play this lane alone";
-  solo.onclick = () => send({ t: "audition", lane: lane.index });
-
-  const save = document.createElement("button");
-  save.textContent = "save";
-  save.disabled = !lane.patch;
-  save.title = lane.patch
-    ? `write it back to ${lane.patch}`
-    : "no name yet — use save as";
-  save.onclick = () => send({ t: "save_patch", lane: lane.index });
-
-  const saveAs = document.createElement("button");
-  saveAs.textContent = "save as…";
-  saveAs.title = "save these settings under a new name";
-  const saveAsBox = nameBox(
-    saveAs,
-    () => suggest(lane),
-    (name) => send({ t: "save_patch", lane: lane.index, name }),
-  );
-
-  // Only patches of the same instrument: a hat's parameters mean nothing to a
-  // kick, and the server refuses the swap anyway.
-  const swap = document.createElement("select");
-  swap.title = "play a different saved patch on this lane";
-  const mine = library.patches.filter((p) => p.instrument === lane.instrument);
-  const blank = document.createElement("option");
-  blank.textContent = mine.length ? "swap in…" : "no saved patches";
-  blank.value = "";
-  swap.append(blank);
-  for (const patch of mine) {
-    const option = document.createElement("option");
-    option.value = patch.name;
-    option.textContent = patch.name;
-    swap.append(option);
-  }
-  swap.disabled = !mine.length;
-  swap.onchange = () => {
-    if (swap.value) send({ t: "use_patch", lane: lane.index, name: swap.value });
-    swap.value = "";
-  };
-
-  head.append(label, solo, save, saveAs, saveAsBox);
-
-  // How long the notes ring. A lane property, not the patch's — Bach's bass
-  // holds a half bar and his top voice an eighth on the same instrument — but
-  // it sits here because this is the only panel a lane has, and a roll is
-  // unjudgeable without it: the same notes at one step and at sixteen are two
-  // different pieces of music.
-  if (lane.pitched) {
-    const holds = document.createElement("label");
-    holds.className = "holds";
-    holds.title = "how long each note rings, in steps — this lane's, not the patch's";
-    const box = document.createElement("input");
-    Object.assign(box, { type: "number", min: 0.1, max: 64, step: 0.1 });
-    box.value = lane.length.steps ?? 1;
-    box.onchange = () => {
-      const steps = Math.min(64, Math.max(0.1, Number(box.value) || 1));
-      box.value = steps;
-      send({ t: "set_length", lane: lane.index, length: { steps } });
-    };
-    holds.append("notes last", box, "steps");
-    head.append(holds);
-  }
-
-  head.append(swap);
-  return head;
-}
-
-/**
- * Ask for a name, in place.
- *
- * Not `prompt()`: a modal dialog stops the page's event loop, and this page has
- * audio running behind it and a socket to keep answering.
- *
- * The button and the box both live in the page from the start and only their
- * visibility changes. Swapping the nodes instead — which is the obvious way to
- * write this — races: blur, Enter and a redraw triggered by the save itself can
- * each want to put the button back, and whichever loses throws on a node that
- * has already moved. Two nodes and a `hidden` flag have no such state.
- */
-function nameBox(button, suggest, done) {
-  const box = document.createElement("input");
-  Object.assign(box, { type: "text", maxLength: 64, hidden: true });
-  box.className = "namebox";
-  box.title = "enter to save · escape to cancel";
-
-  const close = () => {
-    box.hidden = true;
-    button.hidden = false;
-  };
-  box.onkeydown = (event) => {
-    if (event.key === "Enter") {
-      const name = box.value.trim();
-      close();
-      if (name) done(name);
-    } else if (event.key === "Escape") {
-      close();
-    }
-    event.stopPropagation();
-  };
-  box.onblur = close;
-
-  button.onclick = () => {
-    box.value = suggest();
-    box.hidden = false;
-    button.hidden = true;
-    box.focus();
-    box.select();
-  };
-  return box;
-}
-
-/** A name that is probably free: "punch 2" after "punch". */
-function suggest(lane) {
-  const base = lane.patch ?? lane.name;
-  const taken = new Set(library.patches.map((p) => p.name));
-  if (!taken.has(base)) return base;
-  for (let n = 2; n < 100; n += 1) if (!taken.has(`${base} ${n}`)) return `${base} ${n}`;
-  return base;
-}
-
-/**
  * A line every four steps and a double line every sixteen.
  *
  * A grid this long is read by counting, and counting past four without a mark
@@ -686,34 +499,20 @@ function tickBefore(step) {
   return tick;
 }
 
-/** The three states a drum step has, and the two a click has. Shift is the third. */
-function nextVelocity(now, shifted) {
-  if (shifted) return now >= 1 ? 0 : 1;
-  return now > 0 ? 0 : 0.7;
-}
-
 /** One row of boxes: a drum, where the only question per step is whether. */
 function stepRow(lane) {
   const cells = document.createElement("div");
   cells.className = "steps";
-  // An empty stand-in for the roll's key column, so a drum lane and a pitched
-  // lane in the same clip put step 1 in the same place.
   const gutter = document.createElement("span");
   gutter.className = "key";
   cells.append(gutter);
-  lane.steps.forEach(([velocity, offset], step) => {
+  lane.steps.forEach(([velocity], step) => {
     const tick = tickBefore(step);
     if (tick) cells.append(tick);
-
     const cell = document.createElement("div");
     cell.className = "step" + (step % 4 === 0 ? " beat" : "");
     cell.dataset.step = step;
     paint(cell, velocity);
-    cell.onclick = (event) => {
-      const next = nextVelocity(Number(cell.dataset.velocity), event.shiftKey);
-      paint(cell, next);
-      send({ t: "set_step", lane: lane.index, step, velocity: next, offset });
-    };
     cells.append(cell);
   });
   return cells;
@@ -723,14 +522,11 @@ function stepRow(lane) {
  * A keyboard turned on its side: rows are semitones from the lane's root, high
  * at the top, columns are steps.
  *
- * A lane holds **one** offset per step, so a column can never have two notes in
- * it — clicking a cell moves the note there rather than adding one. Chords are
- * lanes, which is why the prelude is three voices and the pad is five. The same
- * fact is what makes this a grid and not a general sequencer: there is nothing
- * to overlap.
- *
- * The rows span what the lane actually plays, padded out to at least an octave.
- * A hundred and twenty-eight rows of nothing would be honest and useless.
+ * A lane holds one offset per step, so a column can never have two notes in
+ * it. Chords are lanes, which is why the prelude is three voices and the pad
+ * is five. The rows span what the lane actually plays, padded out to at least
+ * an octave: a hundred and twenty-eight rows of nothing would be honest and
+ * useless.
  */
 function pianoRoll(lane) {
   const played = lane.steps.filter(([v]) => v > 0).map(([, o]) => o);
@@ -742,12 +538,9 @@ function pianoRoll(lane) {
 
   const roll = document.createElement("div");
   roll.className = "roll";
-
   for (let offset = high; offset >= low; offset -= 1) {
     const line = document.createElement("div");
     line.className = "rollrow";
-    // Black notes shaded, and the root drawn as a line you can find: without
-    // one, "seven semitones up" is a thing you count rather than see.
     const semitone = ((offset % 12) + 12) % 12;
     if ([1, 3, 6, 8, 10].includes(semitone)) line.classList.add("black");
     if (offset === 0) line.classList.add("root");
@@ -761,30 +554,11 @@ function pianoRoll(lane) {
     lane.steps.forEach(([velocity, at], step) => {
       const tick = tickBefore(step);
       if (tick) line.append(tick);
-
       const cell = document.createElement("div");
       cell.className = "step" + (step % 4 === 0 ? " beat" : "");
       cell.dataset.step = step;
       cell.dataset.offset = offset;
       paint(cell, at === offset ? velocity : 0);
-      cell.onclick = (event) => {
-        // On this row already: the three states, as a drum has. On another row
-        // or empty: the note comes here, at the velocity it had or a fresh one.
-        const here = Number(cell.dataset.velocity) > 0;
-        const current = lane.steps[step];
-        const velocity = here
-          ? nextVelocity(Number(cell.dataset.velocity), event.shiftKey)
-          : event.shiftKey
-            ? 1
-            : current[0] || 0.7;
-        lane.steps[step] = [velocity, offset];
-        // Every row of this column is redrawn, because moving a note off a row
-        // is the same click as putting it on another one.
-        for (const other of roll.querySelectorAll(`[data-step="${step}"]`)) {
-          paint(other, Number(other.dataset.offset) === offset ? velocity : 0);
-        }
-        send({ t: "set_step", lane: lane.index, step, velocity, offset });
-      };
       line.append(cell);
     });
     roll.append(line);
@@ -808,51 +582,6 @@ function paint(cell, velocity) {
 }
 
 // ── Transport ───────────────────────────────────────────────────────────────
-
-$("save").onclick = () => send({ t: "save" });
-
-$("clipSave").onclick = () => send({ t: "save_clip", clip: tab });
-// Saving as new moves the piece onto the new clip: the thing you were editing is
-// the thing you want to keep editing.
-$("clipSaveAs").after(
-  nameBox(
-    $("clipSaveAs"),
-    () => {
-      const taken = new Set(library.clips.map((c) => c.name));
-      let name = tab;
-      for (let n = 2; taken.has(name); n += 1) name = `${tab} ${n}`;
-      return name;
-    },
-    (chosen) => send({ t: "save_clip", clip: tab, name: chosen }),
-  ),
-);
-
-$("addLane").onclick = () =>
-  send({ t: "add_lane", clip: tab, patch: $("addPatch").value });
-
-// Growing a loop fills the new bar with rests, so you can hear what you put in
-// it; shrinking drops the tail, and those steps are gone.
-const setBars = (by) => {
-  const now = clipBars(clips().get(tab) ?? []);
-  const wanted = now + by;
-  if (wanted < 1 || wanted > 64) return;
-  send({ t: "set_bars", clip: tab, bars: wanted });
-};
-$("barsMore").onclick = () => setBars(1);
-$("barsFewer").onclick = () => setBars(-1);
-
-$("newPatch").onclick = () => {
-  const name = $("newPatchName").value.trim();
-  if (!name) {
-    say("give the new patch a name", true);
-    return;
-  }
-  send({ t: "new_patch", instrument: $("newInstrument").value, name });
-  $("newPatchName").value = "";
-};
-$("newPatchName").onkeydown = (event) => {
-  if (event.key === "Enter") $("newPatch").click();
-};
 
 $("play").onclick = () => send({ t: "playing", value: !(telemetry?.playing ?? true) });
 $("start").onclick = () => send({ t: "seek", bar: 0 });

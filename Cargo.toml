@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/dsp", "crates/engine", "crates/host", "crates/server", "crates/app", "crates/nf-engine"]
+members = ["crates/dsp", "crates/engine", "crates/host", "crates/server", "crates/nf-engine"]
 
 [workspace.package]
 edition = "2024"
@@ -12,8 +12,6 @@ dsp = { path = "crates/dsp" }
 engine = { path = "crates/engine" }
 host = { path = "crates/host" }
 cpal = "0.18"
-eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu"] }
-egui = "0.36"
 rtrb = "0.4"
 hound = "3.5"
 # `default-features = false` drops its `disable_release`, which compiles
