@@ -1,0 +1,3378 @@
+{
+  "version": 1,
+  "name": "barnluren",
+  "bpm": 125.217,
+  "length_bars": 6.0,
+  "reverb": {
+    "rt60": 2.2,
+    "damping": 0.65,
+    "predelay": 0.02,
+    "lowcut": 130.0
+  },
+  "macros": [],
+  "lanes": [
+    {
+      "name": "kick",
+      "clip": "drive",
+      "voicing": {
+        "instrument": "kick",
+        "sweep": 2.2,
+        "pitch_decay": 0.016,
+        "punch": 6.5,
+        "punch_decay": 0.005,
+        "decay": 0.17,
+        "hold": 0.004,
+        "click": 0.4,
+        "click_decay": 0.003,
+        "knock": 0.75,
+        "drive": 2.2
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.95,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.95,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.95,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.95,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.9,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.83436,
+      "length": {
+        "seconds": 0.35
+      },
+      "root": 34.0,
+      "home": {
+        "kind": "centre"
+      },
+      "send": 0.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "hat",
+      "clip": "drive",
+      "voicing": {
+        "instrument": "hat",
+        "tone": 7000.0,
+        "decay": 0.045,
+        "resonance": 0.5,
+        "noise": 0.85
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.3,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.3,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.3,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.3,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.42,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.42,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.42,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.42,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.42,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.42,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.52,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.52,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.52,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.52,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.62,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.4499,
+      "length": {
+        "seconds": 0.05
+      },
+      "root": 0.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 1.2,
+        "bars_per_lap": 8.0,
+        "phase": 0.0,
+        "elevation": 0.0,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 0.12,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "open hat",
+      "clip": "drive",
+      "voicing": {
+        "instrument": "hat",
+        "tone": 7000.0,
+        "decay": 0.22,
+        "resonance": 0.5,
+        "noise": 0.85
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.55,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.6,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.6,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.95,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.3681,
+      "length": {
+        "seconds": 0.22
+      },
+      "root": 0.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 1.2,
+        "bars_per_lap": 8.0,
+        "phase": 0.5,
+        "elevation": 0.0,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 0.2,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "bass",
+      "clip": "drive",
+      "voicing": {
+        "instrument": "bass",
+        "cutoff": 240.0,
+        "env_amount": 4.5,
+        "env_decay": 0.06,
+        "resonance": 0.65,
+        "sub": 0.4,
+        "drive": 2.8,
+        "attack": 0.003,
+        "decay": 0.22,
+        "release": 0.04
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.65,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.65,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.9,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.9,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.75,
+            "offset": 12
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.5889599999999999,
+      "length": {
+        "steps": 0.85
+      },
+      "root": 31.0,
+      "home": {
+        "kind": "centre"
+      },
+      "send": 0.0,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": true,
+      "muted": false
+    },
+    {
+      "name": "bell",
+      "clip": "answer",
+      "voicing": {
+        "instrument": "glass",
+        "ratio": 2.0,
+        "index": 1.1,
+        "index_decay": 0.35,
+        "detune": 5.0,
+        "attack": 0.003,
+        "decay": 2.2,
+        "release": 1.6,
+        "strike": 0.09,
+        "wow_depth": 5.0,
+        "wow_rate": 0.25
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 1.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.7,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.85,
+            "offset": 12
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.409,
+      "length": {
+        "steps": 15.0
+      },
+      "root": 55.0,
+      "home": {
+        "kind": "centre"
+      },
+      "send": 0.75,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "bell high",
+      "clip": "answer",
+      "voicing": {
+        "instrument": "glass",
+        "ratio": 2.0,
+        "index": 1.1,
+        "index_decay": 0.35,
+        "detune": 5.0,
+        "attack": 0.003,
+        "decay": 2.2,
+        "release": 1.6,
+        "strike": 0.09,
+        "wow_depth": 5.0,
+        "wow_rate": 0.25
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.75,
+            "offset": 4
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.5,
+            "offset": 12
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.6,
+            "offset": 16
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.24539999999999998,
+      "length": {
+        "steps": 15.0
+      },
+      "root": 55.0,
+      "home": {
+        "kind": "centre"
+      },
+      "send": 0.8,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "pad",
+      "clip": "answer",
+      "voicing": {
+        "instrument": "strings",
+        "copies": 3.0,
+        "detune": 6.0,
+        "depth": 10.0,
+        "cutoff": 1400.0,
+        "breathe": 0.5,
+        "breathe_rate": 0.1,
+        "attack": 0.35,
+        "release": 1.4,
+        "phaser": 0.5,
+        "phaser_rate": 0.09
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.9,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.409,
+      "length": {
+        "steps": 20.0
+      },
+      "root": 43.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 2.0,
+        "bars_per_lap": 24.0,
+        "phase": 0.0,
+        "elevation": 0.0,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 0.45,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    },
+    {
+      "name": "pad high",
+      "clip": "answer",
+      "voicing": {
+        "instrument": "strings",
+        "copies": 3.0,
+        "detune": 6.0,
+        "depth": 10.0,
+        "cutoff": 1400.0,
+        "breathe": 0.5,
+        "breathe_rate": 0.1,
+        "attack": 0.35,
+        "release": 1.4,
+        "phaser": 0.5,
+        "phaser_rate": 0.09
+      },
+      "pattern": {
+        "steps": [
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.8,
+            "offset": 7
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          },
+          {
+            "velocity": 0.0,
+            "offset": 0
+          }
+        ]
+      },
+      "gain": 0.3272,
+      "length": {
+        "steps": 20.0
+      },
+      "root": 43.0,
+      "home": {
+        "kind": "orbit",
+        "radius": 2.0,
+        "bars_per_lap": 24.0,
+        "phase": 0.5,
+        "elevation": 0.0,
+        "height": 0.0,
+        "height_bars": 1.0
+      },
+      "send": 0.5,
+      "gate": null,
+      "spans": [],
+      "velocity_scale": 1.0,
+      "ducked": false,
+      "muted": false
+    }
+  ]
+}

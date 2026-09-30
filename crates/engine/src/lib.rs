@@ -16,6 +16,7 @@ pub mod library;
 pub mod mix;
 pub mod seq;
 pub mod sets;
+pub mod tab;
 pub mod telemetry;
 pub mod voices;
 

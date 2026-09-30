@@ -38,10 +38,38 @@ fn main() {
 
     let bpm: f32 = flag("--bpm").and_then(|s| s.parse().ok()).unwrap_or(126.0);
     let name = flag("--set").unwrap_or_else(|| "rolling".to_string());
-    let Some(set) = engine::sets::by_name(&name) else {
-        eprintln!("no set named {name:?}; have {:?}", engine::sets::NAMES);
-        std::process::exit(1);
+
+    // A piece on disk wins over the built-in of the same name, and named
+    // patches come from the library — the same order the server loads in, so
+    // what renders here is what you just heard there. Without this the renderer
+    // could only reach the Rust generators, which is to say it could not render
+    // anything anyone had edited.
+    let path_for = engine::document::directory().join(format!("{name}.json"));
+    let mut set = match engine::document::load(&path_for) {
+        Ok(piece) => piece.set,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            match engine::sets::by_name(&name) {
+                Some(set) => set,
+                None => {
+                    eprintln!(
+                        "no piece or set named {name:?}; built in: {:?}",
+                        engine::sets::NAMES
+                    );
+                    std::process::exit(1);
+                }
+            }
+        }
+        Err(err) => {
+            eprintln!("could not read {}: {err}", path_for.display());
+            std::process::exit(1);
+        }
     };
+    for missing in engine::library::resolve(&mut set) {
+        eprintln!("patch not found: {missing}");
+    }
+
+    // The piece's own tempo, unless the command line says otherwise.
+    let bpm = if flag("--bpm").is_some() { bpm } else { set.bpm };
     let mut engine = Engine::new(dsp::SR, bpm, set);
     if args.iter().any(|a| a == "--dry") {
         for name in engine.lane_names() {
