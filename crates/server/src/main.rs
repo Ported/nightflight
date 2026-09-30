@@ -28,6 +28,8 @@ use std::time::Duration;
 
 use engine::Engine;
 use engine::seq::Set;
+
+mod watch;
 use engine::telemetry::{self, Command, Description, LaneState, Telemetry};
 use host::Link;
 use serde::Serialize;
@@ -110,6 +112,17 @@ struct Session {
     /// The bar the piece had reached when an audition took over, so leaving the
     /// editor puts you back where you were rather than at the beginning.
     resume_at: f32,
+    /// Bumped whenever something changed that a page cannot have asked for: a
+    /// file was written, a piece reloaded. Each connection remembers the
+    /// number it last drew and sends itself a fresh hello when it moves.
+    ///
+    /// A counter rather than a message queue because there can be more than
+    /// one page, they can connect at any time, and none of them needs to know
+    /// *what* changed — only that what they are showing is old.
+    generation: u64,
+    /// Why the last reload did not happen, for the page to show. A tab file
+    /// with a typo in it is the normal case here, not an exceptional one.
+    trouble: Option<String>,
 }
 
 impl Session {
@@ -177,6 +190,35 @@ impl Session {
     /// engine it replaces comes back to be dropped on this side.
     fn stage(&mut self, wanted: &Stage) -> Result<(), String> {
         self.stage_at(wanted, None)
+    }
+
+    /// Read the current piece again and carry on from where it was.
+    ///
+    /// The difference from `load` is the bar: a different piece has no
+    /// sensible place to resume, and the same piece edited under you has
+    /// exactly one — the one you are on. Whatever was staged stays staged, so
+    /// editing a clip while auditioning it keeps auditioning it.
+    ///
+    /// # Errors
+    /// If the file no longer reads. Nothing is swapped in that case: a typo
+    /// must not stop the music.
+    fn reload(&mut self) -> Result<(), String> {
+        let name = self.name.clone();
+        let (_, mut set) = engine::document::find(&name).map_err(|err| err.to_string())?;
+        engine::library::resolve(&mut set);
+        let previous = std::mem::replace(&mut self.document, set);
+        let stage = self.stage.clone();
+        let at = self.stage_bar;
+        match self.stage_at(&stage, Some(at)) {
+            Ok(()) => {
+                self.trouble = None;
+                Ok(())
+            }
+            Err(why) => {
+                self.document = previous;
+                Err(why)
+            }
+        }
     }
 
     /// Put a different piece on.
@@ -417,11 +459,16 @@ fn main() {
         document,
         name: set_name,
         stage: Stage::Piece,
+        generation: 0,
+        trouble: None,
         stage_bars: 0.0,
         stage_bar: 0.0,
         resume_at: 0.0,
         link,
     }));
+    // From here a tab file being written is a thing that happens to the music.
+    watch::spawn(Arc::clone(&session));
+
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
         let session = Arc::clone(&session);
@@ -536,6 +583,10 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
         return;
     }
 
+    // What this connection has drawn. A page that connects mid-session starts
+    // level with whatever has already happened.
+    let mut drawn = session.lock().expect("no panics hold this").generation;
+
     loop {
         let mut reply = Vec::new();
         match socket.read() {
@@ -547,6 +598,20 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             Err(tungstenite::Error::Io(err)) if err.kind() == std::io::ErrorKind::WouldBlock => {}
             Err(_) => return,
         }
+        // Something changed on disk: the piece reloaded, or the library did.
+        // A hello is the message that means "here is what this is", and it is
+        // the right one whether a lane appeared or a whole piece was rewritten.
+        {
+            let session = session.lock().expect("no panics hold this");
+            if session.generation != drawn {
+                drawn = session.generation;
+                reply.push(session.hello());
+                if let Some(why) = &session.trouble {
+                    reply.push(complaint_text(why));
+                }
+            }
+        }
+
         for message in reply {
             if socket.send(Message::Text(message.into())).is_err() {
                 return;
@@ -587,6 +652,16 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             None => thread::sleep(Duration::from_millis(4)),
         }
     }
+}
+
+/// Something went wrong, said in a sentence, without printing it again —
+/// the watcher has already said it once and repeats it to every page that
+/// connects.
+fn complaint_text(why: &str) -> String {
+    serde_json::to_string(&Outgoing::Complaint {
+        why: why.to_string(),
+    })
+    .expect("a complaint serialises")
 }
 
 /// Something went wrong, said in a sentence.

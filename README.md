@@ -87,6 +87,12 @@ A piece is a name in `pieces/`, a path to a `.json`, or a path to a `.tab`;
 all three work anywhere one is asked for. `nf measure` on a piece renders it
 first, which is the loop: edit the grid, run one command, read the numbers.
 
+**And the server is watching.** Write a tab under `pieces/`, or a patch under
+`library/`, while it is playing, and it reloads and carries on from the bar it
+was on — the lane you just added is simply there, half a second later, with no
+gap in the sound. A tab with a typo in it does not stop the music: the engine
+keeps what it had and the page says which line is wrong.
+
 **Rust owns the format and the sound; Python owns the surface.** The tab parser
 is in `crates/engine/src/tab.rs` and is round-trip tested, so `nf` never reads a
 tab file itself — it asks `nf-engine`, which is the same code the audio thread

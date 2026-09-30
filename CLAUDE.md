@@ -53,6 +53,16 @@ Both of those boundaries are load-bearing and neither is decoration. The first i
 why an offline render is the same code as the live stream; the second is why the
 front end can be replaced without touching a line of DSP.
 
+## The loop
+
+Write a tab, hear it. The server polls `pieces/` and `library/` every 250 ms
+and reloads what changed, keeping its place in the bar — so editing the piece
+that is playing is a thing you can do while it plays. Two polls before it acts,
+because a shell redirect is not atomic and half a tab file is worse than none.
+
+A file that does not read is reported and ignored. The music does not stop for
+a typo.
+
 ## Commands
 
 ```

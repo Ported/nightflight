@@ -35,6 +35,11 @@ function connect() {
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
     if (message.t === "hello") {
+      // A hello arrives on connect, on a piece change, and whenever a file
+      // under pieces/ or library/ is written. Only the first is silent: the
+      // others happened without anyone here asking, so they say so.
+      const was = description?.set;
+      if (was) say(was === message.set ? `reloaded ${was}` : `playing ${message.set}`);
       description = message;
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
