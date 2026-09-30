@@ -143,7 +143,12 @@ pub enum Command {
     /// future and no end; taking it out is the same lane with a `to`. Both
     /// land on a bar line rather than on the click, so what you press between
     /// beats still arrives in time.
-    Span { lane: u8, from: f32, to: f32 },
+    Span {
+        lane: u8,
+        from: f32,
+        /// `null` for "until someone says otherwise".
+        to: Option<f32>,
+    },
     /// How long every note of a lane rings.
     ///
     /// A lane property rather than a per-note one, which is the model's real
@@ -218,7 +223,14 @@ pub struct LaneDescription {
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct SpanDescription {
     pub start: f32,
-    pub end: f32,
+    /// When it stops, or `None` for a clip brought in by hand that runs until
+    /// someone stops it.
+    ///
+    /// An `Option` rather than an infinity because serde turns a non-finite
+    /// float into JSON `null` anyway — JSON has no infinity — and a reader
+    /// that does not know that gets `Math.min(null, bars)`, which is zero, and
+    /// draws a clip of no width. Better to say so in the type.
+    pub end: Option<f32>,
     /// Where the lane first makes a sound — earlier than `start` if it flies in.
     pub first_bar: f32,
     /// "cut", "fade" or "fly".

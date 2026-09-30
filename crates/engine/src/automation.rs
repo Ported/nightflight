@@ -153,7 +153,16 @@ pub enum Transition {
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Play {
     pub start: f32,
-    pub end: f32,
+    /// When it stops, or `None` for a clip brought in by hand that runs until
+    /// someone stops it.
+    ///
+    /// Not an infinity, which is what this was and which cost two bugs in an
+    /// afternoon: `f32::MAX` reached the page as `3.4e38`, and `f32::INFINITY`
+    /// became JSON `null` — so the reader computed `min(null, bars)`, got
+    /// zero, and drew a clip with no width. JSON has no infinity, so a
+    /// sentinel float cannot survive the trip. `None` can, and it is what was
+    /// meant.
+    pub end: Option<f32>,
     pub enter: Transition,
     pub leave: Transition,
 }
@@ -175,7 +184,18 @@ impl Play {
     pub fn new(start: f32, end: f32) -> Self {
         Self {
             start,
-            end,
+            end: Some(end),
+            enter: Transition::Cut,
+            leave: Transition::Cut,
+        }
+    }
+
+    /// From here until someone says otherwise.
+    #[must_use]
+    pub fn from(start: f32) -> Self {
+        Self {
+            start,
+            end: None,
             enter: Transition::Cut,
             leave: Transition::Cut,
         }
@@ -185,7 +205,7 @@ impl Play {
     pub fn fading(start: f32, end: f32, bars: f32) -> Self {
         Self {
             start,
-            end,
+            end: Some(end),
             enter: Transition::Fade { bars },
             leave: Transition::Fade { bars },
         }
@@ -222,16 +242,19 @@ impl Play {
             return Some(1.0);
         }
         let bar = bar as f32;
-        if bar < self.start || bar >= self.end {
+        if bar < self.start || self.end.is_some_and(|end| bar >= end) {
             return None;
         }
         let rising = match self.enter {
             Transition::Cut | Transition::Fly(_) => 1.0,
             Transition::Fade { bars } => ((bar - self.start) / bars.max(1e-6)).clamp(0.0, 1.0),
         };
-        let falling = match self.leave {
-            Transition::Cut | Transition::Fly(_) => 1.0,
-            Transition::Fade { bars } => ((self.end - bar) / bars.max(1e-6)).clamp(0.0, 1.0),
+        // Nothing to fade towards when there is no end.
+        let falling = match (self.leave, self.end) {
+            (Transition::Fade { bars }, Some(end)) => {
+                ((end - bar) / bars.max(1e-6)).clamp(0.0, 1.0)
+            }
+            _ => 1.0,
         };
         Some(rising.min(falling))
     }

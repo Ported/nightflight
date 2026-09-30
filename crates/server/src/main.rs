@@ -91,11 +91,10 @@ impl Stage {
 #[derive(Clone, Debug)]
 struct Brought {
     clip: String,
-    /// Bars. `to` is where it stops, and infinity while it is still running —
-    /// cheaper to reason about than an `Option`, and the engine's `bar < end`
-    /// needs no special case for it.
+    /// Bars. `to` is `None` while it is still running: an infinity would not
+    /// survive the trip to the page, because JSON has none.
     from: f32,
-    to: f32,
+    to: Option<f32>,
 }
 
 struct Session {
@@ -245,7 +244,7 @@ impl Session {
 
         if let Some(already) = self.live.iter_mut().find(|b| b.clip == name) {
             already.from = at;
-            already.to = f32::INFINITY;
+            already.to = None;
         } else {
             let clip = engine::library::load_clip(name)
                 .map_err(|err| format!("no clip called {name:?}: {err}"))?;
@@ -269,7 +268,7 @@ impl Session {
                 lane.name = self.free_name_among(&lane.name, &arriving);
                 // Exactly one span, so placing it later writes through rather
                 // than pushing — a push on the audio thread could allocate.
-                lane.spans = vec![engine::automation::Play::new(at, f32::INFINITY)];
+                lane.spans = vec![engine::automation::Play::from(at)];
                 arriving.push(lane);
             }
             for lane in arriving {
@@ -281,11 +280,31 @@ impl Session {
             self.live.push(Brought {
                 clip: name.to_string(),
                 from: at,
-                to: f32::INFINITY,
+                to: None,
             });
         }
         self.push_spans(name);
         Ok(at)
+    }
+
+    /// Move a brought-in clip: when it starts, when it stops.
+    ///
+    /// The general form of bringing in and taking out, for dragging its block
+    /// along the timeline. Only clips the conductor brought in: the ones the
+    /// piece placed belong to the file, and moving those is an edit rather
+    /// than a performance.
+    ///
+    /// # Errors
+    /// If that clip was not brought in.
+    fn place(&mut self, name: &str, from: f32, to: Option<f32>) -> Result<(), String> {
+        let Some(brought) = self.live.iter_mut().find(|b| b.clip == name) else {
+            return Err(format!("{name:?} is not in the mix"));
+        };
+        // Nothing can be scheduled for the past; the bar has gone.
+        brought.from = from.max(0.0);
+        brought.to = to.filter(|end| *end > brought.from);
+        self.push_spans(name);
+        Ok(())
     }
 
     /// Stop a brought-in clip, at a bar in the future.
@@ -301,7 +320,7 @@ impl Session {
         let Some(brought) = self.live.iter_mut().find(|b| b.clip == name) else {
             return Err(format!("{name:?} is not in the mix"));
         };
-        brought.to = at;
+        brought.to = Some(at);
         self.push_spans(name);
         Ok(at)
     }
@@ -373,7 +392,10 @@ impl Session {
         for brought in &self.live.clone() {
             if let Ok(clip) = engine::library::load_clip(&brought.clip) {
                 for mut lane in clip.lanes {
-                    lane.spans = vec![engine::automation::Play::new(brought.from, brought.to)];
+                    lane.spans = vec![match brought.to {
+                        Some(end) => engine::automation::Play::new(brought.from, end),
+                        None => engine::automation::Play::from(brought.from),
+                    }];
                     set.lanes.push(lane);
                 }
             }
@@ -510,7 +532,14 @@ impl Session {
     }
 
     fn hello(&self) -> String {
+        self.hello_because("connected")
+    }
+
+    /// The same, saying what prompted it — the page shows different words for
+    /// a file changing under you and a clip you just asked for.
+    fn hello_because(&self, why: &'static str) -> String {
         serde_json::to_string(&Outgoing::Hello {
+            why,
             set: &self.name,
             device: &self.link.device,
             buffer_frames: self.link.buffer_frames,
@@ -520,7 +549,7 @@ impl Session {
                 .map(|b| LiveClip {
                     clip: b.clip.clone(),
                     from: b.from,
-                    to: if b.to.is_finite() { Some(b.to) } else { None },
+                    to: b.to,
                 })
                 .collect(),
             stage: Staged {
@@ -566,6 +595,8 @@ enum Outgoing<'a> {
     /// Once, on connect: what this is and everything about it that will not
     /// change while it plays.
     Hello {
+        /// "connected", "loaded", "reloaded" or "brought".
+        why: &'static str,
         set: &'a str,
         device: &'a str,
         buffer_frames: u32,
@@ -800,7 +831,7 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
             let session = session.lock().expect("no panics hold this");
             if session.generation != drawn {
                 drawn = session.generation;
-                reply.push(session.hello());
+                reply.push(session.hello_because("reloaded"));
                 if let Some(why) = &session.trouble {
                     reply.push(complaint_text(why));
                 }
@@ -929,7 +960,7 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
             match session.load(name) {
                 Ok(()) => {
                     println!("playing {name}");
-                    vec![session.hello()]
+                    vec![session.hello_because("loaded")]
                 }
                 Err(why) => vec![complaint(&why)],
             }
@@ -957,8 +988,28 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
                         "{} {clip} at bar {at}",
                         if taking { "out goes" } else { "in comes" }
                     );
-                    vec![session.hello()]
+                    vec![session.hello_because("brought")]
                 }
+                Err(why) => vec![complaint(&why)],
+            }
+        }
+        // Dragging a brought-in clip's block along the timeline.
+        Some("place") => {
+            let Some(clip) = value.get("clip").and_then(serde_json::Value::as_str) else {
+                return vec![complaint("place needs a clip")];
+            };
+            #[allow(clippy::cast_possible_truncation)]
+            let from = value
+                .get("from")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0) as f32;
+            #[allow(clippy::cast_possible_truncation)]
+            let to = value
+                .get("to")
+                .and_then(serde_json::Value::as_f64)
+                .map(|v| v as f32);
+            match session.place(clip, from, to) {
+                Ok(()) => vec![session.hello_because("brought")],
                 Err(why) => vec![complaint(&why)],
             }
         }

@@ -20,7 +20,7 @@ fn a_curve_interpolates_and_then_holds() {
 fn a_span_fades_in_and_out_and_is_silent_outside() {
     let play = Play {
         start: 4.0,
-        end: 20.0,
+        end: Some(20.0),
         enter: Transition::Fade { bars: 4.0 },
         leave: Transition::Fade { bars: 2.0 },
     };

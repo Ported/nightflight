@@ -179,8 +179,12 @@ fn home(h: Home) -> Option<String> {
     }
 }
 
+/// `4-12`, or `4-` for a span with no end.
 fn span(p: Play) -> String {
-    format!("{}-{}", p.start, p.end)
+    match p.end {
+        Some(end) => format!("{}-{end}", p.start),
+        None => format!("{}-", p.start),
+    }
 }
 
 /// A whole piece as tab.
@@ -565,7 +569,14 @@ fn read_lane(words: &[&str], line: usize) -> Result<(Lane, f32), String> {
         Some(list) => list
             .split(',')
             .filter_map(|s| s.split_once('-'))
-            .map(|(a, b)| Play::new(a.parse().unwrap_or(0.0), b.parse().unwrap_or(0.0)))
+            .map(|(a, b)| {
+                let start = a.parse().unwrap_or(0.0);
+                match b.parse() {
+                    Ok(end) => Play::new(start, end),
+                    // `4-` is "from bar four, until someone says otherwise".
+                    Err(_) => Play::from(start),
+                }
+            })
             .collect(),
         None => Vec::new(),
     };

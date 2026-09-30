@@ -536,7 +536,7 @@ pub fn intro() -> Set {
         gate: Some(Gate::new(PAD_GATE, 0.55, 0.0)),
         spans: vec![Play {
             start: 0.0,
-            end: LANDING,
+            end: Some(LANDING),
             enter: Transition::Fade { bars: 4.0 },
             leave: Transition::Cut,
         }],
@@ -578,7 +578,7 @@ pub fn intro() -> Set {
     for mut lane in groove_lanes() {
         lane.spans = vec![Play {
             start: LANDING,
-            end: LANDING + AFTER,
+            end: Some(LANDING + AFTER),
             enter: if lane.name == "bass" {
                 Transition::Cut
             } else {

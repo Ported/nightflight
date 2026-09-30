@@ -40,8 +40,13 @@ function connect() {
       // A hello arrives on connect, on a piece change, and whenever a file
       // under pieces/ or library/ is written. Only the first is silent: the
       // others happened without anyone here asking, so they say so.
-      const was = description?.set;
-      if (was) say(was === message.set ? `reloaded ${was}` : `playing ${message.set}`);
+      say(
+        {
+          loaded: `playing ${message.set}`,
+          reloaded: `reloaded ${message.set} from disk`,
+          brought: null,
+        }[message.why] ?? "",
+      );
       description = message;
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
@@ -716,6 +721,85 @@ const style = getComputedStyle(document.documentElement);
 const colour = (name) => style.getPropertyValue(name).trim();
 
 /** The arrangement: one row per lane, its spans drawn, with the playhead. */
+// ── Dragging a brought-in clip ──────────────────────────────────────────────
+
+/**
+ * Where the draggable edges were last drawn.
+ *
+ * Rebuilt every frame by `drawTimeline`, because a canvas has no elements to
+ * hit-test against — the only record of what is where is the one the drawing
+ * keeps.
+ */
+const handles = [];
+/** The edge under the pointer, while it is being dragged. */
+let dragging = null;
+
+/** The bar at a pixel, snapped to the launch quantum. */
+function barAt(clientX) {
+  const canvas = $("timeline");
+  const box = canvas.getBoundingClientRect();
+  const gutter = 74;
+  const bars = Math.max(
+    description?.length_bars ?? 16,
+    Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
+  );
+  const span = box.width - gutter - 4;
+  const bar = ((clientX - box.left - gutter) / span) * bars;
+  const q = quantum();
+  return Math.max(0, Math.round(bar / q) * q);
+}
+
+$("timeline").addEventListener("pointerdown", (event) => {
+  const box = event.currentTarget.getBoundingClientRect();
+  const px = event.clientX - box.left;
+  const py = event.clientY - box.top;
+  // Six pixels either side: a handle you have to hit exactly is a handle
+  // nobody uses.
+  const near = handles.filter(
+    (h) => Math.abs(h.x - px) < 7 && py >= h.y && py <= h.y + h.rowHeight,
+  );
+  if (!near.length) return;
+  dragging = near.reduce((a, b) => (Math.abs(a.x - px) <= Math.abs(b.x - px) ? a : b));
+  dragging.to = barAt(event.clientX);
+  event.currentTarget.setPointerCapture(event.pointerId);
+  event.preventDefault();
+});
+
+$("timeline").addEventListener("pointermove", (event) => {
+  const box = event.currentTarget.getBoundingClientRect();
+  const px = event.clientX - box.left;
+  const py = event.clientY - box.top;
+  if (dragging) {
+    dragging.to = barAt(event.clientX);
+    return;
+  }
+  // A cursor that changes is the only way to discover a handle on a canvas.
+  const over = handles.some(
+    (h) => Math.abs(h.x - px) < 7 && py >= h.y && py <= h.y + h.rowHeight,
+  );
+  event.currentTarget.style.cursor = over ? "ew-resize" : "";
+});
+
+for (const done of ["pointerup", "pointercancel"]) {
+  $("timeline").addEventListener(done, () => {
+    if (!dragging) return;
+    const entry = live.find((l) => l.clip === dragging.clip);
+    if (entry) {
+      const from = dragging.edge === "from" ? dragging.to : entry.from;
+      // Dragging the end to the far edge means "no end" again, rather than a
+      // stop at whatever bar the canvas happened to run out at.
+      const bars = Math.max(
+        description?.length_bars ?? 16,
+        Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
+      );
+      let to = dragging.edge === "to" ? dragging.to : entry.to;
+      if (to !== null && to >= bars) to = null;
+      send({ t: "place", clip: dragging.clip, from, to });
+    }
+    dragging = null;
+  });
+}
+
 function drawTimeline() {
   const { context, width, height } = fit($("timeline"));
   context.clearRect(0, 0, width, height);
@@ -725,7 +809,13 @@ function drawTimeline() {
   // is unreadable against either colour.
   const gutter = 74;
   const top = 4;
-  const bars = description.length_bars;
+  // As far as the piece says, or as far as the transport has actually got.
+  // A brought-in clip has no end and the transport runs past the last bar of
+  // the score, so the written length is a floor rather than the width.
+  const bars = Math.max(
+    description.length_bars,
+    Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
+  );
   const rows = clips().size;
   const rowHeight = Math.min(16, (height - top - 16) / Math.max(rows, 1));
   const x = (bar) => gutter + (bar / bars) * (width - gutter - 4);
@@ -748,6 +838,9 @@ function drawTimeline() {
   const playhead = telemetry?.bar ?? -1;
   const inside = (from, to) => playhead >= from && playhead < to;
 
+  handles.length = 0;
+  const brought = new Set(live.map((l) => l.clip));
+
   [...clips()].forEach(([clip, lanes], index) => {
     const y = top + index * rowHeight;
     const middle = y + rowHeight / 2 - 1;
@@ -755,20 +848,38 @@ function drawTimeline() {
     const muted = lanes.every((lane) => telemetry?.lanes?.[lane.index]?.muted);
 
     // Every span of every lane in the clip. A lane with no spans plays for
-    // ever, which a piece for jamming wants.
-    const spans = lanes.flatMap((lane) =>
-      lane.spans.length ? lane.spans : [{ start: 0, end: bars, first_bar: 0 }],
-    );
+    // ever, which a piece for jamming wants, and so does a clip brought in by
+    // hand — `end` is null for both, and they run to the edge of what is
+    // drawn.
+    const spans = lanes
+      .flatMap((lane) =>
+        lane.spans.length ? lane.spans : [{ start: 0, end: null, first_bar: 0 }],
+      )
+      .map((span) => ({ ...span, end: Math.min(span.end ?? bars, bars) }));
     // Whether a block is lit follows the playhead being inside it, not whether
     // a voice happens to be ringing this instant: a closed hat sounds for a
     // third of the time it is playing, so voice activity makes a block flicker
     // and says nothing about the arrangement.
-    const live = spans.some((span) => inside(span.first_bar, span.end));
+    const sounding = spans.some((span) => inside(span.first_bar, span.end));
 
-    context.fillStyle = muted ? colour("--line") : live ? colour("--text") : colour("--weak");
+    context.fillStyle = muted ? colour("--line") : sounding ? colour("--text") : colour("--weak");
     context.textAlign = "right";
     context.fillText(clip, gutter - 6, middle);
     context.textAlign = "left";
+
+    // Only a clip the conductor brought in can be dragged. The ones the piece
+    // placed belong to the file, and moving those would be an edit — which
+    // this page stopped doing when the editors went.
+    if (brought.has(clip)) {
+      const entry = live.find((l) => l.clip === clip);
+      handles.push(
+        { clip, edge: "from", bar: entry.from, x: x(entry.from), y, rowHeight },
+        { clip, edge: "to", bar: entry.to ?? bars, x: x(entry.to ?? bars), y, rowHeight },
+      );
+    }
+
+    // The grips. Drawn after the block so they sit on top of it.
+    const grips = handles.filter((h) => h.clip === clip);
 
     for (const span of spans) {
       // A flight's approach: the lane is sounding, but from somewhere else. It
@@ -789,6 +900,27 @@ function drawTimeline() {
       const landed = inside(span.start, span.end);
       context.fillStyle = muted ? colour("--line") : colour("--accent") + (landed ? "e6" : "55");
       context.fillRect(x(span.start), y + 1, Math.max(x(span.end) - x(span.start), 1.5), rowHeight - 3);
+    }
+
+    // Grips on a brought-in block, and where it would land if the pointer let
+    // go now. The preview is drawn rather than the block moved, so the sound
+    // does not chase the mouse.
+    for (const grip of grips) {
+      const held = dragging === grip;
+      context.fillStyle = held ? colour("--good") : colour("--text");
+      context.fillRect(grip.x - 1, y + 1, 2, rowHeight - 3);
+      context.fillRect(grip.x - (grip.edge === "from" ? 0 : 4), y + rowHeight / 2 - 3, 4, 6);
+      if (held) {
+        context.strokeStyle = colour("--good");
+        context.setLineDash([3, 3]);
+        context.beginPath();
+        context.moveTo(x(grip.to), top);
+        context.lineTo(x(grip.to), height - 12);
+        context.stroke();
+        context.setLineDash([]);
+        context.fillStyle = colour("--good");
+        context.fillText(`bar ${grip.to}`, x(grip.to) + 4, y + rowHeight / 2 - 1);
+      }
     }
   });
 
