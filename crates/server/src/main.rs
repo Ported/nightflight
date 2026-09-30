@@ -127,6 +127,12 @@ impl Session {
             lane.voicing.set_param(param as usize, value);
             self.dirty = true;
         }
+        if let Command::SetLength { lane, length } = command
+            && let Some(lane) = self.document.lanes.get_mut(lane as usize)
+        {
+            lane.length = length;
+            self.dirty = true;
+        }
         if let Command::SetStep {
             lane,
             step,
@@ -165,6 +171,10 @@ impl Session {
                 lane: u8::try_from(at(lane as usize)?).ok()?,
                 param,
                 value,
+            },
+            Command::SetLength { lane, length } => Command::SetLength {
+                lane: u8::try_from(at(lane as usize)?).ok()?,
+                length,
             },
             Command::SetStep {
                 lane,

@@ -137,6 +137,16 @@ pub enum Command {
     /// are clicked, which is both what an interface naturally produces and the
     /// only shape that needs no allocation on the audio thread: the slot
     /// already exists.
+    /// How long every note of a lane rings.
+    ///
+    /// A lane property rather than a per-note one, which is the model's real
+    /// limit: Bach's bass holds a half bar and his top voice an eighth, and
+    /// that is two lanes, not two note lengths. Changing it needs no rebuild —
+    /// the engine reads it when a note starts.
+    SetLength {
+        lane: u8,
+        length: crate::seq::Length,
+    },
     SetStep {
         lane: u8,
         step: u16,
@@ -172,6 +182,10 @@ pub struct LaneDescription {
     pub instrument: &'static str,
     /// The saved patch it plays, if it plays a saved one.
     pub patch: Option<String>,
+    /// Whether its steps carry notes worth drawing on a keyboard.
+    pub pitched: bool,
+    /// How long each note rings: steps of the grid, or seconds.
+    pub length: crate::seq::Length,
     pub gain: f32,
     pub send: f32,
     pub muted: bool,

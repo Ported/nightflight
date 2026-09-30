@@ -202,6 +202,22 @@ impl Voicing {
         })
     }
 
+    /// Whether the notes are something you write, or something the instrument
+    /// makes for itself.
+    ///
+    /// A kick has a pitch and it is not a note: it is a sweep from high to low
+    /// that *is* the sound, and moving the whole thing up a tone is a patch
+    /// edit, not a melody. A hat has no pitch worth naming. Everything else
+    /// plays what the steps say, and wants a piano roll rather than a row of
+    /// boxes.
+    #[must_use]
+    pub fn pitched(self) -> bool {
+        match self {
+            Self::Kick(_) | Self::Hat(_) => false,
+            Self::Bass(_) | Self::Glass(_) | Self::Strings(_) => true,
+        }
+    }
+
     /// Which instrument this is, for an interface to label and for a patch to
     /// be filed under.
     #[must_use]
@@ -423,6 +439,8 @@ impl Set {
                     clip: lane.clip.clone(),
                     instrument: lane.voicing.instrument(),
                     patch: lane.patch.clone(),
+                    pitched: lane.voicing.pitched(),
+                    length: lane.length,
                     gain: lane.gain,
                     send: lane.send,
                     muted: lane.muted,

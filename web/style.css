@@ -137,11 +137,32 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 
 /* ── The step grid ────────────────────────────────────────────────────────── */
 
-.clip { display: flex; flex-direction: column; gap: 6px; }
-.lane { display: flex; align-items: center; gap: 8px; }
+/* `flex-start`, not the default stretch: a stretched lane is only as wide as
+   the panel, so its sticky head has no room to travel and scrolls away with
+   everything else. Sized to its content, the head stays pinned across all
+   eight thousand pixels of a twenty-two bar roll. */
+.clip { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+/* No gap between the head and the steps: a gap is a slot with nothing pinned
+   over it, and cells scroll through it. The spacing lives inside the head. */
+.lane { display: flex; align-items: center; gap: 0; }
+
+/* Pinned while the steps scroll under it. Both of these stick to the scroll
+   container, so the key column's offset is the head's width — stated once here
+   and nowhere else. */
+.lanehead {
+  position: sticky; left: 0; z-index: 2; flex: none;
+  box-sizing: border-box; width: 214px; padding-right: 8px;
+  /* Full height, not just its own line: a piano roll is sixteen rows tall and
+     a head that covered only the first would let the rest scroll out from
+     under it. */
+  align-self: stretch; display: flex; align-items: flex-start; gap: 8px;
+  padding-top: 2px; background: var(--panel);
+}
+.key { position: sticky; left: 214px; z-index: 1; background: var(--panel); }
 .lane .name {
-  width: 104px; flex: none; text-align: right;
+  flex: 1; min-width: 0; text-align: right;
   color: var(--text); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .lane .patch { width: 62px; flex: none; color: var(--weak); font-size: 11px; }
 .steps { display: flex; flex-wrap: wrap; gap: 2px; }
@@ -182,7 +203,7 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .patch[hidden] { display: none; }
 .patch {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 2px 14px; margin: 4px 0 10px 112px;
+  gap: 2px 14px; margin: 4px 0 10px;
 }
 .param { display: flex; align-items: center; gap: 6px; font-size: 11px; }
 .param .pname { width: 84px; color: var(--weak); text-align: right; flex: none; }
@@ -263,7 +284,55 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 /* Taking a lane out: at the end of the row, away from everything else, because
    it deletes that lane's steps. */
 .lane .drop {
-  border: 0; background: none; color: var(--weak); padding: 0 6px;
-  font-size: 14px; line-height: 1; cursor: pointer;
+  order: -1; border: 0; background: none; color: #444b58; padding: 0 2px;
+  font-size: 13px; line-height: 1; cursor: pointer;
 }
 .lane .drop:hover { color: var(--bad); }
+
+/* ── The piano roll ───────────────────────────────────────────────────────── */
+
+/* A keyboard on its side. Rows are semitones from the lane's root, high at the
+   top; a column is a step and holds at most one note, because a lane holds one
+   offset per step. Chords are lanes. */
+.roll { display: flex; flex-direction: column; gap: 1px; }
+.rollrow { display: flex; flex-wrap: nowrap; gap: 2px; align-items: center; }
+.roll .step { height: 12px; }
+
+/* Black notes shaded and the root drawn as a line, so "seven semitones up" is
+   something you see rather than something you count. */
+.rollrow.black .step { background: #0a0c0f; }
+.rollrow.root .step { border-color: #4a5263; }
+.rollrow.root .key { color: var(--accent); }
+
+.key {
+  width: 24px; flex: none; text-align: right; padding-right: 4px;
+  font-family: var(--mono); font-size: 9px; color: var(--weak);
+}
+/* The parameter panel stays in view while the grid scrolls under it — it
+   belongs to the lane, not to any part of the loop, and a panel that slides off
+   to the left when you scroll to bar fifteen is a panel you cannot reach.
+   Scoped to a direct child, because `.patch` is also the little instrument
+   label inside a lane's head — two things with one class name, and an
+   unscoped rule here shoved every lane's label 214 pixels to the right. */
+#clipLanes > .patch {
+  position: sticky; left: 0; align-self: stretch; padding-left: 214px;
+}
+
+/* A pitched lane is a block, not a line, so its label sits at the top of it. */
+.lane.tall { align-items: flex-start; }
+
+/* Long clips scroll rather than wrap: a wrapped piano roll is unreadable, and
+   a wrapped drum grid is not much better. */
+.steps { flex-wrap: nowrap; }
+#clipLanes { overflow-x: auto; }
+
+/* How long a lane's notes ring, beside its patch. */
+.holds {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: 14px;
+  font-size: 11px; color: var(--weak);
+}
+.holds input {
+  width: 5.5ch; background: var(--bg); color: var(--text);
+  border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px;
+  font: inherit; font-size: 11px;
+}

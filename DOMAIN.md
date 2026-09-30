@@ -33,6 +33,34 @@ that is not the notes.
 is a patch of the kick instrument. Changing a patch changes every lane using it;
 that is what makes it a patch rather than a copy.
 
+### Writing the notes
+
+A drum lane is a row of boxes: the only question per step is *whether*. A
+pitched lane is a **piano roll** — rows are semitones from the lane's root, high
+at the top, columns are steps — because the question is also *which*.
+
+Which one you get is the instrument's own answer. A kick has a pitch and it is
+not a note: it is a sweep from high to low that *is* the sound, and moving the
+whole thing up a tone is a patch edit. A hat has no pitch worth naming.
+Everything else plays what the steps say.
+
+A column holds at most one note, because a lane holds one offset per step — so
+clicking a cell *moves* the note there rather than adding one, and chords are
+lanes. The rows span what the lane actually plays, padded out to an octave: a
+hundred and twenty-eight rows of nothing would be honest and useless.
+
+**Note length is a lane property, not a note's.** Bach's bass holds a half bar
+and his top voice an eighth, and in this model that is two lanes rather than two
+note lengths. It is the real limit of a step being `(velocity, offset)` and
+nothing else. The control sits by the patch because a roll is unjudgeable
+without it: the same notes at one step and at sixteen are two different pieces
+of music.
+
+**You would not hand-enter Bach.** The prelude is 352 steps a voice, derived by
+eleven lines of Rust. Generators stay in `sets.rs` as provenance, the export
+writes what they make into the library, and the roll is for writing a bass line
+by hand and for *editing* what a generator produced.
+
 ### Where variation lives
 
 Three places, and it is worth knowing which is which.

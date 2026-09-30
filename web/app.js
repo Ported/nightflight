@@ -435,42 +435,26 @@ function buildClip(name) {
     // what anyone was reading.
     toggle.title = `show this patch's ${lane.params.length} parameters`;
 
-    const cells = document.createElement("div");
-    cells.className = "steps";
-    lane.steps.forEach(([velocity, offset], step) => {
-      // A line every four steps and a double line every sixteen. A grid this
-      // long is read by counting, and counting past four without a mark is how
-      // you lose your place — so the marks are where the beats and the bars
-      // are, and they say which is which.
-      if (step > 0 && step % 4 === 0) {
-        const tick = document.createElement("i");
-        tick.className = step % 16 === 0 ? "tick bar" : "tick";
-        cells.append(tick);
-      }
-      const cell = document.createElement("div");
-      cell.className = "step" + (step % 4 === 0 ? " beat" : "");
-      cell.dataset.step = step;
-      paint(cell, velocity);
-      cell.onclick = (event) => {
-        // Off, on, or accented: a drum grid needs three states and a click has
-        // two, so shift is the third.
-        const now = Number(cell.dataset.velocity);
-        const next = event.shiftKey ? (now >= 1 ? 0 : 1) : now > 0 ? 0 : 0.7;
-        paint(cell, next);
-        send({ t: "set_step", lane: lane.index, step, velocity: next, offset });
-      };
-      cells.append(cell);
-    });
+    const cells = lane.pitched ? pianoRoll(lane) : stepRow(lane);
 
-    // Removing a lane is a real deletion of its steps, so it is a small
-    // target at the end of the row rather than a button beside the name.
+    // Removing a lane deletes its steps, so it stays a small dim target — at
+    // the far edge of the head, as far from the expander as the row allows.
     const drop = document.createElement("button");
     drop.className = "drop";
     drop.textContent = "×";
     drop.title = `take ${lane.name} out of this clip`;
     drop.onclick = () => send({ t: "remove_lane", lane: lane.index });
 
-    row.append(label, patch, toggle, cells, drop);
+    // The name, what it plays, and the two things you can do to it, in a block
+    // that stays put while a long clip scrolls under it. A twenty-two bar roll
+    // is eight thousand pixels wide, and a row you cannot identify is a row you
+    // cannot edit.
+    const head = document.createElement("div");
+    head.className = "lanehead";
+    head.append(drop, label, patch, toggle);
+
+    row.append(head, cells);
+    row.classList.toggle("tall", lane.pitched);
     host.append(row);
 
     const panel = buildPatch(lane);
@@ -608,7 +592,30 @@ function patchHead(lane) {
     swap.value = "";
   };
 
-  head.append(label, solo, save, saveAs, saveAsBox, swap);
+  head.append(label, solo, save, saveAs, saveAsBox);
+
+  // How long the notes ring. A lane property, not the patch's — Bach's bass
+  // holds a half bar and his top voice an eighth on the same instrument — but
+  // it sits here because this is the only panel a lane has, and a roll is
+  // unjudgeable without it: the same notes at one step and at sixteen are two
+  // different pieces of music.
+  if (lane.pitched) {
+    const holds = document.createElement("label");
+    holds.className = "holds";
+    holds.title = "how long each note rings, in steps — this lane's, not the patch's";
+    const box = document.createElement("input");
+    Object.assign(box, { type: "number", min: 0.1, max: 64, step: 0.1 });
+    box.value = lane.length.steps ?? 1;
+    box.onchange = () => {
+      const steps = Math.min(64, Math.max(0.1, Number(box.value) || 1));
+      box.value = steps;
+      send({ t: "set_length", lane: lane.index, length: { steps } });
+    };
+    holds.append("notes last", box, "steps");
+    head.append(holds);
+  }
+
+  head.append(swap);
   return head;
 }
 
@@ -665,11 +672,134 @@ function suggest(lane) {
   return base;
 }
 
+/**
+ * A line every four steps and a double line every sixteen.
+ *
+ * A grid this long is read by counting, and counting past four without a mark
+ * is how you lose your place — so the marks are where the beats and the bars
+ * are, and the doubled one says which is which.
+ */
+function tickBefore(step) {
+  if (step === 0 || step % 4 !== 0) return null;
+  const tick = document.createElement("i");
+  tick.className = step % 16 === 0 ? "tick bar" : "tick";
+  return tick;
+}
+
+/** The three states a drum step has, and the two a click has. Shift is the third. */
+function nextVelocity(now, shifted) {
+  if (shifted) return now >= 1 ? 0 : 1;
+  return now > 0 ? 0 : 0.7;
+}
+
+/** One row of boxes: a drum, where the only question per step is whether. */
+function stepRow(lane) {
+  const cells = document.createElement("div");
+  cells.className = "steps";
+  // An empty stand-in for the roll's key column, so a drum lane and a pitched
+  // lane in the same clip put step 1 in the same place.
+  const gutter = document.createElement("span");
+  gutter.className = "key";
+  cells.append(gutter);
+  lane.steps.forEach(([velocity, offset], step) => {
+    const tick = tickBefore(step);
+    if (tick) cells.append(tick);
+
+    const cell = document.createElement("div");
+    cell.className = "step" + (step % 4 === 0 ? " beat" : "");
+    cell.dataset.step = step;
+    paint(cell, velocity);
+    cell.onclick = (event) => {
+      const next = nextVelocity(Number(cell.dataset.velocity), event.shiftKey);
+      paint(cell, next);
+      send({ t: "set_step", lane: lane.index, step, velocity: next, offset });
+    };
+    cells.append(cell);
+  });
+  return cells;
+}
+
+/**
+ * A keyboard turned on its side: rows are semitones from the lane's root, high
+ * at the top, columns are steps.
+ *
+ * A lane holds **one** offset per step, so a column can never have two notes in
+ * it — clicking a cell moves the note there rather than adding one. Chords are
+ * lanes, which is why the prelude is three voices and the pad is five. The same
+ * fact is what makes this a grid and not a general sequencer: there is nothing
+ * to overlap.
+ *
+ * The rows span what the lane actually plays, padded out to at least an octave.
+ * A hundred and twenty-eight rows of nothing would be honest and useless.
+ */
+function pianoRoll(lane) {
+  const played = lane.steps.filter(([v]) => v > 0).map(([, o]) => o);
+  let low = played.length ? Math.min(...played) : 0;
+  let high = played.length ? Math.max(...played) : 12;
+  low -= 2;
+  high += 2;
+  while (high - low < 12) high += 1;
+
+  const roll = document.createElement("div");
+  roll.className = "roll";
+
+  for (let offset = high; offset >= low; offset -= 1) {
+    const line = document.createElement("div");
+    line.className = "rollrow";
+    // Black notes shaded, and the root drawn as a line you can find: without
+    // one, "seven semitones up" is a thing you count rather than see.
+    const semitone = ((offset % 12) + 12) % 12;
+    if ([1, 3, 6, 8, 10].includes(semitone)) line.classList.add("black");
+    if (offset === 0) line.classList.add("root");
+
+    const key = document.createElement("span");
+    key.className = "key";
+    key.textContent = NOTE_NAMES[semitone];
+    key.title = `${offset >= 0 ? "+" : ""}${offset} semitones from the root`;
+    line.append(key);
+
+    lane.steps.forEach(([velocity, at], step) => {
+      const tick = tickBefore(step);
+      if (tick) line.append(tick);
+
+      const cell = document.createElement("div");
+      cell.className = "step" + (step % 4 === 0 ? " beat" : "");
+      cell.dataset.step = step;
+      cell.dataset.offset = offset;
+      paint(cell, at === offset ? velocity : 0);
+      cell.onclick = (event) => {
+        // On this row already: the three states, as a drum has. On another row
+        // or empty: the note comes here, at the velocity it had or a fresh one.
+        const here = Number(cell.dataset.velocity) > 0;
+        const current = lane.steps[step];
+        const velocity = here
+          ? nextVelocity(Number(cell.dataset.velocity), event.shiftKey)
+          : event.shiftKey
+            ? 1
+            : current[0] || 0.7;
+        lane.steps[step] = [velocity, offset];
+        // Every row of this column is redrawn, because moving a note off a row
+        // is the same click as putting it on another one.
+        for (const other of roll.querySelectorAll(`[data-step="${step}"]`)) {
+          paint(other, Number(other.dataset.offset) === offset ? velocity : 0);
+        }
+        send({ t: "set_step", lane: lane.index, step, velocity, offset });
+      };
+      line.append(cell);
+    });
+    roll.append(line);
+  }
+  return roll;
+}
+
 /** Bars a clip's longest lane covers, rounded up to a whole one. */
 function clipBars(lanes) {
   const steps = Math.max(0, ...lanes.map((lane) => lane.steps.length));
   return Math.max(1, Math.ceil(steps / 16));
 }
+
+/** Semitone names from the root, so a row can say what it is. */
+const NOTE_NAMES = ["R", "♭2", "2", "♭3", "3", "4", "♯4", "5", "♭6", "6", "♭7", "7"];
 
 function paint(cell, velocity) {
   cell.dataset.velocity = velocity;

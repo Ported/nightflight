@@ -854,6 +854,13 @@ impl Engine {
                     lane.voicing.set_param(param as usize, value);
                 }
             }
+            Command::SetLength { lane, length } => {
+                // Read when a note starts, so this takes effect on the next one
+                // and leaves whatever is ringing alone.
+                if let Some(lane) = self.lanes.get_mut(lane as usize) {
+                    lane.length = length;
+                }
+            }
             Command::SetStep {
                 lane,
                 step,
