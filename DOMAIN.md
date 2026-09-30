@@ -156,6 +156,33 @@ A name is checked rather than escaped. Patch names come from a text box and a
 text box can contain a slash; telling someone to pick another name is kinder than
 quietly saving `drums/punch` as `drums_punch` and then failing to find it.
 
+## Conducting
+
+A piece says when its clips play. A **conductor** says otherwise, while it is
+playing: bring a clip in, take it out, bring it back.
+
+Two things make that work. Changes land on a **bar line in the future** — the
+next 1, 2, 4, 8 or 16 bars — so what you press between beats still arrives in
+time, and four is the default because a change that lands mid-phrase sounds
+like a mistake even when it was deliberate.
+
+And a clip's lanes **join the running engine** rather than replacing it. The
+engine reserves room for sixteen lanes at construction, so taking one in is
+seven pushes into vectors that already have the capacity: no allocation, no
+fade, and every note still ringing keeps ringing. Swapping the engine would
+have been less code and would have restarted every sustaining voice and
+emptied the reverb — unnoticeable on a drum loop, obvious under a pad with a
+four second release.
+
+Bringing the same clip back afterwards is only a span: its lanes are still
+there, silent, and a twelve-byte command places them again.
+
+**A performance is not an edit.** What the conductor does lives in the session,
+not the file, and a piece being rewritten on disk while you conduct it
+re-applies the conducting on top. Bringing in a clip the piece already uses
+gives you both, with the second copy's lanes renamed — which is how one beat
+plays against another.
+
 ## What exists today, and what does not
 
 Lanes, steps, clips, pieces and macros are real. A lane names the clip it belongs

@@ -305,3 +305,16 @@ main.three { grid-template-columns: repeat(3, minmax(240px, 1fr)); }
 .libitem.playing { background: #78c8ff1f; }
 .libitem.playing .name { color: var(--accent); }
 .libitem .weak.built-in { font-style: italic; }
+
+/* Conducting: what is in the mix, and what is on its way. */
+.libitem { grid-template-columns: 1fr auto auto auto; }
+.libitem.inmix { background: #78c89614; }
+.libitem.inmix .name { color: var(--good); }
+.libitem .conduct { min-width: 7.5ch; }
+.quant { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--weak); }
+.quant select {
+  background: var(--bg); color: var(--text); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2px 4px; font: inherit; font-size: 11px;
+}
+/* A change that has been asked for but has not landed yet. */
+.libitem .conduct.soon { color: var(--warn); border-color: var(--warn); }

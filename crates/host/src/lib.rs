@@ -35,6 +35,18 @@ const TELEMETRY_HZ: f32 = 60.0;
 /// editor feels immediate.
 const SWAP_FADE: f32 = 480.0;
 
+/// Something built where allocating is allowed, on its way in — or on its way
+/// back out to be freed there.
+///
+/// Two kinds, and they are handled very differently. A whole engine replaces
+/// what is playing and needs a fade around the exchange. A single lane joins
+/// what is playing and needs nothing: it is seven pushes into vectors that
+/// already have the room, and every note still ringing keeps ringing.
+pub enum Handover {
+    Piece(Box<Engine>),
+    Lane(Box<engine::NewLane>),
+}
+
 /// The fade either side of an engine swap.
 ///
 /// A piece being exchanged for a clip's audition is a discontinuity in every
@@ -131,13 +143,13 @@ pub fn realtime<T>(f: impl FnOnce() -> T) -> T {
 pub struct Link {
     pub commands: rtrb::Producer<Command>,
     pub telemetry: rtrb::Consumer<Telemetry>,
-    /// Engines built off the audio thread, waiting to take over.
-    swap: rtrb::Producer<Box<Engine>>,
-    /// The ones they replaced, coming back to be dropped somewhere a deadline
-    /// does not apply. Freeing an engine means freeing a reverb and several
-    /// delay lines, which is exactly the kind of work the audio thread must
-    /// never be asked to do.
-    retired: rtrb::Consumer<Box<Engine>>,
+    /// Things built off the audio thread, waiting to be taken in.
+    swap: rtrb::Producer<Handover>,
+    /// What they replaced, coming back to be dropped somewhere a deadline does
+    /// not apply. Freeing an engine means freeing a reverb and several delay
+    /// lines, which is exactly the kind of work the audio thread must never be
+    /// asked to do.
+    retired: rtrb::Consumer<Handover>,
     /// Read once, before the engine was handed to the audio thread. Commands
     /// carry indices into these.
     pub lane_names: Vec<String>,
@@ -164,7 +176,28 @@ impl Link {
     /// should not queue up five pieces to play in turn.
     pub fn load(&mut self, engine: Box<Engine>) -> bool {
         self.collect();
-        self.swap.push(engine).is_ok()
+        self.swap.push(Handover::Piece(engine)).is_ok()
+    }
+
+    /// Hand the audio thread one more lane, without disturbing what is
+    /// playing.
+    ///
+    /// Returns false if the queue is full, which for one slot means a previous
+    /// handover has not been taken yet — try again rather than drop it, since
+    /// unlike a piece change every lane matters.
+    pub fn add_lane(&mut self, lane: Box<engine::NewLane>) -> bool {
+        self.collect();
+        self.swap.push(Handover::Lane(lane)).is_ok()
+    }
+
+    /// How many more things can be handed over before the queue is full.
+    ///
+    /// A caller with several lanes to send should ask first: half a clip in
+    /// the mix is worse than none, and finding out on the third push is too
+    /// late to do anything about it.
+    #[must_use]
+    pub fn room(&self) -> usize {
+        self.swap.slots()
     }
 
     /// Drop any engines the audio thread has finished with.
@@ -231,10 +264,13 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
 
     let (command_tx, mut command_rx) = rtrb::RingBuffer::new(256);
     let (mut telemetry_tx, telemetry_rx) = rtrb::RingBuffer::new(8);
-    // One at a time in each direction: there is never a reason to have two
-    // pieces queued, and a second slot would only let them pile up.
-    let (swap_tx, mut swap_rx) = rtrb::RingBuffer::<Box<Engine>>::new(1);
-    let (mut retired_tx, retired_rx) = rtrb::RingBuffer::<Box<Engine>>::new(2);
+    // Deep enough for a whole clip at once. One slot was right when the only
+    // thing crossing was a piece, and wrong the moment lanes did: a five-lane
+    // clip needs five handovers before the callback has popped any of them,
+    // and the refusals left the server believing lanes had arrived that had
+    // not. `MAX_PARTS` is the most lanes there can ever be.
+    let (swap_tx, mut swap_rx) = rtrb::RingBuffer::<Handover>::new(engine::telemetry::MAX_PARTS);
+    let (mut retired_tx, retired_rx) = rtrb::RingBuffer::<Handover>::new(4);
 
     let xruns = Arc::new(AtomicU32::new(0));
     let reported = Arc::clone(&xruns);
@@ -257,14 +293,25 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
                     && let Some(next) = waiting.take()
                 {
                     let previous = std::mem::replace(&mut engine, next);
-                    let _ = retired_tx.push(previous);
+                    let _ = retired_tx.push(Handover::Piece(previous));
                     fade.start_opening();
                 }
-                if waiting.is_none()
-                    && let Ok(next) = swap_rx.pop()
-                {
-                    waiting = Some(next);
-                    fade.start_closing();
+                if waiting.is_none() {
+                    match swap_rx.pop() {
+                        // A lane joins immediately. Nothing fades, nothing
+                        // restarts, and whatever the box came back as goes
+                        // home to be freed.
+                        Ok(Handover::Lane(lane)) => {
+                            if let Some(refused) = engine.adopt(lane) {
+                                let _ = retired_tx.push(Handover::Lane(refused));
+                            }
+                        }
+                        Ok(Handover::Piece(next)) => {
+                            waiting = Some(next);
+                            fade.start_closing();
+                        }
+                        Err(_) => {}
+                    }
                 }
 
                 while let Ok(command) = command_rx.pop() {

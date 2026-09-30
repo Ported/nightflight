@@ -15,6 +15,8 @@ const $ = (id) => document.getElementById(id);
 let stage = { kind: "piece", name: "" };
 /** The library index, as the server last listed it. */
 let library = { pieces: [], patches: [], clips: [] };
+/** Clips the conductor brought in: [{clip, from, to}]. */
+let live = [];
 /** Bars the staged material runs for — the piece's length, or one clip's. */
 let stageBars = 0;
 
@@ -50,6 +52,7 @@ function connect() {
       // earlier page opened. Adopt what it is doing rather than assume: `show`
       // sends an audition only when the stage would change, so following it here
       // costs nothing and interrupts nothing.
+      live = message.live ?? [];
       adoptStage(message.stage);
       // A page survives a reconnect with the tab it had open, and the engine
       // may have come back playing something else entirely — a different
@@ -300,20 +303,26 @@ function buildLibrary() {
     what.textContent =
       `${count(clip.lanes, "lane", "lanes")} · ${count(clip.steps, "step", "steps")}`;
 
-    // A clip in the library that this piece does not use has no editor tab to
-    // open: the piece is what an editor edits. Say so rather than offer a
-    // button that cannot work.
     const open = document.createElement("button");
-    if (inPiece.has(clip.name)) {
-      open.textContent = "open";
-      open.onclick = () => show(clip.name);
-    } else {
-      open.textContent = "not in this piece";
-      open.disabled = true;
-      open.title = "this piece does not use that clip";
-    }
+    open.textContent = "look";
+    open.title = "see what is in it";
+    open.disabled = !inPiece.has(clip.name);
+    open.onclick = () => show(clip.name);
 
-    row.append(name, what, open);
+    // Conducting. A clip joins or leaves on a bar line in the future, so what
+    // you press between beats still arrives in time — and while it is waiting
+    // the button says when.
+    const conduct = document.createElement("button");
+    conduct.className = "conduct";
+    conduct.dataset.clip = clip.name;
+    conduct.onclick = () => {
+      // Whichever way it is going, the opposite is what to press next; the
+      // label follows the playhead rather than the click.
+      const now = live.find((l) => l.clip === clip.name && l.to === null);
+      send({ t: now ? "take_out" : "bring", clip: clip.name, in: quantum() });
+    };
+
+    row.append(name, what, open, conduct);
     host.append(row);
   }
   if (!library.clips.length) {
@@ -327,6 +336,33 @@ function empty(words) {
   line.className = "weak";
   line.textContent = words;
   return line;
+}
+
+/**
+ * What each clip's conductor button says, as the playhead moves.
+ *
+ * Redrawn every frame rather than when the library arrives, because "in at
+ * 20" has to become "take out" the moment bar 20 goes past and nothing sends
+ * a message when that happens — the bar line is not an event, it is just the
+ * clock.
+ */
+function paintConduct() {
+  const bar = telemetry?.bar ?? 0;
+  for (const button of document.querySelectorAll(".conduct")) {
+    const entry = live.find((l) => l.clip === button.dataset.clip);
+    const on = entry && bar >= entry.from && (entry.to === null || bar < entry.to);
+    const waiting = entry && bar < entry.from;
+    const leaving = entry && entry.to !== null && bar < entry.to && bar >= entry.from;
+    button.textContent = waiting
+      ? `in at ${entry.from}`
+      : leaving
+        ? `out at ${entry.to}`
+        : on
+          ? "take out"
+          : "bring in";
+    button.classList.toggle("soon", Boolean(waiting || leaving));
+    button.closest(".libitem")?.classList.toggle("inmix", Boolean(on));
+  }
 }
 
 /** Mark whatever is currently sounding, wherever it is drawn. */
@@ -614,6 +650,13 @@ function pianoRoll(lane) {
   return roll;
 }
 
+/** How far ahead a change lands, in bars. Four is the phrase nearly
+ *  everything here is built on, and a change that arrives mid-phrase sounds
+ *  like a mistake even when it was deliberate. */
+function quantum() {
+  return Number($("quantum").value) || 4;
+}
+
 /** Bars a clip's longest lane covers, rounded up to a whole one. */
 function clipBars(lanes) {
   const steps = Math.max(0, ...lanes.map((lane) => lane.steps.length));
@@ -895,6 +938,7 @@ function drawPlan() {
 // ── The frame ───────────────────────────────────────────────────────────────
 
 function frame() {
+  if (tab === "library") paintConduct();
   if (telemetry) {
     const t = telemetry;
     $("play").textContent = t.playing ? "stop" : "play";

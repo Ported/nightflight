@@ -110,6 +110,43 @@ pub struct Engine {
     wires: Vec<Wire>,
 }
 
+/// Room for lanes that arrive later.
+///
+/// A closure cannot be generic, and these are seven vectors of seven types.
+fn room<T>(mut v: Vec<T>) -> Vec<T> {
+    v.reserve_exact(telemetry::MAX_PARTS.saturating_sub(v.len()));
+    v
+}
+
+/// A lane built somewhere it is safe to allocate, on its way to an engine that
+/// is already playing.
+///
+/// Everything `Engine::new` makes per lane, made off the audio thread and
+/// handed over as one box. Under four hundred bytes in total — the delay line
+/// inside a `Placer` is on the heap, so moving one is moving a pointer.
+pub struct NewLane {
+    pub lane: Lane,
+    level: Smoothed,
+    placer: Option<Placer>,
+}
+
+impl NewLane {
+    /// Build the per-lane state an engine needs, ready to be adopted.
+    #[must_use]
+    pub fn new(sr: f32, lane: Lane) -> Self {
+        let placer = if matches!(lane.home, Home::Centre) && !lane.ever_flies() {
+            None
+        } else {
+            Some(Placer::new())
+        };
+        Self {
+            level: Smoothed::new(sr, 0.02, lane.gain),
+            placer,
+            lane,
+        }
+    }
+}
+
 impl Engine {
     #[must_use]
     pub fn new(sr: f32, bpm: f32, set: Set) -> Self {
@@ -156,13 +193,22 @@ impl Engine {
             })
             .collect();
 
+        // Room for lanes that arrive later. Bringing a clip into a running
+        // mix pushes onto these seven vectors, and a push that has to grow
+        // would allocate — on the audio thread, which is the one thing that
+        // must never happen. `MAX_PARTS` is what telemetry can report anyway,
+        // so it is the honest ceiling.
+        let levels = room(levels);
+        let placers = room(placers);
+        let lanes = room(lanes);
+
         Self {
             clock: Clock::new(sr, bpm),
             pool: Pool::default(),
-            laps: vec![0.0; lanes.len()],
-            flight_cursor: vec![None; lanes.len()],
-            lane_peaks: vec![0.0; lanes.len()],
-            lane_positions: vec![Position::default(); lanes.len()],
+            laps: room(vec![0.0; lanes.len()]),
+            flight_cursor: room(vec![None; lanes.len()]),
+            lane_peaks: room(vec![0.0; lanes.len()]),
+            lane_positions: room(vec![Position::default(); lanes.len()]),
             peak: 0.0,
             playing: true,
             loop_region: None,
@@ -753,6 +799,41 @@ impl Engine {
         self.playing
     }
 
+    /// Take in a lane that was built elsewhere, while playing.
+    ///
+    /// This is how a clip joins a running mix, and it is why the vectors have
+    /// spare capacity: seven pushes, no allocation, nothing else disturbed. A
+    /// swap would have done the same job and restarted every sustaining voice
+    /// and emptied the reverb with it — fine on a drum loop, obvious under a
+    /// pad with a four second release.
+    ///
+    /// Returns the box back when there is no room, so the caller can free it
+    /// somewhere a deadline does not apply.
+    pub fn adopt(&mut self, incoming: Box<NewLane>) -> Option<Box<NewLane>> {
+        if self.lanes.len() >= telemetry::MAX_PARTS {
+            return Some(incoming);
+        }
+        let NewLane {
+            lane,
+            level,
+            placer,
+        } = *incoming;
+        self.laps.push(0.0);
+        self.flight_cursor.push(None);
+        self.lane_peaks.push(0.0);
+        self.lane_positions.push(Position::default());
+        self.levels.push(level);
+        self.placers.push(placer);
+        self.lanes.push(lane);
+        None
+    }
+
+    /// Whether a lane of this name is already here.
+    #[must_use]
+    pub fn has_lane(&self, name: &str) -> bool {
+        self.lanes.iter().any(|lane| lane.name == name)
+    }
+
     /// Put the transport at `bar` before the engine is playing.
     ///
     /// Not a scrub: there is nothing to fade, because nothing is sounding yet.
@@ -856,6 +937,18 @@ impl Engine {
                     lane.voicing.set_param(param as usize, value);
                 }
             }
+            Command::Span { lane, from, to } => {
+                // In place, never pushed: a brought-in lane is built with
+                // exactly one span, and writing through it cannot allocate.
+                // A lane with none is one the score placed, and the score is
+                // not the conductor's to overwrite mid-bar.
+                if let Some(lane) = self.lanes.get_mut(lane as usize)
+                    && let Some(span) = lane.spans.first_mut()
+                {
+                    span.start = from;
+                    span.end = to;
+                }
+            }
             Command::SetLength { lane, length } => {
                 // Read when a note starts, so this takes effect on the next one
                 // and leaves whatever is ringing alone.
@@ -906,4 +999,68 @@ pub struct State {
     pub bpm: f32,
     pub voices: usize,
     pub dropped: u32,
+}
+
+
+#[cfg(test)]
+mod adopting {
+    use super::*;
+
+    /// A lane joining a running engine must not restart anything, and must not
+    /// ask for memory. The second is enforced in debug by `assert_no_alloc`
+    /// around the callback; this checks the first.
+    #[test]
+    fn a_lane_joins_without_disturbing_what_is_playing() {
+        let set = crate::sets::by_name("rolling").expect("rolling");
+        let bars = 2.0;
+        let frames = (bars * 240.0 / 126.0 * dsp::SR) as usize;
+
+        // The same two bars, once plain and once with a lane brought in
+        // halfway that does not start until after the window ends.
+        let render = |bring_at: Option<f32>| {
+            let mut engine = Engine::new(dsp::SR, 126.0, set.clone());
+            let mut out = vec![0.0f32; frames * 2];
+            let half = frames / 2;
+            engine.process(&mut out[..half * 2]);
+            if let Some(start) = bring_at {
+                let mut lane = set.lanes[0].clone();
+                lane.name = "late".into();
+                lane.clip = "late".into();
+                lane.spans = vec![crate::automation::Play::new(start, f32::INFINITY)];
+                assert!(
+                    engine.adopt(Box::new(NewLane::new(dsp::SR, lane))).is_none(),
+                    "there should be room"
+                );
+            }
+            engine.process(&mut out[half * 2..]);
+            out
+        };
+
+        let plain = render(None);
+        let joined = render(Some(64.0));
+        assert_eq!(
+            plain, joined,
+            "a lane that has not started yet changed the sound"
+        );
+    }
+
+    #[test]
+    fn there_is_a_ceiling_and_it_refuses_politely() {
+        let set = crate::sets::by_name("rolling").expect("rolling");
+        let spare = telemetry::MAX_PARTS - set.lanes.len();
+        let mut engine = Engine::new(dsp::SR, 126.0, set.clone());
+        for n in 0..spare {
+            let mut lane = set.lanes[0].clone();
+            lane.name = format!("extra {n}");
+            assert!(engine.adopt(Box::new(NewLane::new(dsp::SR, lane))).is_none());
+        }
+        let mut lane = set.lanes[0].clone();
+        lane.name = "one too many".into();
+        assert!(
+            engine.adopt(Box::new(NewLane::new(dsp::SR, lane))).is_some(),
+            "past the ceiling the box comes back to be freed off-thread"
+        );
+        assert!(engine.has_lane("extra 0"));
+        assert!(!engine.has_lane("one too many"));
+    }
 }

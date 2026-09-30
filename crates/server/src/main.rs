@@ -87,6 +87,17 @@ impl Stage {
     }
 }
 
+/// A clip playing because someone asked for it, not because the piece said so.
+#[derive(Clone, Debug)]
+struct Brought {
+    clip: String,
+    /// Bars. `to` is where it stops, and infinity while it is still running —
+    /// cheaper to reason about than an `Option`, and the engine's `bar < end`
+    /// needs no special case for it.
+    from: f32,
+    to: f32,
+}
+
 struct Session {
     link: Link,
     document: Set,
@@ -120,6 +131,13 @@ struct Session {
     /// one page, they can connect at any time, and none of them needs to know
     /// *what* changed — only that what they are showing is old.
     generation: u64,
+    /// Clips the conductor brought in, over and above what the piece says.
+    ///
+    /// Kept apart from the document because the document is the file and this
+    /// is the performance: a reload re-reads the one and re-applies the other,
+    /// so editing a piece while conducting it does not quietly undo the last
+    /// ten minutes of conducting.
+    live: Vec<Brought>,
     /// Why the last reload did not happen, for the page to show. A tab file
     /// with a typo in it is the normal case here, not an exceptional one.
     trouble: Option<String>,
@@ -192,6 +210,149 @@ impl Session {
         self.stage_at(wanted, None)
     }
 
+    /// The next bar line at or after `bar` that falls on a multiple of
+    /// `quantum`.
+    ///
+    /// What you press between beats arrives in time. Four bars by default,
+    /// because that is the phrase length nearly everything here is built on
+    /// and because a change that lands mid-phrase sounds like a mistake even
+    /// when it was deliberate.
+    fn boundary(&self, quantum: f32) -> f32 {
+        let q = if quantum > 0.0 { quantum } else { 1.0 };
+        // Strictly after: pressing it exactly on the bar line means the next
+        // one, not this one, which has already gone.
+        ((self.stage_bar / q).floor() + 1.0) * q
+    }
+
+    /// Bring a clip into the mix, starting at a bar in the future.
+    ///
+    /// The first time, its lanes are built here and handed to the engine one
+    /// at a time — seven pushes each into vectors that already have the room.
+    /// Nothing is rebuilt and nothing restarts, which is the difference
+    /// between conducting and starting again.
+    ///
+    /// After that the lanes are already there, so bringing the same clip back
+    /// is only a span: a twelve-byte command.
+    ///
+    /// # Errors
+    /// If there is no clip of that name, if the piece is not what is playing,
+    /// or if the engine has no room left for lanes.
+    fn bring(&mut self, name: &str, quantum: f32) -> Result<f32, String> {
+        if self.stage != Stage::Piece {
+            return Err("bring a clip in while the piece is playing, not an audition".into());
+        }
+        let at = self.boundary(quantum);
+
+        if let Some(already) = self.live.iter_mut().find(|b| b.clip == name) {
+            already.from = at;
+            already.to = f32::INFINITY;
+        } else {
+            let clip = engine::library::load_clip(name)
+                .map_err(|err| format!("no clip called {name:?}: {err}"))?;
+            if self.document.lanes.len() + clip.lanes.len() > engine::telemetry::MAX_PARTS {
+                return Err(format!(
+                    "no room: {} lanes playing and {name:?} wants {} more, of {} the engine can report",
+                    self.document.lanes.len(),
+                    clip.lanes.len(),
+                    engine::telemetry::MAX_PARTS
+                ));
+            }
+            // Built and checked before anything is committed. Half a clip in
+            // the mix is worse than none, and the queue is the one thing that
+            // can refuse: ask it first rather than discover on the third lane
+            // that the first two are already playing.
+            if self.link.room() < clip.lanes.len() {
+                return Err("the engine is still taking the last clip in".into());
+            }
+            let mut arriving = Vec::with_capacity(clip.lanes.len());
+            for mut lane in clip.lanes {
+                lane.name = self.free_name_among(&lane.name, &arriving);
+                // Exactly one span, so placing it later writes through rather
+                // than pushing — a push on the audio thread could allocate.
+                lane.spans = vec![engine::automation::Play::new(at, f32::INFINITY)];
+                arriving.push(lane);
+            }
+            for lane in arriving {
+                self.document.lanes.push(lane.clone());
+                self.on_stage.push(self.document.lanes.len() - 1);
+                self.link
+                    .add_lane(Box::new(engine::NewLane::new(dsp::SR, lane)));
+            }
+            self.live.push(Brought {
+                clip: name.to_string(),
+                from: at,
+                to: f32::INFINITY,
+            });
+        }
+        self.push_spans(name);
+        Ok(at)
+    }
+
+    /// Stop a brought-in clip, at a bar in the future.
+    ///
+    /// Its lanes stay in the engine. They cost a comparison per step while
+    /// silent, and keeping them means bringing the clip back is a command
+    /// rather than another handover.
+    ///
+    /// # Errors
+    /// If that clip was not brought in.
+    fn take_out(&mut self, name: &str, quantum: f32) -> Result<f32, String> {
+        let at = self.boundary(quantum);
+        let Some(brought) = self.live.iter_mut().find(|b| b.clip == name) else {
+            return Err(format!("{name:?} is not in the mix"));
+        };
+        brought.to = at;
+        self.push_spans(name);
+        Ok(at)
+    }
+
+    /// Tell the engine where a brought clip's lanes now play.
+    fn push_spans(&mut self, name: &str) {
+        let Some(brought) = self.live.iter().find(|b| b.clip == name).cloned() else {
+            return;
+        };
+        let lanes: Vec<usize> = self
+            .document
+            .lanes
+            .iter()
+            .enumerate()
+            .filter(|(_, lane)| lane.clip == name)
+            .map(|(i, _)| i)
+            .collect();
+        for index in lanes {
+            if let Some(lane) = self.document.lanes.get_mut(index)
+                && let Some(span) = lane.spans.first_mut()
+            {
+                span.start = brought.from;
+                span.end = brought.to;
+            }
+            if let Ok(lane) = u8::try_from(index) {
+                self.apply(Command::Span {
+                    lane,
+                    from: brought.from,
+                    to: brought.to,
+                });
+            }
+        }
+    }
+
+    /// A lane name nothing else is using — not in the piece, and not among
+    /// the lanes arriving with it. Macros find lanes by name, and two "kick"s
+    /// would be one macro's guess.
+    fn free_name_among(&self, wanted: &str, arriving: &[engine::seq::Lane]) -> String {
+        let taken = |name: &str| {
+            self.document.lanes.iter().any(|l| l.name == name)
+                || arriving.iter().any(|l| l.name == name)
+        };
+        if !taken(wanted) {
+            return wanted.to_string();
+        }
+        (2..99)
+            .map(|n| format!("{wanted} {n}"))
+            .find(|name| !taken(name))
+            .unwrap_or_else(|| wanted.to_string())
+    }
+
     /// Read the current piece again and carry on from where it was.
     ///
     /// The difference from `load` is the bar: a different piece has no
@@ -206,6 +367,17 @@ impl Session {
         let name = self.name.clone();
         let (_, mut set) = engine::document::find(&name).map_err(|err| err.to_string())?;
         engine::library::resolve(&mut set);
+        // Whatever was brought in is part of what is playing, not part of the
+        // file, so it survives the file being rewritten. Without this, saving
+        // a piece while conducting it would silently undo the conducting.
+        for brought in &self.live.clone() {
+            if let Ok(clip) = engine::library::load_clip(&brought.clip) {
+                for mut lane in clip.lanes {
+                    lane.spans = vec![engine::automation::Play::new(brought.from, brought.to)];
+                    set.lanes.push(lane);
+                }
+            }
+        }
         let previous = std::mem::replace(&mut self.document, set);
         let stage = self.stage.clone();
         let at = self.stage_bar;
@@ -244,6 +416,8 @@ impl Session {
         }
         self.document = set;
         self.name = name;
+        // A different piece is a different performance.
+        self.live.clear();
         self.resume_at = 0.0;
         self.stage_bar = 0.0;
         self.stage_at(&Stage::Piece, Some(0.0))
@@ -340,6 +514,15 @@ impl Session {
             set: &self.name,
             device: &self.link.device,
             buffer_frames: self.link.buffer_frames,
+            live: self
+                .live
+                .iter()
+                .map(|b| LiveClip {
+                    clip: b.clip.clone(),
+                    from: b.from,
+                    to: if b.to.is_finite() { Some(b.to) } else { None },
+                })
+                .collect(),
             stage: Staged {
                 kind: self.stage.kind(),
                 name: self.stage.label(&self.document),
@@ -353,6 +536,15 @@ impl Session {
         })
         .expect("a description serialises")
     }
+}
+
+/// A clip in the mix by hand rather than by the score.
+#[derive(Serialize)]
+struct LiveClip {
+    clip: String,
+    from: f32,
+    /// `null` while it is still running.
+    to: Option<f32>,
 }
 
 /// What the engine is playing, as the page needs to know it.
@@ -386,6 +578,8 @@ enum Outgoing<'a> {
         /// the first tab click does nothing, because the page thinks it is
         /// already where it is being asked to go.
         stage: Staged,
+        /// Clips the conductor brought in, and when each starts and stops.
+        live: Vec<LiveClip>,
         #[serde(flatten)]
         description: &'a Description,
     },
@@ -459,6 +653,7 @@ fn main() {
         document,
         name: set_name,
         stage: Stage::Piece,
+        live: Vec::new(),
         generation: 0,
         trouble: None,
         stage_bars: 0.0,
@@ -734,6 +929,34 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
             match session.load(name) {
                 Ok(()) => {
                     println!("playing {name}");
+                    vec![session.hello()]
+                }
+                Err(why) => vec![complaint(&why)],
+            }
+        }
+        // Conducting: a clip joins or leaves the mix, on a bar line in the
+        // future so what you press between beats still arrives in time.
+        Some("bring") | Some("take_out") => {
+            let Some(clip) = value.get("clip").and_then(serde_json::Value::as_str) else {
+                return vec![complaint("that needs a clip")];
+            };
+            #[allow(clippy::cast_possible_truncation)]
+            let quantum = value
+                .get("in")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(4.0) as f32;
+            let taking = value.get("t").and_then(serde_json::Value::as_str) == Some("take_out");
+            let done = if taking {
+                session.take_out(clip, quantum)
+            } else {
+                session.bring(clip, quantum)
+            };
+            match done {
+                Ok(at) => {
+                    println!(
+                        "{} {clip} at bar {at}",
+                        if taking { "out goes" } else { "in comes" }
+                    );
                     vec![session.hello()]
                 }
                 Err(why) => vec![complaint(&why)],

@@ -137,6 +137,13 @@ pub enum Command {
     /// are clicked, which is both what an interface naturally produces and the
     /// only shape that needs no allocation on the audio thread: the slot
     /// already exists.
+    /// When a lane plays, in bars.
+    ///
+    /// The conductor's verb. Bringing a clip in is this with a `from` in the
+    /// future and no end; taking it out is the same lane with a `to`. Both
+    /// land on a bar line rather than on the click, so what you press between
+    /// beats still arrives in time.
+    Span { lane: u8, from: f32, to: f32 },
     /// How long every note of a lane rings.
     ///
     /// A lane property rather than a per-note one, which is the model's real
