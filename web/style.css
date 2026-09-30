@@ -157,6 +157,16 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .step.playing { outline: 1px solid var(--good); outline-offset: 1px; }
 .step:hover { border-color: var(--accent); }
 
+/* Where the beats and the bars fall. One line every four steps, two every
+   sixteen — the same hierarchy the ear hears, so the eye does not have to
+   count. `box-sizing` makes the doubled one two hairlines a pixel apart rather
+   than one thick one. */
+.tick { width: 1px; align-self: stretch; margin: 0 3px; background: #4a5263; }
+.tick.bar {
+  box-sizing: border-box; width: 3px; margin: 0 4px; background: none;
+  border-left: 1px solid #6b7488; border-right: 1px solid #6b7488;
+}
+
 /* Save is only interesting when there is something to save. */
 #save { min-width: 0; padding: 3px 10px; font-size: 12px; margin-right: 10px; visibility: hidden; }
 #save.dirty { visibility: visible; color: var(--warn); border-color: var(--warn); }
@@ -183,8 +193,11 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 }
 .param.moved .pname { color: var(--warn); }
 .lane .expand {
-  min-width: 0; padding: 1px 6px; font-size: 10px; color: var(--weak);
-  border-color: transparent;
+  /* Fixed, so every lane's grid starts at the same place. A button that sizes
+     to its own glyph puts a ten-parameter kick out of line with a
+     four-parameter hat, and a grid you cannot read across is not a grid. */
+  width: 20px; min-width: 0; flex: none; padding: 1px 0; text-align: center;
+  font-size: 13px; line-height: 1; color: var(--weak); border-color: transparent;
 }
 .lane .expand.on { color: var(--accent); border-color: var(--line); }
 

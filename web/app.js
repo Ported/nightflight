@@ -428,12 +428,25 @@ function buildClip(name) {
     // rhythm, and ten faders per lane would bury it.
     const toggle = document.createElement("button");
     toggle.className = "expand";
-    toggle.textContent = `${lane.params.length} ▸`;
-    toggle.title = "show this patch's parameters";
+    toggle.textContent = "▸";
+    // The count used to be on the button, and a ten-parameter kick above a
+    // four-parameter hat pushed their grids out of line with each other. It is
+    // in the tooltip instead: the grids have to agree, and the number was never
+    // what anyone was reading.
+    toggle.title = `show this patch's ${lane.params.length} parameters`;
 
     const cells = document.createElement("div");
     cells.className = "steps";
     lane.steps.forEach(([velocity, offset], step) => {
+      // A line every four steps and a double line every sixteen. A grid this
+      // long is read by counting, and counting past four without a mark is how
+      // you lose your place — so the marks are where the beats and the bars
+      // are, and they say which is which.
+      if (step > 0 && step % 4 === 0) {
+        const tick = document.createElement("i");
+        tick.className = step % 16 === 0 ? "tick bar" : "tick";
+        cells.append(tick);
+      }
       const cell = document.createElement("div");
       cell.className = "step" + (step % 4 === 0 ? " beat" : "");
       cell.dataset.step = step;
@@ -466,7 +479,7 @@ function buildClip(name) {
     toggle.onclick = () => {
       panel.hidden = !panel.hidden;
       toggle.classList.toggle("on", !panel.hidden);
-      toggle.textContent = `${lane.params.length} ${panel.hidden ? "▸" : "▾"}`;
+      toggle.textContent = panel.hidden ? "▸" : "▾";
     };
   }
 }
