@@ -21,7 +21,7 @@
 //! The room stays, because how much of a lane goes to the reverb is part of how
 //! that lane sounds, not part of the arrangement.
 
-use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, Set, Voicing, STEPS_PER_BAR};
+use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, STEPS_PER_BAR, Set, Voicing};
 use crate::sets::ROOT;
 
 /// Bars this set's longest pattern occupies, at least one.
@@ -68,7 +68,6 @@ pub fn clip(set: &Set, name: &str) -> (Set, Vec<usize>) {
     alone.length_bars = bars(&alone);
     (alone, indices)
 }
-
 
 /// One lane, alone, looping — the lane a patch is being edited through.
 ///
@@ -172,14 +171,22 @@ mod tests {
     #[test]
     fn growing_a_loop_adds_rests_and_shrinking_drops_the_tail() {
         let mut pattern = crate::seq::Pattern::grid("X...X...X...X...");
-        let before: Vec<_> = pattern.all().iter().map(|s| (s.velocity, s.offset)).collect();
+        let before: Vec<_> = pattern
+            .all()
+            .iter()
+            .map(|s| (s.velocity, s.offset))
+            .collect();
         let now = |p: &crate::seq::Pattern| -> Vec<(f32, i8)> {
             p.all().iter().map(|s| (s.velocity, s.offset)).collect()
         };
 
         pattern.resize(32);
         assert_eq!(pattern.all().len(), 32);
-        assert_eq!(now(&pattern)[..16], before[..], "the first bar is untouched");
+        assert_eq!(
+            now(&pattern)[..16],
+            before[..],
+            "the first bar is untouched"
+        );
         assert!(
             pattern.all()[16..].iter().all(|step| step.velocity == 0.0),
             "a bar you just added should be empty"
@@ -202,7 +209,10 @@ mod tests {
             }
         }
         let (after, _) = clip(&piece, "beat");
-        assert_eq!(after.length_bars, 2.0, "the audition loops over the new length");
+        assert_eq!(
+            after.length_bars, 2.0,
+            "the audition loops over the new length"
+        );
     }
 
     #[test]

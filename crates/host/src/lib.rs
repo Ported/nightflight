@@ -321,7 +321,6 @@ pub fn start(set: Set) -> Result<Link, Box<dyn Error>> {
     })
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::{Fade, SWAP_FADE};
@@ -350,8 +349,15 @@ mod tests {
         // which is what "no click" means.
         let mut previous = 1.0;
         for &sample in &all {
-            assert!(sample <= previous + 1e-6, "went back up: {sample} > {previous}");
-            assert!((previous - sample) <= 1.0 / SWAP_FADE + 1e-6, "a jump of {}", previous - sample);
+            assert!(
+                sample <= previous + 1e-6,
+                "went back up: {sample} > {previous}"
+            );
+            assert!(
+                (previous - sample) <= 1.0 / SWAP_FADE + 1e-6,
+                "a jump of {}",
+                previous - sample
+            );
             previous = sample;
         }
         assert_eq!(all[all.len() - 1], 0.0);

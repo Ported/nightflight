@@ -47,7 +47,7 @@
 use std::fmt::Write as _;
 
 use crate::automation::Play;
-use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, Set, Step, Voicing, STEPS_PER_BAR};
+use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, STEPS_PER_BAR, Set, Step, Voicing};
 
 /// Velocity where a bare note name carries none of its own.
 const DEFAULT_VELOCITY: f32 = 0.8;
@@ -200,12 +200,19 @@ pub fn write(name: &str, set: &Set) -> String {
         let _ = writeln!(
             out,
             "room rt60={} damping={} predelay={} lowcut={}",
-            trim(r.rt60), trim(r.damping), trim(r.predelay), trim(r.lowcut)
+            trim(r.rt60),
+            trim(r.damping),
+            trim(r.predelay),
+            trim(r.lowcut)
         );
     }
     let _ = writeln!(out);
 
-    let defaults: Vec<f32> = set.lanes.iter().map(|l| common_velocity(&l.pattern)).collect();
+    let defaults: Vec<f32> = set
+        .lanes
+        .iter()
+        .map(|l| common_velocity(&l.pattern))
+        .collect();
 
     for (lane, default) in set.lanes.iter().zip(&defaults) {
         let mut attrs = vec![
@@ -269,31 +276,25 @@ pub fn write(name: &str, set: &Set) -> String {
                     .collect()
             })
             .collect();
-        let width = cells
-            .iter()
-            .flatten()
-            .map(String::len)
-            .max()
-            .unwrap_or(1);
+        let width = cells.iter().flatten().map(String::len).max().unwrap_or(1);
         let label = members
             .iter()
             .map(|&i| word(&set.lanes[i].name).len())
             .max()
             .unwrap_or(4);
-        let bars = cells.iter().map(Vec::len).max().unwrap_or(0).div_ceil(STEPS_PER_BAR);
+        let bars = cells
+            .iter()
+            .map(Vec::len)
+            .max()
+            .unwrap_or(0)
+            .div_ceil(STEPS_PER_BAR);
         // Around a hundred characters of music to a line, whatever the cells
         // cost: four-character notes get a bar to a line, drum hits get four.
         let per_system = (100 / (STEPS_PER_BAR * (width + 1))).max(1);
 
         for first in (0..bars).step_by(per_system) {
             let last = (first + per_system).min(bars);
-            let _ = writeln!(
-                out,
-                "\ngrid {} bars {}-{}",
-                word(clip),
-                first + 1,
-                last
-            );
+            let _ = writeln!(out, "\ngrid {} bars {}-{}", word(clip), first + 1, last);
             for (row, &i) in cells.iter().zip(&members) {
                 let mut line = format!("  {:label$} ", word(&set.lanes[i].name));
                 for step in first * STEPS_PER_BAR..last * STEPS_PER_BAR {
@@ -548,10 +549,7 @@ fn read_lane(words: &[&str], line: usize) -> Result<(Lane, f32), String> {
     };
     let home = match get(&a, "orbit") {
         Some(o) => {
-            let n: Vec<f32> = o
-                .split('/')
-                .map(|p| p.parse().unwrap_or(0.0))
-                .collect();
+            let n: Vec<f32> = o.split('/').map(|p| p.parse().unwrap_or(0.0)).collect();
             Home::Orbit {
                 radius: n.first().copied().unwrap_or(1.5),
                 bars_per_lap: n.get(1).copied().unwrap_or(8.0),
@@ -629,8 +627,8 @@ mod tests {
         for name in crate::sets::NAMES {
             let before = crate::sets::by_name(name).expect("a built-in set");
             let text = write(name, &before);
-            let (read_name, after) = read(&text)
-                .unwrap_or_else(|why| panic!("{name} did not read back: {why}"));
+            let (read_name, after) =
+                read(&text).unwrap_or_else(|why| panic!("{name} did not read back: {why}"));
 
             assert_eq!(read_name, *name);
             assert!((after.bpm - before.bpm).abs() < 1e-3, "{name}: bpm");

@@ -271,7 +271,16 @@ mod tests {
 
     #[test]
     fn names_that_would_escape_the_directory_are_refused() {
-        for name in ["", " ", "  x", "x ", "../../etc/passwd", "a/b", "a.b", "a\0b"] {
+        for name in [
+            "",
+            " ",
+            "  x",
+            "x ",
+            "../../etc/passwd",
+            "a/b",
+            "a.b",
+            "a\0b",
+        ] {
             assert!(check_name(name).is_err(), "{name:?} should be refused");
         }
         for name in ["punch", "808 tight", "kick-2", "sub_bass", "Öresund"] {

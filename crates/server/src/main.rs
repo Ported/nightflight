@@ -26,9 +26,9 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use engine::Engine;
 use engine::seq::{Set, Step};
 use engine::telemetry::{self, Command, Description, LaneState, Telemetry};
-use engine::Engine;
 use host::Link;
 use serde::Serialize;
 use tungstenite::{Message, accept};
@@ -240,11 +240,8 @@ impl Session {
             Stage::Patch(name) => {
                 let patch = engine::library::load_patch(name)
                     .map_err(|err| format!("could not read patch {name:?}: {err}"))?;
-                let set = engine::audition::patch(
-                    patch.voicing,
-                    self.document.bpm,
-                    self.document.reverb,
-                );
+                let set =
+                    engine::audition::patch(patch.voicing, self.document.bpm, self.document.reverb);
                 // Nothing in the document is sounding, so no lane of it is on
                 // stage and every meter reads silent. Correct: none of them is
                 // what you are hearing.
@@ -419,9 +416,7 @@ impl Session {
         // are the ones that will suit.
         let model = siblings
             .iter()
-            .find(|&&i| {
-                self.document.lanes[i].voicing.instrument() == patch.voicing.instrument()
-            })
+            .find(|&&i| self.document.lanes[i].voicing.instrument() == patch.voicing.instrument())
             .copied()
             .unwrap_or(last);
 
@@ -478,8 +473,17 @@ impl Session {
             .ok_or_else(|| format!("there is no lane {index}"))?;
         let clip = lane.clip.clone();
         let name = lane.name.clone();
-        if self.document.lanes.iter().filter(|l| l.clip == clip).count() <= 1 {
-            return Err(format!("{name} is the only lane of {clip} — a clip needs one"));
+        if self
+            .document
+            .lanes
+            .iter()
+            .filter(|l| l.clip == clip)
+            .count()
+            <= 1
+        {
+            return Err(format!(
+                "{name} is the only lane of {clip} — a clip needs one"
+            ));
         }
 
         // A macro pointing at a lane that no longer exists is not an error the
@@ -1022,7 +1026,9 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
                         .and_then(|lane| lane.patch.clone())
                 });
             let Some(name) = name else {
-                return vec![complaint("this lane has no patch name yet — save it as new")];
+                return vec![complaint(
+                    "this lane has no patch name yet — save it as new",
+                )];
             };
             match session.save_patch(index, &name) {
                 Ok(path) => {
@@ -1059,7 +1065,10 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
                     // Saving as new renamed the clip, which renamed the stage:
                     // the page needs both the new document and the new name of
                     // what it is listening to.
-                    vec![session.described_message(Some(path)), session.stage_message()]
+                    vec![
+                        session.described_message(Some(path)),
+                        session.stage_message(),
+                    ]
                 }
                 Err(why) => vec![complaint(&why)],
             }

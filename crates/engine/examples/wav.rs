@@ -69,7 +69,11 @@ fn main() {
     }
 
     // The piece's own tempo, unless the command line says otherwise.
-    let bpm = if flag("--bpm").is_some() { bpm } else { set.bpm };
+    let bpm = if flag("--bpm").is_some() {
+        bpm
+    } else {
+        set.bpm
+    };
     let mut engine = Engine::new(dsp::SR, bpm, set);
     if args.iter().any(|a| a == "--dry") {
         for name in engine.lane_names() {

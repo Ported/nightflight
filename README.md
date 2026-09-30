@@ -68,18 +68,38 @@ cargo run -p dsp   --release --example ir      # dump the reverb's impulse respo
 cargo test --release
 ```
 
-Neither the author nor the machine writing most of this code can hear the output,
-so **everything is verified by measurement**. `tools/analyse.py` reads a rendered
-WAV and prints level, peak, the largest sample-to-sample jump, K-weighted
-loudness, per-band reverberation time, and how much of a spun tone is not the
-tone. It needs `numpy` and nothing else:
+### `nf`
+
+Music is written as **tab** — a text grid, one line per lane, bars divided by
+`|` — and `nf` is how you work with it. It needs `numpy` and nothing else.
 
 ```
-python3 tools/analyse.py renders/intro.wav --lufs --hits
+nf ls                          what the library holds
+nf show intro                  the piece as tab
+nf new piece groove --bars 2   a file to start from
+nf measure groove.tab          render it, then say what came out
+nf measure intro --hits 0,7.6  and whether the music lands on those seconds
 ```
 
-That division is deliberate: **Rust makes sound, Python looks at it.** There is no
-contract between them beyond a file on disk.
+A piece is a name in `pieces/`, a path to a `.json`, or a path to a `.tab`;
+all three work anywhere one is asked for. `nf measure` on a piece renders it
+first, which is the loop: edit the grid, run one command, read the numbers.
+
+**Rust owns the format and the sound; Python owns the surface.** The tab parser
+is in `crates/engine/src/tab.rs` and is round-trip tested, so `nf` never reads a
+tab file itself — it asks `nf-engine`, which is the same code the audio thread
+runs. A second parser would drift from the first, and the half that changes
+every session should be the half that is ten lines to extend.
+
+Neither the author nor the machine writing most of this code can hear the
+output, so **everything is verified by measurement**. `tools/analyse.py` is the
+library underneath `nf measure` and is worth knowing directly for the things
+the CLI does not surface — per-band reverberation time, note onsets, and how
+much of a spun tone is not the tone:
+
+```
+python3 tools/analyse.py renders/intro.wav --lufs --rt60
+```
 
 The test suite is the same discipline in a form that fails a build. It checks
 things like: a whole-number FM ratio keeps its pitch and a fractional one does

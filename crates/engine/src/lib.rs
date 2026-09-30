@@ -417,7 +417,8 @@ impl Engine {
         // size. Stopped, they hold: a source's place is musical time, not
         // wall-clock time.
         if offset + n == CONTROL_BLOCK && self.playing {
-            let bars = CONTROL_BLOCK as f64 / (self.clock.samples_per_step() * seq::STEPS_PER_BAR as f64);
+            let bars =
+                CONTROL_BLOCK as f64 / (self.clock.samples_per_step() * seq::STEPS_PER_BAR as f64);
             for (laps, lane) in self.laps.iter_mut().zip(&self.lanes) {
                 *laps += lane.home.laps_per_bar() * bars;
             }

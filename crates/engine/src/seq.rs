@@ -186,8 +186,7 @@ impl Voicing {
     }
 
     /// Every instrument there is, for an interface offering to make a new patch.
-    pub const INSTRUMENTS: &'static [&'static str] =
-        &["kick", "hat", "bass", "glass", "strings"];
+    pub const INSTRUMENTS: &'static [&'static str] = &["kick", "hat", "bass", "glass", "strings"];
 
     /// A new patch of a named instrument, at its defaults.
     #[must_use]
