@@ -56,8 +56,10 @@ front end can be replaced without touching a line of DSP.
 ## Commands
 
 ```
-cargo run -p app --release intro          # play, with the window: rolling | prelude | pad | intro
-cargo run -p engine --release --example wav -- 40 renders/intro.wav --set intro
+cargo run -p server --release intro       # play it: rolling | prelude | pad | intro | barnluren
+nf ls                                     # pieces, clips, patches
+nf show intro                             # the piece as tab
+nf measure intro --hits 0,7.6             # render, then the numbers
 cargo run -p engine --release --example macros   # what the automation is doing, bar by bar
 cargo run -p dsp --release --example ir          # the reverb's impulse response
 cargo test --release && cargo clippy --all-targets && cargo fmt --all

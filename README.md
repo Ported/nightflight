@@ -7,7 +7,7 @@ thrown around your head — heard binaurally on headphones.
 Everything is synthesised. There are no samples in this repository.
 
 ```
-cargo run -p app --release intro
+cargo run -p server --release intro   # then open http://127.0.0.1:8730
 ```
 
 Headphones. On speakers you lose the whole point of it.
@@ -62,8 +62,9 @@ touches the allocator, which is how that rule is enforced rather than remembered
 ## Working on it
 
 ```
-cargo run -p app --release intro              # play it, with the window
-cargo run -p engine --release --example wav -- 40 renders/intro.wav --set intro
+cargo run -p server --release intro            # play it; the browser conducts
+nf show intro                                  # the piece as tab
+nf measure intro                               # render it, then the numbers
 cargo run -p engine --release --example macros # what the automation curves are doing
 cargo run -p dsp   --release --example ir      # dump the reverb's impulse response
 cargo test --release
