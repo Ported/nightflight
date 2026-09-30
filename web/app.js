@@ -14,7 +14,7 @@ const $ = (id) => document.getElementById(id);
 /** What the engine is playing: {kind, name}. kind is piece, clip, lane or patch. */
 let stage = { kind: "piece", name: "" };
 /** The library index, as the server last listed it. */
-let library = { patches: [], clips: [] };
+let library = { pieces: [], patches: [], clips: [] };
 /** Bars the staged material runs for — the piece's length, or one clip's. */
 let stageBars = 0;
 
@@ -50,12 +50,16 @@ function connect() {
       // may have come back playing something else entirely — a different
       // piece, with different clips. Follow what is actually there; asking for
       // a clip that no longer exists just earns a complaint.
-      const open = clips().has(tab) ? tab : "conductor";
+      // A hello also arrives when the piece changes, and the conductor and the
+      // library are about the session rather than any one piece — staying put
+      // is what you want when you are trying pieces one after another. Only a
+      // clip tab can be orphaned by a new piece.
+      const open = !isClip(tab) || clips().has(tab) ? tab : "conductor";
       show(stage.kind === "clip" && clips().has(stage.name) ? stage.name : open);
     } else if (message.t === "stage") {
       adoptStage(message);
     } else if (message.t === "library") {
-      library = { patches: message.patches, clips: message.clips };
+      library = { pieces: message.pieces, patches: message.patches, clips: message.clips };
       if (tab === "library") buildLibrary();
     } else if (message.t === "complaint") {
       say(message.why, true);
@@ -210,8 +214,43 @@ function say(words, bad = false) {
 function buildLibrary() {
   const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   $("libraryInfo").textContent =
-    `${count(library.patches.length, "patch", "patches")} · ` +
-    `${count(library.clips.length, "clip", "clips")}`;
+    `${count(library.pieces.length, "piece", "pieces")} · ` +
+    `${count(library.clips.length, "clip", "clips")} · ` +
+    `${count(library.patches.length, "patch", "patches")}`;
+
+  // Pieces first, because this is now where you choose what is playing.
+  const pieces = $("libraryPieces");
+  pieces.replaceChildren();
+  for (const piece of library.pieces) {
+    const row = document.createElement("div");
+    row.className = "libitem";
+    row.dataset.piece = piece.name;
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = piece.name;
+    const what = document.createElement("span");
+    what.className = piece.built_in ? "weak built-in" : "weak";
+    what.textContent = `${piece.bars.toFixed(0)} bars · ${piece.bpm.toFixed(0)} BPM`;
+    what.title = piece.built_in
+      ? `a generator in sets.rs, with no file to edit · ${piece.clips.join(", ")}`
+      : piece.clips.join(", ");
+
+    const play = document.createElement("button");
+    const on = piece.name === $("set").textContent;
+    play.textContent = on ? "playing" : "play";
+    play.disabled = on;
+    // Switching is a whole new engine, built off the audio thread and swapped
+    // in over the same ten-millisecond fade an audition uses. The server
+    // answers with a fresh hello and the page rebuilds from it.
+    play.onclick = () => send({ t: "load", piece: piece.name });
+
+    row.append(name, what, play);
+    pieces.append(row);
+  }
+  if (!library.pieces.length) {
+    pieces.append(empty("nothing in pieces/ and no built-ins"));
+  }
 
   const patches = $("libraryPatches");
   patches.replaceChildren();
@@ -292,6 +331,10 @@ function paintStage() {
       "sounding",
       stage.kind === "patch" && row.dataset.patch === stage.name,
     );
+  });
+  const playing = $("set").textContent;
+  document.querySelectorAll("[data-piece]").forEach((row) => {
+    row.classList.toggle("playing", row.dataset.piece === playing);
   });
 }
 

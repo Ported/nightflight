@@ -62,8 +62,24 @@ pub struct Clip {
 /// What the library holds, for an index to draw.
 #[derive(Clone, Debug, Serialize)]
 pub struct Index {
+    pub pieces: Vec<PieceEntry>,
     pub patches: Vec<PatchEntry>,
     pub clips: Vec<ClipEntry>,
+}
+
+/// A piece, enough of it to choose one.
+#[derive(Clone, Debug, Serialize)]
+pub struct PieceEntry {
+    pub name: String,
+    pub bpm: f32,
+    pub bars: f32,
+    pub lanes: usize,
+    /// What it is made of, which is what tells one piece from another at a
+    /// glance far better than its length does.
+    pub clips: Vec<String>,
+    /// Whether it exists as a file, or only as a generator in `sets.rs`. A
+    /// built-in can be played and rendered but there is nothing to edit.
+    pub built_in: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -126,7 +142,10 @@ fn names(directory: &Path) -> Vec<String> {
     let mut names: Vec<String> = entries
         .flatten()
         .map(|entry| entry.path())
-        .filter(|path| path.extension().is_some_and(|e| e == "json"))
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|e| e == "json" || e == "tab")
+        })
         .filter_map(|path| {
             path.file_stem()
                 .and_then(|s| s.to_str())
@@ -137,10 +156,61 @@ fn names(directory: &Path) -> Vec<String> {
     names
 }
 
+/// Every piece there is: the files in `pieces/`, then any built-in generator
+/// no file has shadowed.
+///
+/// Each one is read to say how long it is and what it is made of. That costs
+/// a couple of hundred kilobytes of JSON per call and happens when someone
+/// opens a tab, which is to say never in a hurry — and it means the list is
+/// never stale, which will matter more once a file being written is the
+/// signal to reload it.
+#[must_use]
+pub fn pieces() -> Vec<PieceEntry> {
+    let mut seen: Vec<String> = Vec::new();
+    let mut out: Vec<PieceEntry> = Vec::new();
+
+    let mut from_files = names(&crate::document::directory());
+    from_files.dedup();
+    for name in from_files {
+        if let Some(entry) = describe_piece(&name, false) {
+            seen.push(name);
+            out.push(entry);
+        }
+    }
+    for name in crate::sets::NAMES {
+        if !seen.iter().any(|s| s == name)
+            && let Some(entry) = describe_piece(name, true)
+        {
+            out.push(entry);
+        }
+    }
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    out
+}
+
+fn describe_piece(name: &str, built_in: bool) -> Option<PieceEntry> {
+    let (_, set) = crate::document::find(name).ok()?;
+    let mut clips: Vec<String> = Vec::new();
+    for lane in &set.lanes {
+        if !clips.contains(&lane.clip) {
+            clips.push(lane.clip.clone());
+        }
+    }
+    Some(PieceEntry {
+        name: name.to_string(),
+        bpm: set.bpm,
+        bars: set.length_bars,
+        lanes: set.lanes.len(),
+        clips,
+        built_in,
+    })
+}
+
 /// Everything saved, for the index.
 #[must_use]
 pub fn index() -> Index {
     Index {
+        pieces: pieces(),
         patches: names(&patches())
             .into_iter()
             .filter_map(|name| {

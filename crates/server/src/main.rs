@@ -179,6 +179,34 @@ impl Session {
         self.stage_at(wanted, None)
     }
 
+    /// Put a different piece on.
+    ///
+    /// Everything about the session changes — the lanes, the macros, the
+    /// clips, the room, the tempo — so the page is sent a fresh hello and
+    /// rebuilds from scratch. That is not laziness: a piece change is exactly
+    /// the event the hello was written for, and inventing a narrower message
+    /// would be inventing a second way to say the same thing.
+    ///
+    /// It starts at the top. There is no sensible bar to resume at when the
+    /// piece has a different number of them, and whether it was playing
+    /// carries over because that is a property of the transport, not the
+    /// music.
+    ///
+    /// # Errors
+    /// If there is no piece of that name, or it cannot be read. The engine
+    /// keeps playing what it had — a typo should not stop the music.
+    fn load(&mut self, what: &str) -> Result<(), String> {
+        let (name, mut set) = engine::document::find(what).map_err(|err| err.to_string())?;
+        for missing in engine::library::resolve(&mut set) {
+            eprintln!("patch not found: {missing}");
+        }
+        self.document = set;
+        self.name = name;
+        self.resume_at = 0.0;
+        self.stage_bar = 0.0;
+        self.stage_at(&Stage::Piece, Some(0.0))
+    }
+
     fn stage_at(&mut self, wanted: &Stage, at: Option<f32>) -> Result<(), String> {
         let (set, on_stage, bar) = match wanted {
             Stage::Piece => (
@@ -270,7 +298,6 @@ impl Session {
             set: &self.name,
             device: &self.link.device,
             buffer_frames: self.link.buffer_frames,
-            instruments: engine::seq::Voicing::INSTRUMENTS,
             stage: Staged {
                 kind: self.stage.kind(),
                 name: self.stage.label(&self.document),
@@ -308,8 +335,6 @@ enum Outgoing<'a> {
         set: &'a str,
         device: &'a str,
         buffer_frames: u32,
-        /// Every instrument a new patch can be made of.
-        instruments: &'static [&'static str],
         /// What the engine is playing right now.
         ///
         /// A page that reloads must not assume the piece is on: the engine
@@ -346,29 +371,10 @@ fn main() {
     // A piece on disk wins over the built-in of the same name. That ordering is
     // the point: once a piece has been written down, editing the file is editing
     // the music, and the Rust that first generated it is only its provenance.
-    let path = engine::document::directory().join(format!("{set_name}.json"));
-    let set = match engine::document::load(&path) {
-        Ok(piece) => {
-            println!("{} · {}", piece.name, path.display());
-            piece.set
-        }
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-            match engine::sets::by_name(&set_name) {
-                Some(set) => {
-                    println!("{set_name} · built in, nothing at {}", path.display());
-                    set
-                }
-                None => {
-                    eprintln!(
-                        "no piece named {set_name:?}; have {:?}",
-                        engine::sets::NAMES
-                    );
-                    std::process::exit(1);
-                }
-            }
-        }
+    let (set_name, set) = match engine::document::find(&set_name) {
+        Ok(found) => found,
         Err(err) => {
-            eprintln!("could not read {}: {err}", path.display());
+            eprintln!("{err}");
             std::process::exit(1);
         }
     };
@@ -640,6 +646,21 @@ fn handle(text: &str, session: &Mutex<Session>) -> Vec<String> {
             };
             match session.stage(&wanted) {
                 Ok(()) => vec![session.stage_message()],
+                Err(why) => vec![complaint(&why)],
+            }
+        }
+        // A different piece. Everything about the session changes, so the
+        // answer is a fresh hello — the message that already means "here is
+        // what this is".
+        Some("load") => {
+            let Some(name) = value.get("piece").and_then(serde_json::Value::as_str) else {
+                return vec![complaint("load needs a piece")];
+            };
+            match session.load(name) {
+                Ok(()) => {
+                    println!("playing {name}");
+                    vec![session.hello()]
+                }
                 Err(why) => vec![complaint(&why)],
             }
         }

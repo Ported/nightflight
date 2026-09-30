@@ -19,7 +19,7 @@
 //! `.tab`. All three work everywhere one is asked for, because the thing you
 //! are iterating on is a file and the thing you saved is a name.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::ExitCode;
 
 use engine::seq::Set;
@@ -88,31 +88,7 @@ fn positional<'a>(args: &[&'a str]) -> Vec<&'a str> {
 /// A name in `pieces/`, a `.json`, or a `.tab`. Patches named by a lane are
 /// resolved from the library either way, so what renders is what plays.
 fn load(what: &str) -> Result<(String, Set), String> {
-    let path = PathBuf::from(what);
-    let (name, mut set) = if path.extension().is_some_and(|e| e == "tab") {
-        let text = std::fs::read_to_string(&path)
-            .map_err(|err| format!("could not read {}: {err}", path.display()))?;
-        engine::tab::read(&text).map_err(|why| format!("{}: {why}", path.display()))?
-    } else {
-        let path = if path.extension().is_some_and(|e| e == "json") {
-            path
-        } else {
-            engine::document::directory().join(format!("{what}.json"))
-        };
-        match engine::document::load(&path) {
-            Ok(piece) => (piece.name, piece.set),
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                let set = engine::sets::by_name(what).ok_or_else(|| {
-                    format!(
-                        "no piece, file or built-in called {what:?}.\nbuilt in: {:?}",
-                        engine::sets::NAMES
-                    )
-                })?;
-                (what.to_string(), set)
-            }
-            Err(err) => return Err(format!("could not read {}: {err}", path.display())),
-        }
-    };
+    let (name, mut set) = engine::document::find(what).map_err(|err| err.to_string())?;
     for missing in engine::library::resolve(&mut set) {
         eprintln!("patch not found: {missing}");
     }
@@ -181,46 +157,9 @@ fn convert(args: &[&str]) -> Result<(), String> {
 }
 
 fn index() -> Result<(), String> {
-    let library = engine::library::index();
-    let mut pieces: Vec<serde_json::Value> = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(engine::document::directory()) {
-        let mut found: Vec<PathBuf> = entries
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.extension().is_some_and(|e| e == "json" || e == "tab"))
-            .collect();
-        found.sort();
-        for path in found {
-            let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
-                continue;
-            };
-            let Ok((_, set)) = load(path.to_str().unwrap_or(stem)) else {
-                continue;
-            };
-            let mut clips: Vec<&str> = Vec::new();
-            for lane in &set.lanes {
-                if !clips.contains(&lane.clip.as_str()) {
-                    clips.push(&lane.clip);
-                }
-            }
-            pieces.push(serde_json::json!({
-                "name": stem,
-                "bpm": set.bpm,
-                "bars": set.length_bars,
-                "lanes": set.lanes.len(),
-                "clips": clips,
-                "path": path,
-            }));
-        }
-    }
-    let out = serde_json::json!({
-        "pieces": pieces,
-        "patches": library.patches,
-        "clips": library.clips,
-    });
     println!(
         "{}",
-        serde_json::to_string_pretty(&out).map_err(|e| e.to_string())?
+        serde_json::to_string_pretty(&engine::library::index()).map_err(|e| e.to_string())?
     );
     Ok(())
 }

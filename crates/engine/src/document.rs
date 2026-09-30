@@ -100,6 +100,62 @@ pub fn load(path: &Path) -> io::Result<Piece> {
     Ok(piece)
 }
 
+/// Find a piece by whatever you have: a name, a path, or neither.
+///
+/// One function because there were three, in the server, the renderer and the
+/// library listing, and they had already drifted on which extensions they
+/// tried and in what order. What you are iterating on is a file and what you
+/// saved is a name; nothing downstream should care which you are holding.
+///
+/// The order is deliberate. A `.tab` beside a `.json` of the same name wins,
+/// because tab is what a person edits and JSON is what a program wrote — if
+/// both exist, the one someone typed is the one they meant. A built-in is the
+/// last resort, so saving a piece over a generator's name shadows it, which is
+/// the point of the generators being provenance rather than sources.
+///
+/// # Errors
+/// If nothing of that name exists anywhere, or what does cannot be read.
+pub fn find(what: &str) -> io::Result<(String, Set)> {
+    let given = Path::new(what);
+    let candidates: Vec<PathBuf> = if given.extension().is_some() {
+        vec![given.to_path_buf()]
+    } else {
+        let here = directory();
+        vec![here.join(format!("{what}.tab")), here.join(format!("{what}.json"))]
+    };
+
+    for path in &candidates {
+        if !path.is_file() {
+            continue;
+        }
+        if path.extension().is_some_and(|e| e == "tab") {
+            let text = std::fs::read_to_string(path)?;
+            return crate::tab::read(&text)
+                .map_err(|why| io::Error::new(io::ErrorKind::InvalidData, why));
+        }
+        let piece = load(path)?;
+        return Ok((piece.name, piece.set));
+    }
+
+    if given.extension().is_none()
+        && let Some(set) = crate::sets::by_name(what)
+    {
+        return Ok((what.to_string(), set));
+    }
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        format!(
+            "no piece called {what:?}. Tried {}, and the built-ins {:?}",
+            candidates
+                .iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", "),
+            crate::sets::NAMES
+        ),
+    ))
+}
+
 /// Write a piece, atomically.
 ///
 /// # Errors
@@ -113,4 +169,55 @@ pub fn save(path: &Path, name: &str, set: &Set) -> io::Result<()> {
             set: set.clone(),
         },
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A name is not a path and a path is not a name, and `find` is the one
+    /// place that has to know. It used to be three places, which had already
+    /// drifted on which extensions they tried and in what order.
+    #[test]
+    fn a_piece_is_found_by_name_or_by_path() {
+        let (name, set) = find("rolling").expect("rolling is in pieces/");
+        assert_eq!(name, "rolling");
+        assert!(!set.lanes.is_empty());
+
+        let path = directory().join("rolling.json");
+        let (_, same) = find(path.to_str().expect("utf-8")).expect("by path too");
+        assert_eq!(same.lanes.len(), set.lanes.len());
+    }
+
+    #[test]
+    fn a_tab_beside_a_json_wins() {
+        // Tab is what a person edits and JSON is what a program wrote; if both
+        // exist, the one someone typed is the one they meant.
+        let stem = "__find_precedence_test__";
+        let json = directory().join(format!("{stem}.json"));
+        let tab = directory().join(format!("{stem}.tab"));
+        let (_, mut set) = find("rolling").expect("something to copy");
+        set.bpm = 126.0;
+        save(&json, stem, &set).expect("write the json");
+        set.bpm = 100.0;
+        std::fs::write(&tab, crate::tab::write(stem, &set)).expect("write the tab");
+
+        let found = find(stem).map(|(_, s)| s.bpm);
+        // Clean up before asserting, so a failure does not leave litter in
+        // pieces/ for the next run to trip over.
+        let _ = std::fs::remove_file(&tab);
+        let json_only = find(stem).map(|(_, s)| s.bpm);
+        let _ = std::fs::remove_file(&json);
+
+        assert_eq!(found.expect("found with both"), 100.0, "the tab should win");
+        assert_eq!(json_only.expect("found with one"), 126.0, "then the json");
+    }
+
+    #[test]
+    fn a_name_that_is_nothing_says_where_it_looked() {
+        let why = find("no-such-piece").expect_err("nothing of that name").to_string();
+        assert!(why.contains("no-such-piece"), "{why}");
+        assert!(why.contains(".tab"), "{why}");
+        assert!(why.contains("rolling"), "should list the built-ins: {why}");
+    }
 }

@@ -92,6 +92,8 @@ input[type=range] { accent-color: var(--accent); background: none; }
 .meter i { display: block; height: 100%; width: 0; background: var(--good); }
 
 main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 420px); gap: 12px; }
+/* The library has three lists and no canvas, so it gets even columns. */
+main.three { grid-template-columns: repeat(3, minmax(240px, 1fr)); }
 .column {
   background: var(--panel); border: 1px solid var(--line);
   border-radius: 6px; padding: 10px 12px;
@@ -297,3 +299,9 @@ main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, 42
 .steps { flex-wrap: nowrap; }
 #clipLanes { overflow-x: auto; }
 
+
+/* The piece that is playing. Not a hover state — it stays lit, because "which
+   one is on" is the question this list exists to answer. */
+.libitem.playing { background: #78c8ff1f; }
+.libitem.playing .name { color: var(--accent); }
+.libitem .weak.built-in { font-style: italic; }
