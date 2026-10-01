@@ -1,0 +1,73 @@
+piece football
+bpm 160
+bars 12
+
+# Barnluren, "Should we meet up for football?" — 18.2 s of motion comic.
+#
+# The film is at 160 BPM already: the three yeses are 45 frames apart, 45
+# frames is 1.5 s, and 1.5 s is one bar. They land on bars 6, 7 and 8 to the
+# frame, and the pan onto the pitch lands on bar 9. The music starts half a
+# second into the picture, which is the pickup the edit has and which lets the
+# opening question sit for a moment before anything comments on it.
+#
+# The story is not sad then happy. It is a question nobody wants asked, a boy
+# risking a no, three answers, and then release. So the music is a suspension
+# that will not resolve: G over D, held through the cards and through the
+# asking, walked up by the three yeses over I - IV - V, and let down onto the
+# third of the chord at the moment the frame opens onto grass.
+#
+#   bar  1-2   the hook card. One note, unresolved, nothing under it
+#   bar  3     the turn. The pad arrives; the note softens to the third
+#   bar  4-5   the dare. A heartbeat, a rising figure, and then he waits
+#   bar  6     yes, Mateo        bell A3 over D   — the fifth
+#   bar  7     me too, Hana      bell B3 over G   — the third
+#   bar  8     in goal, Yusuf    bell D4 over A   — still suspended
+#   bar  9     the match         bell Gb4 over D  — resolved, everything in
+#   bar 10     the match, running
+#   bar 11-12  the end card, and the same suspension let down one last time
+
+# Gains are 0.9x what they were: the first mix peaked at -0.60 dBFS and
+# social delivery wants a ceiling nearer -1.5.
+lane bell     clip=football inst=glass   root=D3 gain=0.612 len=20 send=0.6 vel=7
+lane bell_low clip=football inst=glass   root=D3 gain=0.360 len=28 send=0.7 vel=6
+lane pad      clip=football inst=strings root=D2 gain=0.855 len=26 send=0.45 orbit=2/24/0/0/0/1 vel=7
+lane pad_high clip=football inst=strings root=D2 gain=0.666 len=26 send=0.5 orbit=2/24/0.5/0/0/1 vel=6
+lane ground   clip=football inst=bass    root=D1 gain=0.558 len=6 duck vel=7
+lane heart    clip=football inst=kick    root=D1 gain=0.468 len=0.45s
+
+grid football bars 1-4
+  bell     G3:4 . .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  Gb3:5 .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  E3 .  .  .  .  .  .  .  | D3:5 . .  .  .  .  .  .  E3:5 .  .  .  .  .  .  .
+  bell_low .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .   . .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  pad      .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .   . .  .  .  .  .  .  .  .  .  .  | D2:4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  pad_high .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .   . .  .  .  .  .  .  .  .  .  .  | A2:3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  ground   .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .   . .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  heart    .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .   . .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | 3  .  .  .  .  .  .  .  2  .  .  .  .  .  .  .
+
+grid football bars 5-8
+  bell     G3:5 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | A3:6 . .  .  .  .  .  .  .  .  .  .  .  .  .  .  | B3:7 . .  .  .  .  .  .  .  .  .  .  .  .  .  .  | D4:8 . .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  bell_low .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | A3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  pad      .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | D2:4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | G2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | A2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  pad_high .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | A2:3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | D3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | E3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  ground   .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | .  .  .  .  .  .  .  .  A1 .  .  .  .  .  .  .
+  heart    3  .  .  .  .  .  .  .  2  .  .  .  .  .  .  .  | 4  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | 5  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  | 6  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+
+grid football bars 9-12
+  bell     Gb4:X .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | A3 .  .  .  B3 .  .  .  D4 .  .  .  Gb4 . .  .  | G3:5 . .  .  .  .  .  .  Gb3:4 . .  .  .  .  .  .  | D3:4 . .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  bell_low D3  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  A3 .  .  .  .   . .  .  | D3:4 . .  .  .  .  .  .  .   . .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  pad      D2  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .   . .  .  | D2:5 . .  .  .  .  .  .  .   . .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  pad_high A2  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .   . .  .  | A2:4 . .  .  .  .  .  .  .   . .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  ground   D1  .  .  .  .  .  .  .  D1 .  .  .  .  .  .  . | D1 .  .  .  .  .  .  .  A1 .  .  .  .   . .  .  | D1:4 . .  .  .  .  .  .  .   . .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  heart    X   .  .  .  .  .  .  .  4  .  .  .  .  .  .  . | 6  .  .  .  .  .  .  .  4  .  .  .  .   . .  .  | .  .  .  .  .  .  .  .  .   . .  .  .  .  .  .  | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+
+# A music box rather than a bell: a high ratio for the metallic strike, the
+# brightness gone almost at once, and a long ring under it.
+params bell     ratio=3.5 index=1.6 index_decay=0.12 decay=2.4 release=1.8 strike=0.1 detune=4 wow_depth=4 wow_rate=0.3
+params bell_low ratio=2 index=1.1 index_decay=0.2 decay=3.2 release=2.4 strike=0.06 detune=5
+
+# Warm and slow in: watercolour, not synth.
+params pad      cutoff=1200 detune=5 depth=9 attack=0.7 release=2.2 breathe=0.45 breathe_rate=0.08 phaser=0.4
+params pad_high cutoff=1400 detune=6 depth=10 attack=0.9 release=2.2 breathe=0.5 breathe_rate=0.07 phaser=0.45
+
+# Felt, not heard: the heartbeat under the asking.
+params heart    sweep=2 pitch_decay=0.02 punch=4 decay=0.2 hold=0.005 click=0.2 knock=0.45 drive=1.6
+params ground   cutoff=180 env_amount=3 resonance=0.4 sub=0.5 drive=1.5 decay=0.5 release=0.2
