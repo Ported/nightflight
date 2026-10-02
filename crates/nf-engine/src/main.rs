@@ -169,16 +169,77 @@ fn lanes(args: &[&str]) -> Result<(), String> {
         .copied()
         .ok_or("lanes needs a piece")?;
     let (_, set) = load(what)?;
+    let seconds_per_step = 60.0 / set.bpm / 4.0;
+
     let out: Vec<serde_json::Value> = set
         .lanes
         .iter()
         .map(|lane| {
+            // How many of a lane's own notes sound at once where they are
+            // closest together. Over one means a melodic line is playing
+            // itself as a chord, which is a bug you can hear and could not
+            // previously be told about — the Mozart lead in `gatetest` had
+            // 5.7 and nobody knew until it was played out loud.
+            let sounding: Vec<usize> = lane
+                .pattern
+                .all()
+                .iter()
+                .enumerate()
+                .filter(|(_, step)| step.velocity > 0.0)
+                .map(|(i, _)| i)
+                .collect();
+            let steps = lane.pattern.all().len().max(1);
+            let tightest = sounding
+                .windows(2)
+                .map(|w| w[1] - w[0])
+                // The pattern loops, so the wrap counts as a gap too.
+                .chain(match (sounding.first(), sounding.last()) {
+                    (Some(&a), Some(&z)) if sounding.len() > 1 => Some(steps - z + a),
+                    _ => None,
+                })
+                .min();
+
+            let held = match lane.length {
+                engine::seq::Length::Steps(n) => n,
+                engine::seq::Length::Seconds(s) => s / seconds_per_step,
+            };
+            // The release runs on after the note ends, and every instrument
+            // but the kick has one.
+            let release = lane
+                .voicing
+                .spec()
+                .iter()
+                .position(|s| s.name == "release")
+                .map_or(0.0, |i| lane.voicing.param(i) / seconds_per_step);
+
+            let overlap = tightest.map(|gap| (held + release) / gap as f32);
+            let driven = set.macros.iter().any(|m| {
+                m.mappings
+                    .iter()
+                    .any(|map| map.lane == lane.name && map.target == engine::automation::Target::Level)
+            });
+
             serde_json::json!({
                 "name": lane.name,
                 "clip": lane.clip,
                 "instrument": lane.voicing.instrument(),
+                "pitched": lane.voicing.pitched(),
+                // Whether it holds at full level while the note lasts. An
+                // instrument with an amplitude decay is already quiet by the
+                // time its next note arrives, so overlapping it is an
+                // arpeggio; one that sustains makes a cluster instead.
+                "sustains": !lane
+                    .voicing
+                    .spec()
+                    .iter()
+                    .any(|s| s.name == "decay"),
                 "gain": lane.gain,
                 "gated": lane.gate.is_some(),
+                "notes": sounding.len(),
+                "held_steps": held,
+                "tightest_gap_steps": tightest,
+                "overlap": overlap,
+                "level_driven_by_macro": driven,
             })
         })
         .collect();

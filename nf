@@ -159,8 +159,14 @@ def cmd_measure(args: list[str]) -> None:
     if facts.get("bpm"):
         head += f"  ·  {facts['bars']:g} bars at {facts['bpm']:g} BPM"
     print(head)
+    rms = float(np.sqrt((mono ** 2).mean()))
     print(f"  peak      {db(peak):+7.2f} dBFS   at {loudest:.3f} s")
     print(f"  loudness  {lufs(x, sr):+7.2f} LUFS")
+    # Crest is the measurement that tells distorted from bright, and the two
+    # look nearly identical in a spectrum. A plucked sound is 12-15 dB; under
+    # about 9 something is squashing it, which is usually saturation and
+    # occasionally a limiter nobody meant to use.
+    print(f"  crest     {db(peak) - db(rms):+7.2f} dB     {crest_reads(db(peak) - db(rms))}")
     # Mono is where a phone plays it, and a wide mix loses level when summed.
     wide = float(np.sqrt((x ** 2).mean()))
     print(f"  mono sum  {db(float(np.sqrt((mono ** 2).mean()))) - db(wide):+7.2f} dB "
@@ -198,6 +204,17 @@ def cmd_measure(args: list[str]) -> None:
                   f"{(at - t) * 30:+5.2f} frames")
 
 
+def crest_reads(crest: float) -> str:
+    """What a crest factor is telling you, in words."""
+    if crest < 9:
+        return "squashed — saturation, or a mix with no transients left"
+    if crest < 13:
+        return "driven"
+    if crest < 20:
+        return "clean transients"
+    return "very peaky — one loud thing over a quiet mix"
+
+
 def per_lane(what: str) -> None:
     """Every lane on its own, loudest first.
 
@@ -210,7 +227,7 @@ def per_lane(what: str) -> None:
     lanes = json.loads(engine("lanes", what))
     bpm = piece_facts(what).get("bpm") or 120
     bar = 240.0 / bpm
-    print(f"\n  {'lane':<14}{'plays':<9}{'gain':>6}{'peak':>9}{'loudest bar':>12}")
+    print(f"\n  {'lane':<14}{'plays':<9}{'gain':>6}{'peak':>9}{'loudest bar':>12}{'crest':>8}")
     rows = []
     for lane in lanes:
         tmp = Path(tempfile.gettempdir()) / f"nf-solo-{lane['name'].replace(' ', '_')}.wav"
@@ -226,15 +243,54 @@ def per_lane(what: str) -> None:
             float(np.sqrt((mono[int(b * bar * sr):int((b + 1) * bar * sr)] ** 2).mean()))
             for b in range(max(1, int(len(mono) / sr / bar)))
         )
-        rows.append((lane, db(float(np.abs(x).max())), db(loudest)))
-    for lane, peak, rms in sorted(rows, key=lambda r: -r[2]):
-        mark = " gated" if lane["gated"] else ""
+        rows.append((
+            lane, db(float(np.abs(x).max())), db(loudest),
+            db(float(np.abs(x).max())) - db(float(np.sqrt((mono ** 2).mean()))),
+        ))
+    for lane, peak, rms, crest in sorted(rows, key=lambda r: -r[2]):
+        marks = []
+        if lane["gated"]:
+            marks.append("gated")
+        if lane["level_driven_by_macro"]:
+            # Its `gain=` is not what you hear, so scaling gains to trim a mix
+            # will miss it — which cost a decibel before anyone noticed.
+            marks.append("level from a macro")
         print(f"  {lane['name']:<14}{lane['instrument']:<9}{lane['gain']:>6.2f}"
-              f"{peak:>9.1f}{rms:>12.1f}{mark}")
+              f"{peak:>9.1f}{rms:>12.1f}{crest:>8.1f}   {', '.join(marks)}")
     spread = rows and max(r[2] for r in rows) - min(r[2] for r in rows)
     if spread:
         print(f"\n  {spread:.0f} dB between the loudest lane and the quietest, "
               f"each measured in the bar where it works hardest.")
+        print("  RMS underrates percussion badly — a working hat sits 30 dB "
+              "under its kick. Read peak for anything short.")
+
+    # The lint. A melodic line whose notes outlast the gap between them is
+    # playing itself as a chord, and that is a bug you can hear and could not
+    # be told about: `gatetest`'s lead had 5.7 of its own notes sounding at
+    # once and it took someone listening to find it.
+    #
+    # Three conditions, and each one was learned by the lint getting it wrong.
+    #
+    # *Pitched*, because the first draft flagged the kick, whose tail laps the
+    # next one by design and always will — a drum has no pitch to clash with.
+    #
+    # *Sustaining*, because it then flagged two bells, and a bell overlapping
+    # itself is an arpeggio: an instrument with an amplitude decay is already
+    # quiet by the time its next note lands. Only one that holds at full level
+    # — which here means the saw ensemble, the one instrument with no `decay`
+    # — turns its own melody into a cluster.
+    #
+    # *Close together*, four sixteenths or less, because a pad's chords are
+    # meant to blur into one another and do not need telling.
+    for lane, *_ in rows:
+        overlap = lane["overlap"]
+        gap = lane["tightest_gap_steps"]
+        if (lane["pitched"] and lane["sustains"]
+                and overlap and gap and gap <= 4 and overlap > 1.5):
+            print(f"\n  ! {lane['name']}: {overlap:.1f} of its own notes sound at once.")
+            print(f"    Notes are {gap} step{'s' if gap > 1 else ''} apart and last "
+                  f"{lane['held_steps']:.2f} steps plus release. A line this close "
+                  f"together\n    needs to be shorter than the gap, or it is a chord.")
 
 
 def cmd_new(args: list[str]) -> None:
