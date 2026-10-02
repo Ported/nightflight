@@ -31,6 +31,9 @@ const macroHeld = new Map();
 let socket = null;
 /** Which view is showing: "conductor", or a clip's name. */
 let tab = "conductor";
+/** Per-clip waveforms for the timeline, rendered offline by the server and
+ * pushed a few seconds after each document change. Null until they arrive. */
+let waves = null;
 
 function connect() {
   socket = new WebSocket(`ws://${location.host}/`);
@@ -47,6 +50,10 @@ function connect() {
           brought: null,
         }[message.why] ?? "",
       );
+      // Waveforms belong to a piece. Keep them across a reload of the same
+      // one — the fresh render is seconds behind and the old shape is close —
+      // but a different piece's shapes are not approximately anything.
+      if (description && description.set !== message.set) waves = null;
       description = message;
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
@@ -76,6 +83,8 @@ function connect() {
       if (tab === "library") buildLibrary();
     } else if (message.t === "complaint") {
       say(message.why, true);
+    } else if (message.t === "waves") {
+      waves = message;
     } else if (message.t === "telemetry") {
       telemetry = message.Telemetry ?? message;
     }
@@ -418,7 +427,6 @@ function show(name) {
 function adoptStage({ kind, name, bars }) {
   stage = { kind, name };
   stageBars = bars;
-  $("scrub").max = bars;
   const length = `${bars} ${bars === 1 ? "bar" : "bars"}`;
   $("stage").textContent =
     {
@@ -687,12 +695,6 @@ function paint(cell, velocity) {
 $("play").onclick = () => send({ t: "playing", value: !(telemetry?.playing ?? true) });
 $("start").onclick = () => send({ t: "seek", bar: 0 });
 
-const scrub = $("scrub");
-for (const event of ["pointerdown", "keydown"]) scrub.addEventListener(event, () => held.add("scrub"));
-for (const event of ["pointerup", "pointercancel", "keyup", "blur"])
-  scrub.addEventListener(event, () => held.delete("scrub"));
-scrub.oninput = () => send({ t: "seek", bar: Number(scrub.value) });
-
 const bpm = $("bpm");
 bpm.oninput = () => {
   $("bpmText").textContent = Number(bpm.value).toFixed(1);
@@ -741,6 +743,13 @@ let dragging = null;
 
 /** The bar at a pixel, snapped to the launch quantum. */
 function barAt(clientX) {
+  const q = quantum();
+  return Math.max(0, Math.round(rawBarAt(clientX) / q) * q);
+}
+
+/** The bar at a pixel, exactly. Scrubbing wants the floor under the pointer,
+ * not the nearest place a clip would be allowed to land. */
+function rawBarAt(clientX) {
   const canvas = $("timeline");
   const box = canvas.getBoundingClientRect();
   const gutter = 74;
@@ -749,10 +758,13 @@ function barAt(clientX) {
     Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
   );
   const span = box.width - gutter - 4;
-  const bar = ((clientX - box.left - gutter) / span) * bars;
-  const q = quantum();
-  return Math.max(0, Math.round(bar / q) * q);
+  return Math.max(0, ((clientX - box.left - gutter) / span) * bars);
 }
+
+/** The bar the pointer is scrubbing to, or null when it is not. Drawn as the
+ * playhead while held, so the line follows the hand rather than the
+ * round-trip through the engine. */
+let scrubbingTo = null;
 
 $("timeline").addEventListener("pointerdown", (event) => {
   const box = event.currentTarget.getBoundingClientRect();
@@ -763,7 +775,16 @@ $("timeline").addEventListener("pointerdown", (event) => {
   const near = handles.filter(
     (h) => Math.abs(h.x - px) < 7 && py >= h.y && py <= h.y + h.rowHeight,
   );
-  if (!near.length) return;
+  if (!near.length) {
+    // Anywhere on the bars that is not a handle: jump there, and drag to
+    // scrub. The gutter is names, not time, so a press there does nothing.
+    if (px < 74) return;
+    scrubbingTo = rawBarAt(event.clientX);
+    send({ t: "seek", bar: scrubbingTo });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    return;
+  }
   dragging = near.reduce((a, b) => (Math.abs(a.x - px) <= Math.abs(b.x - px) ? a : b));
   dragging.to = barAt(event.clientX);
   event.currentTarget.setPointerCapture(event.pointerId);
@@ -778,6 +799,14 @@ $("timeline").addEventListener("pointermove", (event) => {
     dragging.to = barAt(event.clientX);
     return;
   }
+  if (scrubbingTo !== null) {
+    const bar = rawBarAt(event.clientX);
+    if (Math.abs(bar - scrubbingTo) > 0.01) {
+      scrubbingTo = bar;
+      send({ t: "seek", bar });
+    }
+    return;
+  }
   // A cursor that changes is the only way to discover a handle on a canvas.
   const over = handles.some(
     (h) => Math.abs(h.x - px) < 7 && py >= h.y && py <= h.y + h.rowHeight,
@@ -787,6 +816,7 @@ $("timeline").addEventListener("pointermove", (event) => {
 
 for (const done of ["pointerup", "pointercancel"]) {
   $("timeline").addEventListener(done, () => {
+    scrubbingTo = null;
     if (!dragging) return;
     const entry = live.find((l) => l.clip === dragging.clip);
     if (entry) {
@@ -822,7 +852,9 @@ function drawTimeline() {
     Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
   );
   const rows = clips().size;
-  const rowHeight = Math.min(16, (height - top - 16) / Math.max(rows, 1));
+  // Tall enough for a waveform to have a shape when there are few clips,
+  // shared out when there are many.
+  const rowHeight = Math.min(26, (height - top - 16) / Math.max(rows, 1));
   const x = (bar) => gutter + (bar / bars) * (width - gutter - 4);
 
   context.font = `10px ${colour("--mono")}`;
@@ -840,7 +872,7 @@ function drawTimeline() {
     context.fillText(bar, x(bar) + 2, height - 6);
   }
 
-  const playhead = telemetry?.bar ?? -1;
+  const playhead = scrubbingTo ?? telemetry?.bar ?? -1;
   const inside = (from, to) => playhead >= from && playhead < to;
 
   handles.length = 0;
@@ -866,6 +898,7 @@ function drawTimeline() {
     // third of the time it is playing, so voice activity makes a block flicker
     // and says nothing about the arrangement.
     const sounding = spans.some((span) => inside(span.first_bar, span.end));
+    const wave = waves?.clips?.[clip];
 
     context.fillStyle = muted ? colour("--line") : sounding ? colour("--text") : colour("--weak");
     context.textAlign = "right";
@@ -902,9 +935,26 @@ function drawTimeline() {
           rowHeight * 0.36,
         );
       }
+      if (wave) continue;
+      // Until the waveform arrives, the block is the block it always was.
       const landed = inside(span.start, span.end);
       context.fillStyle = muted ? colour("--line") : colour("--accent") + (landed ? "e6" : "55");
       context.fillRect(x(span.start), y + 1, Math.max(x(span.end) - x(span.start), 1.5), rowHeight - 3);
+    }
+
+    // The waveform is the row: no block behind it, silence is empty space.
+    // Once per clip rather than once per span — a span-less lane stands in a
+    // full-width span, and six translucent anythings stacked read as a slab.
+    if (wave) {
+      const per = waves.per_bar;
+      const middle = y + 1 + (rowHeight - 3) / 2;
+      context.fillStyle = muted ? colour("--line") : colour("--accent") + (sounding ? "f0" : "88");
+      for (let s = 0; s < wave.length; s++) {
+        if (!wave[s]) continue;
+        const tall = Math.max((wave[s] / 255) * (rowHeight - 3), 0.8);
+        const left = x(s / per);
+        context.fillRect(left, middle - tall / 2, Math.max(x((s + 1) / per) - left - 0.4, 0.7), tall);
+      }
     }
 
     // Grips on a brought-in block, and where it would land if the pointer let
@@ -963,8 +1013,8 @@ function drawTimeline() {
     context.strokeStyle = colour("--good");
     context.lineWidth = 1.5;
     context.beginPath();
-    context.moveTo(x(telemetry.bar), top);
-    context.lineTo(x(telemetry.bar), height - 12);
+    context.moveTo(x(playhead), top);
+    context.lineTo(x(playhead), height - 12);
     context.stroke();
   }
 }
@@ -1079,7 +1129,6 @@ function frame() {
   if (telemetry) {
     const t = telemetry;
     $("play").textContent = t.playing ? "stop" : "play";
-    if (!held.has("scrub")) scrub.value = t.bar;
     const seconds = (t.bar * 4 * 60) / Math.max(t.bpm, 1);
     const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
     $("position").textContent =

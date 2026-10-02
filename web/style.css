@@ -67,9 +67,9 @@ section {
   padding: 8px 10px;
   margin-bottom: 8px;
 }
-.transport #scrub { flex: 1; }
 .health { flex-wrap: wrap; font-size: 12px; }
-.timeline { padding: 6px; }
+.timeline { padding: 6px; flex-direction: column; align-items: stretch; gap: 6px; }
+.timeline .transport { display: flex; align-items: center; gap: 10px; }
 .timeline canvas { width: 100%; height: 190px; display: block; }
 
 button {

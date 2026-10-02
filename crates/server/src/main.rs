@@ -30,6 +30,7 @@ use engine::Engine;
 use engine::seq::Set;
 
 mod watch;
+mod waves;
 use engine::telemetry::{self, Command, Description, LaneState, Telemetry};
 use host::Link;
 use serde::Serialize;
@@ -140,6 +141,12 @@ struct Session {
     /// Why the last reload did not happen, for the page to show. A tab file
     /// with a typo in it is the normal case here, not an exceptional one.
     trouble: Option<String>,
+    /// The timeline's waveforms, as the message to send — rendered offline by
+    /// the waves worker, a few seconds behind the document it pictures.
+    waves: Option<String>,
+    /// Bumped with each new render, the same scheme as `generation`: every
+    /// connection remembers what it sent and pushes when this moves.
+    waves_generation: u64,
 }
 
 impl Session {
@@ -687,6 +694,8 @@ fn main() {
         live: Vec::new(),
         generation: 0,
         trouble: None,
+        waves: None,
+        waves_generation: 0,
         stage_bars: 0.0,
         stage_bar: 0.0,
         resume_at: 0.0,
@@ -694,6 +703,7 @@ fn main() {
     }));
     // From here a tab file being written is a thing that happens to the music.
     watch::spawn(Arc::clone(&session));
+    waves::spawn(Arc::clone(&session));
 
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
@@ -810,8 +820,10 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
     }
 
     // What this connection has drawn. A page that connects mid-session starts
-    // level with whatever has already happened.
+    // level with whatever has already happened — except the waveforms, which
+    // start at zero so whatever is already rendered is sent on arrival.
     let mut drawn = session.lock().expect("no panics hold this").generation;
+    let mut waves_drawn = 0;
 
     loop {
         let mut reply = Vec::new();
@@ -834,6 +846,12 @@ fn socket(stream: &TcpStream, session: &Mutex<Session>) {
                 reply.push(session.hello_because("reloaded"));
                 if let Some(why) = &session.trouble {
                     reply.push(complaint_text(why));
+                }
+            }
+            if session.waves_generation != waves_drawn {
+                waves_drawn = session.waves_generation;
+                if let Some(waves) = &session.waves {
+                    reply.push(waves.clone());
                 }
             }
         }
