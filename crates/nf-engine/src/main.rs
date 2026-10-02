@@ -38,6 +38,7 @@ fn main() -> ExitCode {
         "check" => check(&rest),
         "convert" => convert(&rest),
         "index" => index(),
+        "lanes" => lanes(&rest),
         "help" | "--help" | "-h" => {
             println!("{}", usage());
             Ok(())
@@ -59,6 +60,7 @@ fn usage() -> String {
      nf-engine render   <piece> <out.wav> [--seconds N] [--bpm N] [--solo lane]\n\
      nf-engine check    <file.tab>\n\
      nf-engine convert  <in> <out>\n\
+     nf-engine lanes    <piece>\n\
      nf-engine index"
         .to_string()
 }
@@ -153,6 +155,37 @@ fn convert(args: &[&str]) -> Result<(), String> {
             .map_err(|err| format!("could not write {to}: {err}"))?;
     }
     println!("{to}");
+    Ok(())
+}
+
+/// What a piece is made of, so a caller can solo each one in turn.
+///
+/// Here rather than in `nf` because finding this out means reading the piece,
+/// and reading a piece is this side's job — the Python never parses a tab,
+/// not even the easy lines at the top of one.
+fn lanes(args: &[&str]) -> Result<(), String> {
+    let what = positional(args)
+        .first()
+        .copied()
+        .ok_or("lanes needs a piece")?;
+    let (_, set) = load(what)?;
+    let out: Vec<serde_json::Value> = set
+        .lanes
+        .iter()
+        .map(|lane| {
+            serde_json::json!({
+                "name": lane.name,
+                "clip": lane.clip,
+                "instrument": lane.voicing.instrument(),
+                "gain": lane.gain,
+                "gated": lane.gate.is_some(),
+            })
+        })
+        .collect();
+    println!(
+        "{}",
+        serde_json::to_string(&out).map_err(|e| e.to_string())?
+    );
     Ok(())
 }
 

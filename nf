@@ -180,6 +180,9 @@ def cmd_measure(args: list[str]) -> None:
                   f"{db(float(np.abs(seg).max())):>8.1f} "
                   f"{db(float(np.sqrt((seg ** 2).mean()))):>8.1f}{cells}")
 
+    if "--lanes" in rest and not what.endswith(".wav"):
+        per_lane(what)
+
     hits = flag(rest, "--hits")
     if hits:
         print("\n  cut        music within 50 ms")
@@ -193,6 +196,36 @@ def cmd_measure(args: list[str]) -> None:
             at = (lo + int(np.argmax(window))) / sr
             print(f"  {t:7.3f}s  {db(float(window.max())):+7.1f} dBFS  "
                   f"{(at - t) * 30:+5.2f} frames")
+
+
+def per_lane(what: str) -> None:
+    """Every lane on its own, loudest first.
+
+    The thing I most wanted and did not have. Instruments here are nothing
+    like each other at the same gain — a kick at 0.9 peaks around -6 dBFS and
+    a saw ensemble at 0.5 comes to -33 dB RMS — and the only way to find that
+    out was to render each one by hand, four times, while wondering why a
+    breakdown was silent.
+    """
+    lanes = json.loads(engine("lanes", what))
+    print(f"\n  {'lane':<14}{'plays':<9}{'gain':>6}{'peak':>9}{'rms':>8}   ")
+    rows = []
+    for lane in lanes:
+        tmp = Path(tempfile.gettempdir()) / f"nf-solo-{lane['name'].replace(' ', '_')}.wav"
+        engine("render", what, str(tmp), "--solo", lane["name"])
+        sr, x = read_wav(tmp)
+        mono = x.mean(axis=1)
+        rows.append((
+            lane, db(float(np.abs(x).max())),
+            db(float(np.sqrt((mono ** 2).mean()))),
+        ))
+    for lane, peak, rms in sorted(rows, key=lambda r: -r[2]):
+        mark = " gated" if lane["gated"] else ""
+        print(f"  {lane['name']:<14}{lane['instrument']:<9}{lane['gain']:>6.2f}"
+              f"{peak:>9.1f}{rms:>8.1f}{mark}")
+    spread = rows and max(r[2] for r in rows) - min(r[2] for r in rows)
+    if spread:
+        print(f"\n  {spread:.0f} dB between the loudest lane and the quietest.")
 
 
 def cmd_new(args: list[str]) -> None:

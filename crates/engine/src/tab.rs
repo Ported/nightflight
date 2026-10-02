@@ -235,6 +235,17 @@ pub fn write(name: &str, set: &Set) -> String {
         if let Some(h) = home(lane.home) {
             attrs.push(h);
         }
+        if let Some(gate) = &lane.gate {
+            // The chop that makes a held chord pulse. Its pattern is a grid of
+            // the same `x .` the steps use, which is the one thing tab is
+            // already good at — so it goes inline rather than in `params`.
+            attrs.push(format!(
+                "gate={}/{}/{}",
+                gate.pattern(),
+                trim(gate.length()),
+                trim(gate.depth)
+            ));
+        }
         if lane.ducked {
             attrs.push("duck".to_string());
         }
@@ -580,6 +591,26 @@ fn read_lane(words: &[&str], line: usize) -> Result<(Lane, f32), String> {
             .collect(),
         None => Vec::new(),
     };
+    // `gate=x.x.x.x./0.55/1` — the chop, how much of each cell stays open,
+    // and how deep. Length and depth are optional: a gate with neither is a
+    // half-open sixteenth chop at full depth, which is the trance default and
+    // the reason anyone reaches for one.
+    let gate = match get(&a, "gate") {
+        Some(spec) => {
+            let mut parts = spec.split('/');
+            let pattern = parts.next().unwrap_or("");
+            if pattern.is_empty() {
+                return Err(format!("line {line}: a gate needs a pattern"));
+            }
+            let open = parts
+                .next()
+                .map_or(Ok(0.55), |v| number(v, line, "gate length"))?;
+            let depth = parts.next().map_or(Ok(1.0), |v| number(v, line, "gate depth"))?;
+            Some(crate::mix::Gate::new(pattern, open, depth))
+        }
+        None => None,
+    };
+
     let velocity = get(&a, "vel")
         .and_then(|v| v.chars().next())
         .and_then(velocity_of)
@@ -597,7 +628,7 @@ fn read_lane(words: &[&str], line: usize) -> Result<(Lane, f32), String> {
             root,
             home,
             send: get(&a, "send").map_or(Ok(0.0), |s| number(s, line, "send"))?,
-            gate: None,
+            gate,
             spans,
             velocity_scale: 1.0,
             ducked: flag(&a, "duck"),
@@ -652,6 +683,12 @@ mod tests {
                 assert!((a.root - b.root).abs() < 1e-3, "{}: root", a.name);
                 assert!((a.gain - b.gain).abs() < 1e-4, "{}: gain", a.name);
                 assert_eq!(a.ducked, b.ducked, "{}: duck", a.name);
+                assert_eq!(
+                    a.gate.as_ref().map(|g| (g.pattern(), g.length(), g.depth)),
+                    b.gate.as_ref().map(|g| (g.pattern(), g.length(), g.depth)),
+                    "{}: gate",
+                    a.name
+                );
                 assert_eq!(a.spans.len(), b.spans.len(), "{}: spans", a.name);
                 assert_eq!(
                     format!("{:?}", a.voicing),

@@ -99,6 +99,18 @@ impl Gate {
         }
     }
 
+    /// The chop as a grid again, for writing one down. `x` open, `.` shut.
+    #[must_use]
+    pub fn pattern(&self) -> String {
+        self.open.iter().map(|&on| if on { 'x' } else { '.' }).collect()
+    }
+
+    /// Share of an open cell that stays open.
+    #[must_use]
+    pub const fn length(&self) -> f32 {
+        self.length
+    }
+
     /// The gain at this transport position.
     #[must_use]
     pub fn gain(&self, sample: u64, samples_per_step: f64, sr: f32) -> f32 {

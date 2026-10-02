@@ -1,0 +1,102 @@
+piece gatetest
+bpm 138
+bars 16
+
+# A trance breakdown, to see what the tab format cannot say.
+#
+# Three things at once: a supersaw chord chopped by a gate so the pulse comes
+# out of the synth rather than the drums; a classical line at a tempo it was
+# never written for; and the moment the kit drops away and the gate is the
+# only rhythm left.
+#
+#   bars  1-4   full. Kick, hats, bass, gated chords
+#   bars  5-12  the breakdown. The kit goes. The gate is the beat
+#   bars  7-12  Mozart 40, the opening sighing figure, over the chords
+#   bars 13-16  the drop. Everything back, lead on top
+#
+# i - VI - III - VII in G minor, one chord a bar: the progression under half
+# of trance, and the one Mozart's G minor shares by accident of key.
+#
+# The lead is the opening of Symphony No. 40 — Eb D D, three times, then the
+# minor sixth up to Bb. Written at 138 rather than Mozart's molto allegro,
+# which is faster than it sounds on paper: the figure is two semiquavers and
+# a quaver, so it fills exactly one beat here, and the whole phrase is one
+# bar. It fits the grid without being bent, which is the thing I wanted to
+# find out.
+
+# Everything is 0.46x what the balance wanted. The mix peaked at +5.2 dBFS
+# with a fifteen-decibel crest factor, which is what a gated saw ensemble is:
+# loud for an instant, nothing in between. There is no limiter in this engine,
+# so the only way under the ceiling is to turn the whole thing down, and that
+# costs about seven decibels of loudness a trance track would normally keep.
+lane kick   clip=drive inst=kick  root=G1  gain=0.414 len=0.4s plays=0-4,12-16
+lane hat    clip=drive inst=hat   root=C-1 gain=0.184 len=0.045s send=0.1 plays=0-4,12-16 orbit=1.2/8/0/0/0/1
+lane ohat   clip=drive inst=hat   root=C-1 gain=0.156 len=0.2s send=0.25 plays=0-4,12-16 orbit=1.2/8/0.5/0/0/1
+lane bass   clip=drive inst=bass  root=G1  gain=0.322 len=0.9 duck plays=0-4,12-16 vel=8
+
+# Gains near 7, not near 0.5. An ensemble of detuned saws through a filter is
+# far quieter than a kick at the same number — the kick at 0.9 peaks at -6
+# dBFS, and three chord voices at 0.5 came to -29 dB RMS, which is inaudible.
+# A gate takes another few decibels, because a chord that is shut half the
+# time has half the energy. Nothing in the tab says any of this; it took three
+# solo renders to find, and the numbers are what they are rather than what
+# they look like.
+#
+# One gate across all three voices, so they pulse as one chord rather than as
+# three parts. `x.xx.x.xx.xx.x.x` at half a cell open is the chop you hear
+# through every trance pad ever made.
+lane chord1 clip=air inst=strings root=G2 gain=3.220 len=19 send=0.35 gate=x.xx.x.xx.xx.x.x/0.6/0.92 orbit=2/16/0/0/0/1 vel=8
+lane chord2 clip=air inst=strings root=G2 gain=2.944 len=19 send=0.35 gate=x.xx.x.xx.xx.x.x/0.6/0.92 orbit=2/16/0.33/0/0/1 vel=8
+lane chord3 clip=air inst=strings root=G2 gain=2.760 len=19 send=0.4  gate=x.xx.x.xx.xx.x.x/0.6/0.92 orbit=2/16/0.66/0/0/1 vel=8
+
+lane lead   clip=air inst=strings root=G4 gain=0.782 len=3.4 send=0.3 plays=6-16 vel=8
+
+grid drive bars 1-4
+  kick  X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . x
+  hat   . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . 4 5 . | . . 5 . . . 5 . . . 5 . . 5 5 6
+  ohat  . . . . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . 7 .
+  bass  G1 . . . . . G1 . G1 . . . . . G1 . | Eb1 . . . . . Eb1 . Eb1 . . . . . Eb1 . | Bb1 . . . . . Bb1 . Bb1 . . . . . Bb1 . | F1 . . . . . F1 . F1 . . . . . F1 .
+
+grid drive bars 13-16
+  kick  X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . x
+  hat   . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . 4 5 . | . . 5 . . . 5 . . . 5 . . 5 5 6
+  ohat  . . . . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . 7 .
+  bass  G1 . . . . . G1 . G1 . . . . . G1 . | Eb1 . . . . . Eb1 . Eb1 . . . . . Eb1 . | Bb1 . . . . . Bb1 . Bb1 . . . . . Bb1 . | F1 . . . . . F1 . F1 . . . . . F1 .
+
+grid air bars 1-4
+  chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
+  chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
+  chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
+  lead   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+
+grid air bars 5-8
+  chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
+  chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
+  chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
+  lead   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | Eb5 D5 D5 . Eb5 D5 D5 . Eb5 D5 D5 . Bb5 . . . | Bb5 . . . . . . . . . . . . . . .
+
+grid air bars 9-12
+  chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
+  chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
+  chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
+  lead   C5 Bb4 Bb4 . C5 Bb4 Bb4 . C5 Bb4 Bb4 . Eb5 . . . | Eb5 . . . . . . . . . . . . . . . | Eb5 D5 D5 . Eb5 D5 D5 . Eb5 D5 D5 . Bb5 . . . | Bb5 . . . . . . . . . . . . . . .
+
+grid air bars 13-16
+  chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
+  chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
+  chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
+  lead   Eb5 D5 D5 . Eb5 D5 D5 . Eb5 D5 D5 . Bb5 . . . | Bb5 . . . . . . . . . . . . . . . | C5 Bb4 Bb4 . C5 Bb4 Bb4 . C5 Bb4 Bb4 . Eb5 . . . | Eb5 . . . . . . . . . . . . . . .
+
+# The chord: five saws a note, wide, dark enough to sit under a lead, with the
+# swirl that makes a held chord move while the gate chops it.
+params chord1 copies=5 detune=22 depth=14 cutoff=1800 attack=0.02 release=0.6 phaser=0.8 phaser_rate=0.11 breathe=0.3 breathe_rate=0.06
+params chord2 copies=5 detune=24 depth=14 cutoff=2000 attack=0.02 release=0.6 phaser=0.8 phaser_rate=0.09 breathe=0.3 breathe_rate=0.05
+params chord3 copies=5 detune=26 depth=16 cutoff=2400 attack=0.02 release=0.6 phaser=0.75 phaser_rate=0.13 breathe=0.3 breathe_rate=0.07
+
+# The lead: the same ensemble but bright and fast on, so a semiquaver reads.
+params lead   copies=5 detune=18 depth=8 cutoff=5200 attack=0.012 release=0.25 phaser=0.2 breathe=0
+
+params kick   sweep=5 pitch_decay=0.03 punch=7 decay=0.32 hold=0.03 click=0.4 knock=0.3 drive=3.4
+params hat    tone=8200 decay=0.04 noise=0.9
+params ohat   tone=7000 decay=0.19 noise=0.85
+params bass   cutoff=220 env_amount=4.5 env_decay=0.06 resonance=0.6 sub=0.4 drive=2.6 decay=0.22 release=0.04
