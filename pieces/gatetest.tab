@@ -49,7 +49,14 @@ lane chord1 clip=air inst=strings root=G2 gain=3.220 len=19 send=0.35 gate=x.xx.
 lane chord2 clip=air inst=strings root=G2 gain=2.944 len=19 send=0.35 gate=x.xx.x.xx.xx.x.x/0.6/0.92 orbit=2/16/0.33/0/0/1 vel=8
 lane chord3 clip=air inst=strings root=G2 gain=2.760 len=19 send=0.4  gate=x.xx.x.xx.xx.x.x/0.6/0.92 orbit=2/16/0.66/0/0/1 vel=8
 
-lane lead   clip=air inst=strings root=G4 gain=0.782 len=3.4 send=0.3 plays=6-16 vel=8
+# Two lanes for one melody, because note length is a lane's property and
+# Mozart's figure is three semiquavers and a held note. One lane for the
+# figure, held just under a step so each note is gone before the next arrives;
+# one for the note it lands on. With a single lane at 3.4 steps the three
+# semiquavers overlapped — 5.7 notes of the line sounding at once, Eb against
+# D, the melody playing itself as a cluster.
+lane lead      clip=air inst=strings root=G4 gain=0.90 len=0.85 send=0.25 plays=6-16 vel=8
+lane lead_hold clip=air inst=strings root=G4 gain=0.78 len=22 send=0.35 plays=6-16 vel=8
 
 grid drive bars 1-4
   kick  X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . x
@@ -67,25 +74,29 @@ grid air bars 1-4
   chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
   chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
   chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
-  lead   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  lead     .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+  lead_hold .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
 
 grid air bars 5-8
   chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
   chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
   chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
-  lead   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | Eb5 D5 D5 . Eb5 D5 D5 . Eb5 D5 D5 . Bb5 . . . | Bb5 . . . . . . . . . . . . . . .
+  lead     .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | Eb5  D5   D5   .    Eb5  D5   D5   .    Eb5  D5   D5   .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+  lead_hold .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    Bb5  .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
 
 grid air bars 9-12
   chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
   chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
   chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
-  lead   C5 Bb4 Bb4 . C5 Bb4 Bb4 . C5 Bb4 Bb4 . Eb5 . . . | Eb5 . . . . . . . . . . . . . . . | Eb5 D5 D5 . Eb5 D5 D5 . Eb5 D5 D5 . Bb5 . . . | Bb5 . . . . . . . . . . . . . . .
+  lead     C5   Bb4  Bb4  .    C5   Bb4  Bb4  .    C5   Bb4  Bb4  .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | Eb5  D5   D5   .    Eb5  D5   D5   .    Eb5  D5   D5   .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+  lead_hold .    .    .    .    .    .    .    .    .    .    .    .    Eb5  .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    Bb5  .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
 
 grid air bars 13-16
   chord1 D3 . . . . . . . . . . . . . . . | Eb3 . . . . . . . . . . . . . . . | D3 . . . . . . . . . . . . . . . | C3 . . . . . . . . . . . . . . .
   chord2 G3 . . . . . . . . . . . . . . . | G3 . . . . . . . . . . . . . . .  | F3 . . . . . . . . . . . . . . . | F3 . . . . . . . . . . . . . . .
   chord3 Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | Bb3 . . . . . . . . . . . . . . . | A3 . . . . . . . . . . . . . . .
-  lead   Eb5 D5 D5 . Eb5 D5 D5 . Eb5 D5 D5 . Bb5 . . . | Bb5 . . . . . . . . . . . . . . . | C5 Bb4 Bb4 . C5 Bb4 Bb4 . C5 Bb4 Bb4 . Eb5 . . . | Eb5 . . . . . . . . . . . . . . .
+  lead     Eb5  D5   D5   .    Eb5  D5   D5   .    Eb5  D5   D5   .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | C5   Bb4  Bb4  .    C5   Bb4  Bb4  .    C5   Bb4  Bb4  .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+  lead_hold .    .    .    .    .    .    .    .    .    .    .    .    Bb5  .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    Eb5  .    .    . | .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
 
 # The chord: five saws a note, wide, dark enough to sit under a lead, with the
 # swirl that makes a held chord move while the gate chops it.
@@ -94,7 +105,11 @@ params chord2 copies=5 detune=24 depth=14 cutoff=2000 attack=0.02 release=0.6 ph
 params chord3 copies=5 detune=26 depth=16 cutoff=2400 attack=0.02 release=0.6 phaser=0.75 phaser_rate=0.13 breathe=0.3 breathe_rate=0.07
 
 # The lead: the same ensemble but bright and fast on, so a semiquaver reads.
-params lead   copies=5 detune=18 depth=8 cutoff=5200 attack=0.012 release=0.25 phaser=0.2 breathe=0
+# Tighter than the chords: a wide ensemble smears a fast line, and the release
+# has to be shorter than the gap between semiquavers or the detuning does the
+# overlapping instead of the notes.
+params lead      copies=4 detune=10 depth=4 cutoff=5600 attack=0.008 release=0.05 phaser=0.15 breathe=0
+params lead_hold copies=5 detune=16 depth=7 cutoff=4800 attack=0.012 release=0.5 phaser=0.3 breathe=0
 
 params kick   sweep=5 pitch_decay=0.03 punch=7 decay=0.32 hold=0.03 click=0.4 knock=0.3 drive=3.4
 params hat    tone=8200 decay=0.04 noise=0.9
