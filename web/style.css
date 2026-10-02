@@ -318,3 +318,8 @@ main.three { grid-template-columns: repeat(3, minmax(240px, 1fr)); }
 }
 /* A change that has been asked for but has not landed yet. */
 .libitem .conduct.soon { color: var(--warn); border-color: var(--warn); }
+/* A piece that will not read. Shown rather than hidden, with the reason
+   where its length would be: a file that vanishes from the list is a file
+   nobody can debug. */
+.libitem.broken .name { color: var(--bad); }
+.libitem .weak.broken { color: var(--bad); font-size: 11px; }

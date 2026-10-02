@@ -80,6 +80,14 @@ pub struct PieceEntry {
     /// Whether it exists as a file, or only as a generator in `sets.rs`. A
     /// built-in can be played and rendered but there is nothing to edit.
     pub built_in: bool,
+    /// Why it will not load, if it will not.
+    ///
+    /// A piece that cannot be read used to be dropped from this list without
+    /// a word, so a file with a typo in it — or one written against a newer
+    /// grammar than the running server knows — simply was not there, and
+    /// there was nowhere to look for the reason. Being told "line 41:
+    /// \"macro\" is not a thing a tab says" is worth a row in the list.
+    pub trouble: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -189,7 +197,20 @@ pub fn pieces() -> Vec<PieceEntry> {
 }
 
 fn describe_piece(name: &str, built_in: bool) -> Option<PieceEntry> {
-    let (_, set) = crate::document::find(name).ok()?;
+    let set = match crate::document::find(name) {
+        Ok((_, set)) => set,
+        Err(why) => {
+            return Some(PieceEntry {
+                name: name.to_string(),
+                bpm: 0.0,
+                bars: 0.0,
+                lanes: 0,
+                clips: Vec::new(),
+                built_in,
+                trouble: Some(why.to_string()),
+            });
+        }
+    };
     let mut clips: Vec<String> = Vec::new();
     for lane in &set.lanes {
         if !clips.contains(&lane.clip) {
@@ -203,6 +224,7 @@ fn describe_piece(name: &str, built_in: bool) -> Option<PieceEntry> {
         lanes: set.lanes.len(),
         clips,
         built_in,
+        trouble: None,
     })
 }
 

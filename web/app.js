@@ -243,16 +243,21 @@ function buildLibrary() {
     name.className = "name";
     name.textContent = piece.name;
     const what = document.createElement("span");
-    what.className = piece.built_in ? "weak built-in" : "weak";
-    what.textContent = `${piece.bars.toFixed(0)} bars · ${piece.bpm.toFixed(0)} BPM`;
-    what.title = piece.built_in
-      ? `a generator in sets.rs, with no file to edit · ${piece.clips.join(", ")}`
-      : piece.clips.join(", ");
+    what.className = piece.trouble ? "weak broken" : piece.built_in ? "weak built-in" : "weak";
+    what.textContent = piece.trouble
+      ? piece.trouble.split("\n")[0]
+      : `${piece.bars.toFixed(0)} bars · ${piece.bpm.toFixed(0)} BPM`;
+    what.title = piece.trouble
+      ? piece.trouble
+      : piece.built_in
+        ? `a generator in sets.rs, with no file to edit · ${piece.clips.join(", ")}`
+        : piece.clips.join(", ");
 
     const play = document.createElement("button");
     const on = piece.name === $("set").textContent;
-    play.textContent = on ? "playing" : "play";
-    play.disabled = on;
+    play.textContent = piece.trouble ? "won't read" : on ? "playing" : "play";
+    play.disabled = on || Boolean(piece.trouble);
+    row.classList.toggle("broken", Boolean(piece.trouble));
     // Switching is a whole new engine, built off the audio thread and swapped
     // in over the same ten-millisecond fade an audition uses. The server
     // answers with a fresh hello and the page rebuilds from it.
