@@ -37,6 +37,15 @@ let tab = "conductor";
 let waves = null;
 /** Clips unfolded to show each lane's own waveform under the clip's row. */
 const unfolded = new Set();
+/** The window of the piece the timeline shows, in bars. A null width means
+ * the whole piece, which is also the furthest out zoom goes. */
+let view = { from: 0, width: null };
+const viewWidth = () => view.width ?? description?.length_bars ?? 16;
+/** Whether the view pages to keep the playhead on screen. Panning or zooming
+ * it out of sight turns this off; it comes back the moment the playhead is in
+ * the window again — which a scrub click guarantees, since the click happened
+ * inside it. */
+let chasing = true;
 /** Where each clip's name was drawn, for the gutter's click-to-unfold.
  * Rebuilt every frame, like `handles` — a canvas keeps no elements. */
 const gutterRows = [];
@@ -59,7 +68,11 @@ function connect() {
       // Waveforms belong to a piece. Keep them across a reload of the same
       // one — the fresh render is seconds behind and the old shape is close —
       // but a different piece's shapes are not approximately anything.
-      if (description && description.set !== message.set) waves = null;
+      if (description && description.set !== message.set) {
+        waves = null;
+        view = { from: 0, width: null };
+        chasing = true;
+      }
       description = message;
       $("set").textContent = message.set;
       $("device").textContent = `${message.device} · ${message.buffer_frames} frames`;
@@ -756,18 +769,44 @@ function barAt(clientX) {
 /** The bar at a pixel, exactly. Scrubbing wants the floor under the pointer,
  * not the nearest place a clip would be allowed to land. */
 function rawBarAt(clientX) {
-  const canvas = $("timeline");
-  const box = canvas.getBoundingClientRect();
-  const gutter = 74;
-  const bars = description?.length_bars ?? 16;
-  const span = box.width - gutter - 4;
-  return Math.max(0, ((clientX - box.left - gutter) / span) * bars);
+  const box = $("timeline").getBoundingClientRect();
+  const frac = (clientX - box.left - 74) / (box.width - 74 - 4);
+  const length = description?.length_bars ?? 16;
+  return Math.max(0, Math.min(length, view.from + frac * viewWidth()));
 }
 
 /** The bar the pointer is scrubbing to, or null when it is not. Drawn as the
  * playhead while held, so the line follows the hand rather than the
  * round-trip through the engine. */
 let scrubbingTo = null;
+
+$("timeline").addEventListener(
+  "wheel",
+  (event) => {
+    if (!description) return;
+    event.preventDefault();
+    const length = description.length_bars;
+    const width = viewWidth();
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+      const box = event.currentTarget.getBoundingClientRect();
+      const perPixel = width / (box.width - 74 - 4);
+      view.from = Math.max(0, Math.min(view.from + event.deltaX * perPixel, length - width));
+    } else {
+      // Zoom about the bar under the pointer, so what you are looking at is
+      // what you are zooming into. A pinch arrives the same way, as a wheel.
+      const at = rawBarAt(event.clientX);
+      const wider = Math.min(length, Math.max(2, width * Math.exp(event.deltaY * 0.002)));
+      const from = Math.max(0, Math.min(at - ((at - view.from) / width) * wider, length - wider));
+      view = { from, width: wider >= length ? null : wider };
+      if (view.width === null) view.from = 0;
+    }
+    // Looking elsewhere is a choice; the view stops chasing until the
+    // playhead is back in the window.
+    const bar = telemetry?.bar ?? 0;
+    chasing = bar >= view.from && bar <= view.from + viewWidth();
+  },
+  { passive: false },
+);
 
 $("timeline").addEventListener("pointerdown", (event) => {
   const box = event.currentTarget.getBoundingClientRect();
@@ -862,20 +901,52 @@ function drawTimeline() {
   // is unreadable against either colour.
   const gutter = 74;
   const top = 4;
-  // The piece loops over its written length, so that length is the width.
+  // The piece loops over its written length...
   const bars = description.length_bars;
+  // ...and the view shows a window of it. The waveform holds still and the
+  // playhead moves; when the playhead walks off the window's edge, the window
+  // pages — unless it was panned or zoomed away on purpose, in which case it
+  // waits where it is until the playhead comes round to it.
+  const windowBars = viewWidth();
+  const playhead = scrubbingTo ?? telemetry?.bar ?? -1;
+  if (playhead >= 0) {
+    const visible = playhead >= view.from && playhead <= view.from + windowBars;
+    if (visible) chasing = true;
+    else if (scrubbingTo !== null) {
+      // A scrub dragged past the edge pulls the window along with it.
+      view.from = Math.max(
+        0,
+        Math.min(playhead < view.from ? playhead : playhead - windowBars, bars - windowBars),
+      );
+    } else if (chasing) {
+      view.from = Math.max(0, Math.min(playhead - windowBars * 0.1, bars - windowBars));
+    }
+  }
+
   // Tall enough for a waveform to have a shape when there are few clips,
   // shared out when there are many.
   const rowHeight = Math.min(26, (height - top - 16) / Math.max(rows, 1));
-  const x = (bar) => gutter + (bar / bars) * (width - gutter - 4);
+  const pxSpan = width - gutter - 4;
+  const x = (bar) => gutter + ((bar - view.from) / windowBars) * pxSpan;
 
   context.font = `10px ${colour("--mono")}`;
   context.textBaseline = "middle";
 
-  // Bar lines every four bars: the block dance music is written in.
+  // Everything in bar coordinates stays off the gutter and off the far edge,
+  // however far in the view is zoomed. Labels are drawn after the restore.
+  const labels = [];
+  context.save();
+  context.beginPath();
+  context.rect(gutter, 0, width - gutter, height);
+  context.clip();
+
+  // Bar lines every four bars — the block dance music is written in — and
+  // every bar once there is room for that to mean something.
+  const pxPerBar = pxSpan / windowBars;
+  const step = pxPerBar >= 36 ? 1 : pxPerBar * 4 >= 36 ? 4 : 16;
   context.strokeStyle = colour("--line");
   context.lineWidth = 1;
-  for (let bar = 0; bar <= bars; bar += 4) {
+  for (let bar = Math.ceil(view.from / step) * step; bar <= view.from + windowBars; bar += step) {
     context.beginPath();
     context.moveTo(x(bar), top);
     context.lineTo(x(bar), height - 12);
@@ -884,7 +955,6 @@ function drawTimeline() {
     context.fillText(bar, x(bar) + 2, height - 6);
   }
 
-  const playhead = scrubbingTo ?? telemetry?.bar ?? -1;
   const inside = (from, to) => playhead >= from && playhead < to;
 
   handles.length = 0;
@@ -926,11 +996,26 @@ function drawTimeline() {
       context.fillStyle = muted
         ? colour("--line")
         : colour("--accent") + (sounding ? (faint ? "b0" : "f0") : faint ? "50" : "88");
-      for (let s = 0; s < wave.length; s++) {
-        if (!wave[s]) continue;
-        const tall = Math.max((wave[s] / 255) * (rowHeight - 3), 0.8);
-        const left = x(s / per);
-        context.fillRect(left, middle - tall / 2, Math.max(x((s + 1) / per) - left - 0.4, 0.7), tall);
+      // Slices group into power-of-two buckets until a bucket is wide enough
+      // to be its own bar of ink, drawn with a hairline gap. Zoomed right in
+      // a bucket is a single 64th; at the whole piece it is a sixteenth —
+      // which keeps the texture of the music visible instead of smearing a
+      // dense kit into a solid slab.
+      let bucket = 1;
+      while ((pxSpan / (windowBars * per)) * bucket < 1.2 && bucket < per) bucket *= 2;
+      const first = Math.max(0, Math.floor((view.from * per) / bucket));
+      const last = Math.ceil(
+        Math.min(wave.length, (view.from + windowBars) * per) / bucket,
+      );
+      for (let b = first; b < last; b++) {
+        let loudest = 0;
+        const stop = Math.min((b + 1) * bucket, wave.length);
+        for (let s = b * bucket; s < stop; s++) loudest = Math.max(loudest, wave[s]);
+        if (!loudest) continue;
+        const tall = Math.max((loudest / 255) * (rowHeight - 3), 0.8);
+        const left = x((b * bucket) / per);
+        const right = x(((b + 1) * bucket) / per);
+        context.fillRect(left, middle - tall / 2, Math.max(right - left - 0.4, 0.7), tall);
       }
     }
   }
@@ -959,10 +1044,11 @@ function drawTimeline() {
     const sounding = spans.some((span) => inside(span.first_bar, span.end));
     const wave = waves?.clips?.[clip];
 
-    context.fillStyle = muted ? colour("--line") : sounding ? colour("--text") : colour("--weak");
-    context.textAlign = "right";
-    context.fillText(`${open ? "▾" : "▸"} ${clip}`, gutter - 6, middle);
-    context.textAlign = "left";
+    labels.push({
+      text: `${open ? "▾" : "▸"} ${clip}`,
+      y: middle,
+      fill: muted ? colour("--line") : sounding ? colour("--text") : colour("--weak"),
+    });
     gutterRows.push({ clip, y, h: rowHeight });
 
     // Only a clip the conductor brought in can be dragged. The ones the piece
@@ -989,10 +1075,11 @@ function drawTimeline() {
         const laneMuted = telemetry?.lanes?.[lane.index]?.muted ?? false;
         const laneSpans = spansOf(lane);
         const laneSounding = laneSpans.some((span) => inside(span.first_bar, span.end));
-        context.fillStyle = laneMuted ? colour("--line") : colour("--weak");
-        context.textAlign = "right";
-        context.fillText(lane.name, gutter - 6, laneY + rowHeight / 2 - 1);
-        context.textAlign = "left";
+        labels.push({
+          text: lane.name,
+          y: laneY + rowHeight / 2 - 1,
+          fill: laneMuted ? colour("--line") : colour("--weak"),
+        });
         row(laneY, laneSpans, waves?.lanes?.[lane.name], laneMuted, laneSounding, true);
       }
     }
@@ -1060,6 +1147,14 @@ function drawTimeline() {
     context.lineTo(x(playhead), height - 12);
     context.stroke();
   }
+
+  context.restore();
+  context.textAlign = "right";
+  for (const label of labels) {
+    context.fillStyle = label.fill;
+    context.fillText(label.text, gutter - 6, label.y);
+  }
+  context.textAlign = "left";
 }
 
 /**

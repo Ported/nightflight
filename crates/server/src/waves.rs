@@ -26,8 +26,11 @@ use engine::seq::Set;
 
 use crate::Session;
 
-/// Slices per bar: one per sixteenth, the grid the music is written on.
-const PER_BAR: usize = 16;
+/// Slices per bar. A 64th of a bar is ~29ms at 128 BPM — sharp enough that a
+/// kick's transient still reads when the page is zoomed to a couple of bars.
+/// The page decimates to pixel columns when zoomed out, so the extra slices
+/// cost bytes on the wire, not rectangles on the screen.
+const PER_BAR: usize = 64;
 
 /// Keep rendering whatever document the session holds, whenever it changes.
 ///
@@ -87,8 +90,11 @@ fn render(set: Set) -> String {
     let bars = set.length_bars.max(1.0);
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let slices = (bars * PER_BAR as f32).ceil() as usize;
-    // A sixteenth of a bar, in samples: a bar is four beats.
-    let per_slice = f64::from(dsp::SR) * 15.0 / f64::from(set.bpm);
+    // One slice, in samples: a bar is four beats, 240/bpm seconds. Derived
+    // from PER_BAR — a constant here already lied once, as 15.0, which is a
+    // sixteenth of a bar and quietly broke the day PER_BAR stopped being 16.
+    #[allow(clippy::cast_precision_loss)]
+    let per_slice = f64::from(dsp::SR) * 240.0 / (f64::from(set.bpm) * PER_BAR as f64);
 
     let mut engine = Engine::new(dsp::SR, set.bpm, set);
     let mut peaks: Vec<Vec<f32>> = vec![Vec::with_capacity(slices); names.len()];
