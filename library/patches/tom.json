@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "tom",
+  "instrument": "snare",
+  "sweep": 2.0,
+  "pitch_decay": 0.03,
+  "decay": 0.25,
+  "snap": 0.25,
+  "snap_decay": 0.05,
+  "snap_tone": 1800.0,
+  "drive": 1.8,
+  "release": 0.005
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "crash",
+  "instrument": "cymbal",
+  "decay": 2.5,
+  "strike": 0.5,
+  "strike_decay": 0.06,
+  "tone": 5000.0,
+  "noise": 0.5,
+  "release": 0.05
+}

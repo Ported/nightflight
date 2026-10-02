@@ -1,0 +1,166 @@
+piece kit
+bpm 126
+bars 24
+room rt60=0.9 damping=0.55 predelay=0.012 lowcut=180
+
+# The kit demonstrating itself: every percussion voice this instrument has,
+# each shown doing the thing it exists for. Eight instruments make fourteen
+# drums — the kick twice (punch and boom), the snare three times (snare,
+# rack tom, floor tom: turn the wires nearly off and retune the head, and
+# the snare's drum layer is simply a membrane), the hat twice (closed and
+# open, where open is only a longer decay and the choke is the note ending),
+# the cymbal twice (crash and ride: the same six oscillators as the hat,
+# through a wider window), the rim twice (rimshot and clave), and the clap,
+# cowbell and shaker once each.
+#
+# Act I — the trap kit. The grammar of a drum solo, bar by bar:
+#
+#   bar  1      the kick states the pulse: four on the floor
+#   bar  2      it syncopates, with velocity doing the phrasing
+#   bar  3      the boom answers — same instrument, other pole, rings a bar
+#   bar  4      the snare arrives on the backbeat: 2 and 4, nowhere else
+#   bar  5      ghost notes: the 2s and 3s between the backbeats are the
+#               grammar that makes a beat breathe rather than march
+#   bar  6      the roll — sixteen sixteenths, 1 up to X
+#   bar  7      closed hats on the eighths, accents marking the quarters
+#   bar  8      open hats on the offbeats, each choked two steps later:
+#               the "tsss-tk" is the note ending, not a second sound
+#   bar  9      the toms speak, answering the snare downward
+#   bar 10      three against four: a tom every third sixteenth drifts
+#               across the bar and lands back on the one
+#   bars 11-13  the full kit grooves, every voice keeping its role
+#   bar 14      the break: everything stops mid-bar and the boom holds
+#               the room — silence is also percussion
+#   bar 15      the build: a snare crescendo with toms cascading under it
+#   bar 16      the hit, the gap, and the button on the and-of-four
+#
+# Act II — the percussion drawer opens. New voices enter one at a time:
+#
+#   bar 17      a crash opens the act and the clap takes the backbeat —
+#               a snare that went to the disco: same job, more room
+#   bar 18      the clave starts the son cell, the five-hit key that makes
+#               a pattern Latin; it will not stop until the build
+#   bar 19      the cowbell marks the strong beats, wrong fifth and all,
+#               and the shaker takes the offbeats with its soft fronts
+#   bar 20      the ride takes over time from the hats: the ping, not the
+#               wash, is what you play on; rimshots push at the bar ends
+#   bars 21-22  everything at once — fourteen voices, each in its lane
+#   bar 23      the second build: snare and shaker roll together
+#   bar 24      crash and boom on the one, a last tom run, and the button
+#               with the whole kit on the and-of-four
+
+lane kick  clip=kit inst=kick   patch=kick       root=G1  gain=0.5  len=0.4s
+lane boom  clip=kit inst=kick                    root=D1  gain=0.47 len=0.9s
+lane snare clip=kit inst=snare  patch=snare      root=Gb3 gain=0.44 len=0.25s send=0.12
+lane tom   clip=kit inst=snare  patch=tom        root=C3  gain=0.41 len=0.3s  send=0.1
+lane floor clip=kit inst=snare  patch=floor_tom  root=G2  gain=0.41 len=0.35s send=0.1
+lane chat  clip=kit inst=hat    patch=closed_hat gain=0.3  len=0.1s send=0.08
+lane ohat  clip=kit inst=hat    patch=open_hat   gain=0.28 len=2    send=0.15
+lane clap  clip=kit inst=clap   patch=clap       gain=0.38 len=0.3s send=0.2
+lane bell  clip=kit inst=cowbell patch=cowbell   root=C5  gain=0.3  len=0.25s
+lane clave clip=kit inst=rim    patch=clave      root=Eb6 gain=0.4  len=0.1s  send=0.15
+lane rims  clip=kit inst=rim    patch=rimshot    root=B5  gain=0.4  len=0.1s  send=0.1
+lane shake clip=kit inst=shaker patch=shaker     gain=0.4  len=0.15s
+lane ride  clip=kit inst=cymbal patch=ride       gain=0.35 len=0.6s
+lane crash clip=kit inst=cymbal patch=crash      gain=0.34  len=3.5s send=0.2
+
+grid kit bars 1-4
+  kick  X . . . X . . . X . . . X . . . | X . . 5 X . . . . 7 . 5 X . . 3 | X . . . X . . . . . . . . . . . | X . . . X . . . X . . . X . . .
+  boom  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . X . . . . . . . | . . . . . . . . . . . . . . . .
+  snare . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . X . . . . . . . X . . .
+  tom   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  floor . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  chat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ohat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clap  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  bell  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clave . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  rims  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  shake . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ride  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  crash . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+
+grid kit bars 5-8
+  kick  X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . .
+  boom  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  snare . . 2 . X . . 2 . 3 . . X . 2 . | 1 1 2 2 3 3 4 4 5 5 6 6 7 8 9 X | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . .
+  tom   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  floor . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  chat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | 7 . 4 . 7 . 4 . 7 . 4 . 7 . 4 . | 7 . . . 7 . . . 7 . . . 7 . . .
+  ohat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . 6 . . . 6 . . . 6 . . . 6 .
+  clap  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  bell  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clave . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  rims  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  shake . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ride  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  crash . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+
+grid kit bars 9-12
+  kick  X . . . . . . . . . . . X . . . | X . . . . . . . X . . . . . . . | X . . . X . . 6 X . . . X . . . | X . . 5 X . . . X . 5 . X . . .
+  boom  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  snare . . . . X . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . X . . . . 2 . . X . . . | . . 2 . X . . 2 . . . . X . . 3
+  tom   . . . . . . 6 7 . . . . . . . . | 6 . . 4 . . 6 . . 4 . . 6 . . 4 | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . 5 . .
+  floor . . . . . . . . X . 6 . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . 6 .
+  chat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | 7 3 4 3 7 3 4 3 7 3 4 3 7 3 4 3 | 7 3 4 3 7 3 4 3 7 3 4 3 7 3 4 3
+  ohat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . 6 . . . . . | . . 6 . . . . . . . . . . . 6 .
+  clap  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  bell  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clave . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  rims  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  shake . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ride  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  crash . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+
+grid kit bars 13-16
+  kick  X . . . X . . 6 X . . . X . . . | X . . . X . . . . . . . . . . . | X . . . X . . . X . . . X . X . | X . . . . . . . . . . . . . X .
+  boom  . . . . . . . . . . . . . . . . | . . . . . . . . X . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . X . . . . . . .
+  snare . . 2 . X . . 2 . 3 . . X . 2 . | . . . . X . . . . . . . . . 2 3 | 4 . 5 . 6 . 7 . 8 8 9 9 X X X X | X . . . . . . . . . . . . . X .
+  tom   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . 4 . . . 5 . . . . 7 . . . . . | . . . . . 5 6 . . . . . . . . .
+  floor . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . 4 . . . 6 . . . 8 . . . . | . . . . . . . 7 . . . . . . . .
+  chat  7 3 4 3 7 3 4 3 7 3 4 3 7 3 4 3 | 7 3 4 3 7 3 4 3 . . . . . . . . | . . . . . . . . 5 . 5 . 5 . 5 . | . . . . . . . . . . . . . . . .
+  ohat  . . 6 . . . . . . . 6 . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | X . . . . . . . . . . . . . X .
+  clap  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  bell  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clave . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  rims  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  shake . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ride  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  crash . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+
+grid kit bars 17-20
+  kick  X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . .
+  boom  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  snare . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  tom   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  floor . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  chat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ohat  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clap  . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . .
+  bell  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | X . . . . 7 . . X . . . . 7 . . | X . . . . 7 . . X . . . . 7 . .
+  clave . . . . . . . . . . . . . . . . | X . . X . . X . . . X . X . . . | X . . X . . X . . . X . X . . . | X . . X . . X . . . X . X . . .
+  rims  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . 6 . . . . . . 6 .
+  shake . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . 6 . . . 6 . . . 6 . . . 6 . | . . 6 . . . 6 . . . 6 . . . 6 .
+  ride  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | 7 . 5 . 7 . 5 . 7 . 5 . 7 . 5 .
+  crash X . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+
+grid kit bars 21-24
+  kick  X . . . X . . 6 X . . . X . . . | X . . 5 X . . . X . 5 . X . . . | X . . . X . . . X . . . X . X . | X . . . . . . . . . . . . . 9 .
+  boom  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . X . . . . . . .
+  snare . . 2 . . . . 2 . 3 . . . . 2 . | . . 2 . . . . 2 . . . . . . . 3 | 4 . 5 . 6 . 7 . 8 8 9 9 X X X X | . . . . . . . . . . . . . . 7 .
+  tom   . . . . . . . . . . . . . . . . | . . . . . . . . . . . . 5 6 . . | . 4 . . . 5 . . . . 7 . . . . . | . . . . . 5 6 . . . . . . . . .
+  floor . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . 7 . | . . . 4 . . . 6 . . . 8 . . . . | . . . . . . . 7 . . . . . . . .
+  chat  7 3 4 3 7 3 4 3 7 3 4 3 7 3 4 3 | 7 3 4 3 7 3 4 3 7 3 4 3 7 3 4 3 | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  ohat  . . 6 . . . . . . . . . . . . . | . . 6 . . . . . . . . . . . 6 . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clap  . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . . . . . . . . . X . X . | X . . . . . . . . . . . . . 7 .
+  bell  X . . . . 7 . . X . . . . 7 . . | X . . . . 7 . . X . . . . 7 . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  clave X . . X . . X . . . X . X . . . | X . . X . . X . . . X . X . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  rims  . . . 6 . . . . . . 6 . . . . . | . . . 6 . . . . . . 6 . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  shake . . 6 . . . 6 . . . 6 . . . 6 . | . . 6 . . . 6 . . . 6 . . . 6 . | 4 . 5 . 6 . 7 . 8 . 9 . X . X . | . . . . . . . . . . . . . . . .
+  ride  7 . 5 . 7 . 5 . 7 . 5 . 7 . 5 . | 7 . 5 . 7 . 5 . 7 . 5 . 7 . 5 . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+  crash . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | X . . . . . . . . . . . . . 7 .
+
+# The boom is the kick's other pole: the pitch starts eight times the note
+# and takes 50 ms to land, the punch starts near 370 Hz, and the body rings
+# the better part of a second. No click, no knock — felt, not located.
+params boom  sweep=8 pitch_decay=0.05 punch=10 punch_decay=0.006 decay=0.7 hold=0.08 click=0.1 knock=0 drive=2

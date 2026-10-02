@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "ride",
+  "instrument": "cymbal",
+  "decay": 0.9,
+  "strike": 1.2,
+  "strike_decay": 0.04,
+  "tone": 7000.0,
+  "noise": 0.25,
+  "release": 0.05
+}

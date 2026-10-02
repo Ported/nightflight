@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "shaker",
+  "instrument": "shaker",
+  "attack": 0.012,
+  "decay": 0.07,
+  "tone": 5500.0,
+  "ring": 0.3,
+  "release": 0.008
+}

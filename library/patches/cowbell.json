@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "cowbell",
+  "instrument": "cowbell",
+  "ratio": 1.48,
+  "decay": 0.22,
+  "clank": 0.25,
+  "drive": 2.0,
+  "release": 0.005
+}

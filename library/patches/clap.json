@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "clap",
+  "instrument": "clap",
+  "bursts": 3.0,
+  "spread": 0.011,
+  "decay": 0.18,
+  "tone": 1100.0,
+  "ring": 0.65,
+  "drive": 1.5,
+  "release": 0.01
+}

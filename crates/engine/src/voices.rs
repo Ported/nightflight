@@ -7,7 +7,7 @@
 //! it, which frees nothing, because there was never anything on the heap.
 
 use dsp::Voice;
-use dsp::inst::{Bass, Glass, Hat, Kick, Snare, Strings};
+use dsp::inst::{Bass, Clap, Cowbell, Cymbal, Glass, Hat, Kick, Rim, Shaker, Snare, Strings};
 
 /// Enough for a busy bar with long tails. Raising it costs memory, not time.
 pub const MAX_VOICES: usize = 48;
@@ -15,7 +15,12 @@ pub const MAX_VOICES: usize = 48;
 pub enum AnyVoice {
     Kick(Kick),
     Snare(Snare),
+    Clap(Clap),
     Hat(Hat),
+    Cymbal(Cymbal),
+    Cowbell(Cowbell),
+    Rim(Rim),
+    Shaker(Shaker),
     Bass(Bass),
     Glass(Glass),
     Strings(Strings),
@@ -26,7 +31,12 @@ impl Voice for AnyVoice {
         match self {
             Self::Kick(v) => v.add(out),
             Self::Snare(v) => v.add(out),
+            Self::Clap(v) => v.add(out),
             Self::Hat(v) => v.add(out),
+            Self::Cymbal(v) => v.add(out),
+            Self::Cowbell(v) => v.add(out),
+            Self::Rim(v) => v.add(out),
+            Self::Shaker(v) => v.add(out),
             Self::Bass(v) => v.add(out),
             Self::Glass(v) => v.add(out),
             Self::Strings(v) => v.add(out),
@@ -37,7 +47,12 @@ impl Voice for AnyVoice {
         match self {
             Self::Kick(v) => v.finished(),
             Self::Snare(v) => v.finished(),
+            Self::Clap(v) => v.finished(),
             Self::Hat(v) => v.finished(),
+            Self::Cymbal(v) => v.finished(),
+            Self::Cowbell(v) => v.finished(),
+            Self::Rim(v) => v.finished(),
+            Self::Shaker(v) => v.finished(),
             Self::Bass(v) => v.finished(),
             Self::Glass(v) => v.finished(),
             Self::Strings(v) => v.finished(),

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "floor tom",
+  "instrument": "snare",
+  "sweep": 1.8,
+  "pitch_decay": 0.04,
+  "decay": 0.35,
+  "snap": 0.15,
+  "snap_decay": 0.04,
+  "snap_tone": 1800.0,
+  "drive": 2.0,
+  "release": 0.005
+}

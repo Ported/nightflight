@@ -107,7 +107,17 @@ pub fn patch(voicing: Voicing, bpm: f32, room: Option<ReverbSettings>) -> Set {
         // The backbeat, which is the snare's whole job: beats 2 and 4. The
         // root puts the head near 185 Hz, where a snare actually sits.
         Voicing::Snare(_) => ("....X.......X...", Length::Seconds(0.25), ROOT + 23.0, 0.15),
+        // A clap is a snare that went to the disco: same backbeat, more room.
+        Voicing::Clap(_) => ("....X.......X...", Length::Seconds(0.3), 0.0, 0.2),
         Voicing::Hat(_) => ("X.X.X.X.X.X.X.X.", Length::Seconds(0.1), 0.0, 0.15),
+        // One a bar: a cymbal's whole shape takes that long to hear.
+        Voicing::Cymbal(_) => ("X...............", Length::Seconds(3.0), 0.0, 0.1),
+        // The 808's cowbell sits near C5; the clave figure shows the rim
+        // where it lives, off the grid's strong beats.
+        Voicing::Cowbell(_) => ("X..X..X...X.X...", Length::Seconds(0.3), ROOT + 41.0, 0.1),
+        Voicing::Rim(_) => ("X..X..X...X.X...", Length::Seconds(0.1), ROOT + 52.0, 0.15),
+        // Offbeat eighths, where a shaker spends its working life.
+        Voicing::Shaker(_) => ("..X...X...X...X.", Length::Seconds(0.15), 0.0, 0.1),
         Voicing::Bass(_) => ("X...X...X...X...", Length::Steps(3.5), ROOT, 0.1),
         // Long notes: one a bar, so its whole shape is audible before the next.
         Voicing::Glass(_) => ("X...............", Length::Steps(16.0), ROOT + 24.0, 0.5),

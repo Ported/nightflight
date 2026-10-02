@@ -32,8 +32,15 @@
 <div id="view-conductor" class="view">
 <section class="timeline">
   <div class="transport">
-    <button id="play" title="space">play</button>
-    <button id="start" title="back to the beginning">start</button>
+    <!-- Drawn, not typed: the glyphs for these exist in Unicode but half of
+         them render as emoji on a Mac. -->
+    <button id="start" title="back to the beginning">
+      <svg viewBox="0 0 14 14"><path d="M2 2h2v10H2zM12 2 5 7l7 5z"/></svg>
+    </button>
+    <button id="play" title="space">
+      <svg class="when-stopped" viewBox="0 0 14 14"><path d="M3 1.5 12.5 7 3 12.5z"/></svg>
+      <svg class="when-playing" viewBox="0 0 14 14"><path d="M3 2h3v10H3zM8 2h3v10H8z"/></svg>
+    </button>
     <span class="spacer"></span>
     <span id="position" class="mono fixed"></span>
   </div>

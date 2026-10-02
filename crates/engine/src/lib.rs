@@ -22,7 +22,7 @@ pub mod voices;
 
 use automation::{Flight, Macro};
 use clock::Clock;
-use dsp::inst::{Bass, Glass, Hat, Kick, Snare, Strings};
+use dsp::inst::{Bass, Clap, Cowbell, Cymbal, Glass, Hat, Kick, Rim, Shaker, Snare, Strings};
 use dsp::reverb::Reverb;
 use dsp::smooth::Smoothed;
 use dsp::space::{Ears, Motion, Placer, Position};
@@ -575,6 +575,25 @@ impl Engine {
             // The snare does not duck the rest: ducking is the kick's privilege,
             // or the two of them together would pump the mix twice a beat.
             Voicing::Snare(p) => AnyVoice::Snare(Snare::new(sr, pitch, velocity, length, p)),
+            Voicing::Clap(p) => AnyVoice::Clap(Clap::new(sr, velocity, length, p)),
+            Voicing::Cowbell(p) => AnyVoice::Cowbell(Cowbell::new(sr, pitch, velocity, length, p)),
+            Voicing::Rim(p) => AnyVoice::Rim(Rim::new(sr, pitch, velocity, length, p)),
+            // Seeded by the step like the hat: free-running metal and loose
+            // seeds, different every hit, identical every render.
+            Voicing::Cymbal(p) => AnyVoice::Cymbal(Cymbal::new(
+                sr,
+                velocity,
+                length,
+                (step as u32).wrapping_mul(2_654_435_761),
+                p,
+            )),
+            Voicing::Shaker(p) => AnyVoice::Shaker(Shaker::new(
+                sr,
+                velocity,
+                length,
+                (step as u32).wrapping_mul(2_654_435_761),
+                p,
+            )),
             // The step number seeds the phases, so every hit differs and
             // the render still repeats exactly.
             Voicing::Hat(p) => AnyVoice::Hat(Hat::new(

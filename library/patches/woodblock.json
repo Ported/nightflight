@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "woodblock",
+  "instrument": "rim",
+  "decay": 0.045,
+  "second": 0.3,
+  "click": 0.25,
+  "drive": 1.5,
+  "release": 0.003
+}

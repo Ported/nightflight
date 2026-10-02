@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "clave",
+  "instrument": "rim",
+  "decay": 0.06,
+  "second": 0.0,
+  "click": 0.15,
+  "drive": 1.2,
+  "release": 0.003
+}

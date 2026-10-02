@@ -1266,7 +1266,7 @@ function frame() {
   if (tab === "library") paintConduct();
   if (telemetry) {
     const t = telemetry;
-    $("play").textContent = t.playing ? "stop" : "play";
+    $("play").classList.toggle("playing", t.playing);
     const seconds = (t.bar * 4 * 60) / Math.max(t.bpm, 1);
     const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
     $("position").textContent =

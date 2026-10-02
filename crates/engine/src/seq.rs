@@ -6,7 +6,7 @@
 //! hypnotic techno hypnotic. The Python studio calls it polymeter and gets it
 //! from `grid()`; here it is just the length of a slice.
 
-use dsp::inst::{bass, glass, hat, kick, snare, strings};
+use dsp::inst::{bass, clap, cowbell, cymbal, glass, hat, kick, rim, shaker, snare, strings};
 use dsp::params::{ParamSpec, Parameters};
 use dsp::space::Position;
 use serde::{Deserialize, Serialize};
@@ -150,7 +150,12 @@ impl Voicing {
         match self {
             Self::Kick(_) => kick::Params::SPEC,
             Self::Snare(_) => snare::Params::SPEC,
+            Self::Clap(_) => clap::Params::SPEC,
             Self::Hat(_) => hat::Params::SPEC,
+            Self::Cymbal(_) => cymbal::Params::SPEC,
+            Self::Cowbell(_) => cowbell::Params::SPEC,
+            Self::Rim(_) => rim::Params::SPEC,
+            Self::Shaker(_) => shaker::Params::SPEC,
             Self::Bass(_) => bass::Params::SPEC,
             Self::Glass(_) => glass::Params::SPEC,
             Self::Strings(_) => strings::Params::SPEC,
@@ -168,7 +173,12 @@ impl Voicing {
         match self {
             Self::Kick(p) => p.get(index),
             Self::Snare(p) => p.get(index),
+            Self::Clap(p) => p.get(index),
             Self::Hat(p) => p.get(index),
+            Self::Cymbal(p) => p.get(index),
+            Self::Cowbell(p) => p.get(index),
+            Self::Rim(p) => p.get(index),
+            Self::Shaker(p) => p.get(index),
             Self::Bass(p) => p.get(index),
             Self::Glass(p) => p.get(index),
             Self::Strings(p) => p.get(index),
@@ -181,7 +191,12 @@ impl Voicing {
         match self {
             Self::Kick(p) => p.set(index, value),
             Self::Snare(p) => p.set(index, value),
+            Self::Clap(p) => p.set(index, value),
             Self::Hat(p) => p.set(index, value),
+            Self::Cymbal(p) => p.set(index, value),
+            Self::Cowbell(p) => p.set(index, value),
+            Self::Rim(p) => p.set(index, value),
+            Self::Shaker(p) => p.set(index, value),
             Self::Bass(p) => p.set(index, value),
             Self::Glass(p) => p.set(index, value),
             Self::Strings(p) => p.set(index, value),
@@ -189,8 +204,10 @@ impl Voicing {
     }
 
     /// Every instrument there is, for an interface offering to make a new patch.
-    pub const INSTRUMENTS: &'static [&'static str] =
-        &["kick", "snare", "hat", "bass", "glass", "strings"];
+    pub const INSTRUMENTS: &'static [&'static str] = &[
+        "kick", "snare", "clap", "hat", "cymbal", "cowbell", "rim", "shaker", "bass", "glass",
+        "strings",
+    ];
 
     /// A new patch of a named instrument, at its defaults.
     #[must_use]
@@ -198,7 +215,12 @@ impl Voicing {
         Some(match instrument {
             "kick" => Self::Kick(kick::Params::default()),
             "snare" => Self::Snare(snare::Params::default()),
+            "clap" => Self::Clap(clap::Params::default()),
             "hat" => Self::Hat(hat::Params::default()),
+            "cymbal" => Self::Cymbal(cymbal::Params::default()),
+            "cowbell" => Self::Cowbell(cowbell::Params::default()),
+            "rim" => Self::Rim(rim::Params::default()),
+            "shaker" => Self::Shaker(shaker::Params::default()),
             "bass" => Self::Bass(bass::Params::default()),
             "glass" => Self::Glass(glass::Params::default()),
             "strings" => Self::Strings(strings::Params::default()),
@@ -218,7 +240,14 @@ impl Voicing {
     #[must_use]
     pub fn pitched(self) -> bool {
         match self {
-            Self::Kick(_) | Self::Snare(_) | Self::Hat(_) => false,
+            Self::Kick(_)
+            | Self::Snare(_)
+            | Self::Clap(_)
+            | Self::Hat(_)
+            | Self::Cymbal(_)
+            | Self::Cowbell(_)
+            | Self::Rim(_)
+            | Self::Shaker(_) => false,
             Self::Bass(_) | Self::Glass(_) | Self::Strings(_) => true,
         }
     }
@@ -230,7 +259,12 @@ impl Voicing {
         match self {
             Self::Kick(_) => "kick",
             Self::Snare(_) => "snare",
+            Self::Clap(_) => "clap",
             Self::Hat(_) => "hat",
+            Self::Cymbal(_) => "cymbal",
+            Self::Cowbell(_) => "cowbell",
+            Self::Rim(_) => "rim",
+            Self::Shaker(_) => "shaker",
             Self::Bass(_) => "bass",
             Self::Glass(_) => "glass",
             Self::Strings(_) => "strings",
@@ -244,7 +278,12 @@ impl Voicing {
 pub enum Voicing {
     Kick(kick::Params),
     Snare(snare::Params),
+    Clap(clap::Params),
     Hat(hat::Params),
+    Cymbal(cymbal::Params),
+    Cowbell(cowbell::Params),
+    Rim(rim::Params),
+    Shaker(shaker::Params),
     Bass(bass::Params),
     Glass(glass::Params),
     Strings(strings::Params),

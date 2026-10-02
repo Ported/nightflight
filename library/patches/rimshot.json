@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "rimshot",
+  "instrument": "rim",
+  "decay": 0.04,
+  "second": 0.5,
+  "click": 0.5,
+  "drive": 1.5,
+  "release": 0.003
+}
