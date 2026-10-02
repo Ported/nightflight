@@ -150,10 +150,7 @@ fn names(directory: &Path) -> Vec<String> {
     let mut names: Vec<String> = entries
         .flatten()
         .map(|entry| entry.path())
-        .filter(|path| {
-            path.extension()
-                .is_some_and(|e| e == "json" || e == "tab")
-        })
+        .filter(|path| path.extension().is_some_and(|e| e == "json" || e == "tab"))
         .filter_map(|path| {
             path.file_stem()
                 .and_then(|s| s.to_str())

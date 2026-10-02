@@ -214,9 +214,9 @@ fn lanes(args: &[&str]) -> Result<(), String> {
 
             let overlap = tightest.map(|gap| (held + release) / gap as f32);
             let driven = set.macros.iter().any(|m| {
-                m.mappings
-                    .iter()
-                    .any(|map| map.lane == lane.name && map.target == engine::automation::Target::Level)
+                m.mappings.iter().any(|map| {
+                    map.lane == lane.name && map.target == engine::automation::Target::Level
+                })
             });
 
             serde_json::json!({

@@ -95,10 +95,7 @@ fn scan() -> Stamps {
         };
         for entry in entries.flatten() {
             let path = entry.path();
-            if !path
-                .extension()
-                .is_some_and(|e| e == "tab" || e == "json")
-            {
+            if !path.extension().is_some_and(|e| e == "tab" || e == "json") {
                 continue;
             }
             let Ok(meta) = entry.metadata() else { continue };

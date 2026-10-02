@@ -236,7 +236,11 @@ impl Session {
         // bar 64 of a 64-bar piece is bar 0 of the next time round, and a
         // span starting there would otherwise never fire.
         let length = self.document.length_bars;
-        if length > 0.0 && at >= length { 0.0 } else { at }
+        if length > 0.0 && at >= length {
+            0.0
+        } else {
+            at
+        }
     }
 
     /// Bring a clip into the mix, starting at a bar in the future.

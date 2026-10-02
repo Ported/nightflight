@@ -121,7 +121,10 @@ pub fn find(what: &str) -> io::Result<(String, Set)> {
         vec![given.to_path_buf()]
     } else {
         let here = directory();
-        vec![here.join(format!("{what}.tab")), here.join(format!("{what}.json"))]
+        vec![
+            here.join(format!("{what}.tab")),
+            here.join(format!("{what}.json")),
+        ]
     };
 
     for path in &candidates {
@@ -215,7 +218,9 @@ mod tests {
 
     #[test]
     fn a_name_that_is_nothing_says_where_it_looked() {
-        let why = find("no-such-piece").expect_err("nothing of that name").to_string();
+        let why = find("no-such-piece")
+            .expect_err("nothing of that name")
+            .to_string();
         assert!(why.contains("no-such-piece"), "{why}");
         assert!(why.contains(".tab"), "{why}");
         assert!(why.contains("rolling"), "should list the built-ins: {why}");

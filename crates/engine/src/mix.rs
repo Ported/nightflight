@@ -102,7 +102,10 @@ impl Gate {
     /// The chop as a grid again, for writing one down. `x` open, `.` shut.
     #[must_use]
     pub fn pattern(&self) -> String {
-        self.open.iter().map(|&on| if on { 'x' } else { '.' }).collect()
+        self.open
+            .iter()
+            .map(|&on| if on { 'x' } else { '.' })
+            .collect()
     }
 
     /// Share of an open cell that stays open.

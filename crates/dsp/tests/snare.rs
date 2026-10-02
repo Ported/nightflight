@@ -56,8 +56,10 @@ fn the_drum_alone_is_smooth_and_the_wires_are_not() {
     // no more. The wires are highpassed noise, which is nothing but jumps —
     // so turning them on must raise that figure several times over. This
     // pins each layer to its role without caring about absolute levels.
-    let mut drum_only = snare::Params::default();
-    drum_only.snap = 0.0;
+    let drum_only = snare::Params {
+        snap: 0.0,
+        ..Default::default()
+    };
     let smooth = max_jump(&render(drum_only, 0.25));
     let snappy = max_jump(&render(snare::Params::default(), 0.25));
     assert!(
@@ -82,11 +84,15 @@ fn the_wires_outlast_the_drum_when_asked() {
     // came out at 3.3. The window was hearing the other layer — the same
     // mistake as measuring a kick through a sounding hat. Solo the lane: the
     // drum is turned down to its shortest decay so the window holds only wires.
-    let mut long = snare::Params::default();
-    long.decay = 0.03;
-    long.snap_decay = 0.4;
-    let mut short = long;
-    short.snap_decay = 0.03;
+    let long = snare::Params {
+        decay: 0.03,
+        snap_decay: 0.4,
+        ..Default::default()
+    };
+    let short = snare::Params {
+        snap_decay: 0.03,
+        ..long
+    };
     let ringing = rms(&render(long, 0.5), 0.25, 0.35);
     let dead = rms(&render(short, 0.5), 0.25, 0.35);
     assert!(
@@ -129,11 +135,15 @@ fn sweep_starts_the_drum_higher() {
             .filter(|w| (w[0] < 0.0) != (w[1] < 0.0))
             .count()
     };
-    let mut still = snare::Params::default();
-    still.snap = 0.0;
-    still.sweep = 1.0;
-    let mut swept = still;
-    swept.sweep = 4.0;
+    let still = snare::Params {
+        snap: 0.0,
+        sweep: 1.0,
+        ..Default::default()
+    };
+    let swept = snare::Params {
+        sweep: 4.0,
+        ..still
+    };
     let (still, swept) = (crossings(still), crossings(swept));
     assert!(
         swept as f32 > 1.5 * still as f32,

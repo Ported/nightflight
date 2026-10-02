@@ -581,14 +581,9 @@ pub fn read(text: &str) -> Result<(String, Set), String> {
                         let mut points = Vec::new();
                         for point in spec.split(',') {
                             let Some((bar, value)) = point.split_once(':') else {
-                                return Err(format!(
-                                    "line {line}: {point:?} should be bar:value"
-                                ));
+                                return Err(format!("line {line}: {point:?} should be bar:value"));
                             };
-                            points.push((
-                                number(bar, line, "bar")?,
-                                number(value, line, "value")?,
-                            ));
+                            points.push((number(bar, line, "bar")?, number(value, line, "value")?));
                         }
                         if points.is_empty() {
                             return Err(format!("line {line}: a curve needs a point"));
@@ -748,7 +743,9 @@ fn read_lane(words: &[&str], line: usize) -> Result<(Lane, f32), String> {
             let open = parts
                 .next()
                 .map_or(Ok(0.55), |v| number(v, line, "gate length"))?;
-            let depth = parts.next().map_or(Ok(1.0), |v| number(v, line, "gate depth"))?;
+            let depth = parts
+                .next()
+                .map_or(Ok(1.0), |v| number(v, line, "gate depth"))?;
             Some(crate::mix::Gate::new(pattern, open, depth))
         }
         None => None,
@@ -818,7 +815,11 @@ mod tests {
             assert_eq!(read_name, *name);
             assert!((after.bpm - before.bpm).abs() < 1e-3, "{name}: bpm");
             assert_eq!(after.lanes.len(), before.lanes.len(), "{name}: lane count");
-            assert_eq!(after.macros.len(), before.macros.len(), "{name}: macro count");
+            assert_eq!(
+                after.macros.len(),
+                before.macros.len(),
+                "{name}: macro count"
+            );
             for (a, b) in after.macros.iter().zip(&before.macros) {
                 assert_eq!(a.name, b.name);
                 assert_eq!(

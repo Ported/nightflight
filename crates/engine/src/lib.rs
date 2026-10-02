@@ -1004,7 +1004,6 @@ pub struct State {
     pub dropped: u32,
 }
 
-
 #[cfg(test)]
 mod adopting {
     use super::*;
@@ -1031,7 +1030,9 @@ mod adopting {
                 lane.clip = "late".into();
                 lane.spans = vec![crate::automation::Play::new(start, f32::INFINITY)];
                 assert!(
-                    engine.adopt(Box::new(NewLane::new(dsp::SR, lane))).is_none(),
+                    engine
+                        .adopt(Box::new(NewLane::new(dsp::SR, lane)))
+                        .is_none(),
                     "there should be room"
                 );
             }
@@ -1055,12 +1056,18 @@ mod adopting {
         for n in 0..spare {
             let mut lane = set.lanes[0].clone();
             lane.name = format!("extra {n}");
-            assert!(engine.adopt(Box::new(NewLane::new(dsp::SR, lane))).is_none());
+            assert!(
+                engine
+                    .adopt(Box::new(NewLane::new(dsp::SR, lane)))
+                    .is_none()
+            );
         }
         let mut lane = set.lanes[0].clone();
         lane.name = "one too many".into();
         assert!(
-            engine.adopt(Box::new(NewLane::new(dsp::SR, lane))).is_some(),
+            engine
+                .adopt(Box::new(NewLane::new(dsp::SR, lane)))
+                .is_some(),
             "past the ceiling the box comes back to be freed off-thread"
         );
         assert!(engine.has_lane("extra 0"));
