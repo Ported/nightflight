@@ -104,6 +104,9 @@ pub fn lane(set: &Set, index: usize) -> Option<(Set, Vec<usize>)> {
 pub fn patch(voicing: Voicing, bpm: f32, room: Option<ReverbSettings>) -> Set {
     let (steps, length, root, send) = match voicing {
         Voicing::Kick(_) => ("X...X...X...X...", Length::Seconds(0.4), ROOT, 0.0),
+        // The backbeat, which is the snare's whole job: beats 2 and 4. The
+        // root puts the head near 185 Hz, where a snare actually sits.
+        Voicing::Snare(_) => ("....X.......X...", Length::Seconds(0.25), ROOT + 23.0, 0.15),
         Voicing::Hat(_) => ("X.X.X.X.X.X.X.X.", Length::Seconds(0.1), 0.0, 0.15),
         Voicing::Bass(_) => ("X...X...X...X...", Length::Steps(3.5), ROOT, 0.1),
         // Long notes: one a bar, so its whole shape is audible before the next.

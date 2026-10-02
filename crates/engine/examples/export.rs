@@ -51,6 +51,13 @@ fn seed_library() {
         existing.patches.iter().map(|p| p.name.clone()).collect();
     let mut clips: std::collections::HashSet<_> =
         existing.clips.iter().map(|c| c.name.clone()).collect();
+    // Which instruments the library already shows. The library lists patch
+    // files, nothing else — so an instrument with no patch is invisible: not in
+    // `nf ls`, not in the index, nowhere to audition it from. Tracked here so
+    // that after seeding from the pieces, any instrument still uncovered gets a
+    // defaults patch below.
+    let mut instruments: std::collections::HashSet<&'static str> =
+        existing.patches.iter().map(|p| p.instrument).collect();
 
     for name in engine::sets::NAMES {
         let Some(set) = engine::sets::by_name(name) else {
@@ -68,6 +75,7 @@ fn seed_library() {
                 Err(err) => eprintln!("  could not save patch {}: {err}", lane.name),
             }
             patches.insert(lane.name.clone());
+            instruments.insert(lane.voicing.instrument());
         }
 
         for lane in &set.lanes {
@@ -90,6 +98,24 @@ fn seed_library() {
                 ),
                 Err(err) => eprintln!("  could not save clip {}: {err}", lane.clip),
             }
+        }
+    }
+
+    // Every instrument the pieces did not cover gets a defaults patch under its
+    // own name. The defaults are not a placeholder — they are each instrument's
+    // chosen sound (the kick's are its "punch" preset) — and without this a new
+    // instrument that no built-in piece plays yet would not exist anywhere a
+    // person can see.
+    for instrument in engine::seq::Voicing::INSTRUMENTS {
+        if instruments.contains(instrument) || patches.contains(*instrument) {
+            continue;
+        }
+        let Some(voicing) = engine::seq::Voicing::fresh(instrument) else {
+            continue;
+        };
+        match engine::library::save_patch(instrument, voicing) {
+            Ok(_) => println!("  patch {instrument:>12}  defaults"),
+            Err(err) => eprintln!("  could not save patch {instrument}: {err}"),
         }
     }
 }

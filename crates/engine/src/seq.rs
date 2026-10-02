@@ -6,7 +6,7 @@
 //! hypnotic techno hypnotic. The Python studio calls it polymeter and gets it
 //! from `grid()`; here it is just the length of a slice.
 
-use dsp::inst::{bass, glass, hat, kick, strings};
+use dsp::inst::{bass, glass, hat, kick, snare, strings};
 use dsp::params::{ParamSpec, Parameters};
 use dsp::space::Position;
 use serde::{Deserialize, Serialize};
@@ -149,6 +149,7 @@ impl Voicing {
     pub fn spec(self) -> &'static [ParamSpec] {
         match self {
             Self::Kick(_) => kick::Params::SPEC,
+            Self::Snare(_) => snare::Params::SPEC,
             Self::Hat(_) => hat::Params::SPEC,
             Self::Bass(_) => bass::Params::SPEC,
             Self::Glass(_) => glass::Params::SPEC,
@@ -166,6 +167,7 @@ impl Voicing {
     pub fn param(self, index: usize) -> f32 {
         match self {
             Self::Kick(p) => p.get(index),
+            Self::Snare(p) => p.get(index),
             Self::Hat(p) => p.get(index),
             Self::Bass(p) => p.get(index),
             Self::Glass(p) => p.get(index),
@@ -178,6 +180,7 @@ impl Voicing {
     pub fn set_param(&mut self, index: usize, value: f32) {
         match self {
             Self::Kick(p) => p.set(index, value),
+            Self::Snare(p) => p.set(index, value),
             Self::Hat(p) => p.set(index, value),
             Self::Bass(p) => p.set(index, value),
             Self::Glass(p) => p.set(index, value),
@@ -186,13 +189,15 @@ impl Voicing {
     }
 
     /// Every instrument there is, for an interface offering to make a new patch.
-    pub const INSTRUMENTS: &'static [&'static str] = &["kick", "hat", "bass", "glass", "strings"];
+    pub const INSTRUMENTS: &'static [&'static str] =
+        &["kick", "snare", "hat", "bass", "glass", "strings"];
 
     /// A new patch of a named instrument, at its defaults.
     #[must_use]
     pub fn fresh(instrument: &str) -> Option<Self> {
         Some(match instrument {
             "kick" => Self::Kick(kick::Params::default()),
+            "snare" => Self::Snare(snare::Params::default()),
             "hat" => Self::Hat(hat::Params::default()),
             "bass" => Self::Bass(bass::Params::default()),
             "glass" => Self::Glass(glass::Params::default()),
@@ -206,13 +211,14 @@ impl Voicing {
     ///
     /// A kick has a pitch and it is not a note: it is a sweep from high to low
     /// that *is* the sound, and moving the whole thing up a tone is a patch
-    /// edit, not a melody. A hat has no pitch worth naming. Everything else
+    /// edit, not a melody. A snare's head is tuned the same way — a drum you
+    /// tension, not a note you play. A hat has no pitch worth naming. Everything else
     /// plays what the steps say, and wants a piano roll rather than a row of
     /// boxes.
     #[must_use]
     pub fn pitched(self) -> bool {
         match self {
-            Self::Kick(_) | Self::Hat(_) => false,
+            Self::Kick(_) | Self::Snare(_) | Self::Hat(_) => false,
             Self::Bass(_) | Self::Glass(_) | Self::Strings(_) => true,
         }
     }
@@ -223,6 +229,7 @@ impl Voicing {
     pub fn instrument(self) -> &'static str {
         match self {
             Self::Kick(_) => "kick",
+            Self::Snare(_) => "snare",
             Self::Hat(_) => "hat",
             Self::Bass(_) => "bass",
             Self::Glass(_) => "glass",
@@ -236,6 +243,7 @@ impl Voicing {
 #[serde(tag = "instrument", rename_all = "snake_case")]
 pub enum Voicing {
     Kick(kick::Params),
+    Snare(snare::Params),
     Hat(hat::Params),
     Bass(bass::Params),
     Glass(glass::Params),

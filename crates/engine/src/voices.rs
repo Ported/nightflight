@@ -7,13 +7,14 @@
 //! it, which frees nothing, because there was never anything on the heap.
 
 use dsp::Voice;
-use dsp::inst::{Bass, Glass, Hat, Kick, Strings};
+use dsp::inst::{Bass, Glass, Hat, Kick, Snare, Strings};
 
 /// Enough for a busy bar with long tails. Raising it costs memory, not time.
 pub const MAX_VOICES: usize = 48;
 
 pub enum AnyVoice {
     Kick(Kick),
+    Snare(Snare),
     Hat(Hat),
     Bass(Bass),
     Glass(Glass),
@@ -24,6 +25,7 @@ impl Voice for AnyVoice {
     fn add(&mut self, out: &mut [f32]) {
         match self {
             Self::Kick(v) => v.add(out),
+            Self::Snare(v) => v.add(out),
             Self::Hat(v) => v.add(out),
             Self::Bass(v) => v.add(out),
             Self::Glass(v) => v.add(out),
@@ -34,6 +36,7 @@ impl Voice for AnyVoice {
     fn finished(&self) -> bool {
         match self {
             Self::Kick(v) => v.finished(),
+            Self::Snare(v) => v.finished(),
             Self::Hat(v) => v.finished(),
             Self::Bass(v) => v.finished(),
             Self::Glass(v) => v.finished(),

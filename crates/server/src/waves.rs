@@ -7,13 +7,15 @@
 //! the telemetry — the meters needed it first — so the render costs one
 //! engine and no new tap into the audio path.
 //!
-//! Lanes fold into their clip by maximum rather than by sum: a peak is not
-//! additive, and max is how a drum bus reads — the kick's spikes with the
-//! hat showing between them.
+//! Every lane's own shape is kept and sent, for rows the page has unfolded.
+//! For the clip's single row, lanes fold together by maximum rather than by
+//! sum: a peak is not additive, and max is how a drum bus reads — the kick's
+//! spikes with the hat showing between them.
 //!
-//! Each clip is then normalised to its own loudest moment. Absolute level is
-//! the mixer's business and the meters already show it; the row's business is
-//! *shape*, and at absolute scale a hat row under a kick row is a flat line.
+//! Clip and lane alike are normalised to their own loudest moment. Absolute
+//! level is the mixer's business and the meters already show it; a row's
+//! business is *shape*, and at absolute scale a hat row under a kick row is
+//! a flat line.
 
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -80,6 +82,7 @@ fn render(set: Set) -> String {
             None => clips.push((lane.clip.clone(), vec![index])),
         }
     }
+    let names: Vec<String> = set.lanes.iter().map(|lane| lane.name.clone()).collect();
 
     let bars = set.length_bars.max(1.0);
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -88,7 +91,7 @@ fn render(set: Set) -> String {
     let per_slice = f64::from(dsp::SR) * 15.0 / f64::from(set.bpm);
 
     let mut engine = Engine::new(dsp::SR, set.bpm, set);
-    let mut peaks: Vec<Vec<f32>> = vec![Vec::with_capacity(slices); clips.len()];
+    let mut peaks: Vec<Vec<f32>> = vec![Vec::with_capacity(slices); names.len()];
     let mut block = vec![0.0f32; 1024 * 2];
     let mut done: u64 = 0;
     for slice in 1..=slices {
@@ -107,25 +110,36 @@ fn render(set: Set) -> String {
         // `level` is the peak since the last telemetry frame, and reading it
         // resets it — exactly one slice's worth, by construction.
         let frame = engine.telemetry();
-        for (clip, (_, lanes)) in clips.iter().enumerate() {
-            let peak = lanes
-                .iter()
-                .filter_map(|&lane| frame.lanes.get(lane))
-                .map(|state| state.level)
-                .fold(0.0_f32, f32::max);
-            peaks[clip].push(peak);
+        for (lane, peaks) in peaks.iter_mut().enumerate() {
+            peaks.push(frame.lanes.get(lane).map_or(0.0, |state| state.level));
         }
     }
 
-    let mut out = serde_json::Map::new();
-    for ((name, _), peaks) in clips.into_iter().zip(peaks) {
-        let loudest = peaks.iter().copied().fold(0.0_f32, f32::max).max(1e-6);
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let quantised: Vec<u8> = peaks
-            .iter()
-            .map(|peak| (peak / loudest * 255.0).round() as u8)
-            .collect();
-        out.insert(name, quantised.into());
+    // Each lane its own shape; each clip the max of its lanes, slice by
+    // slice — the single row an unfolded clip still keeps at its head.
+    let mut lane_rows = serde_json::Map::new();
+    for (name, peaks) in names.iter().zip(&peaks) {
+        lane_rows.insert(name.clone(), quantised(peaks).into());
     }
-    serde_json::json!({ "t": "waves", "per_bar": PER_BAR, "clips": out }).to_string()
+    let mut clip_rows = serde_json::Map::new();
+    for (name, lanes) in clips {
+        let folded: Vec<f32> = (0..slices)
+            .map(|s| lanes.iter().map(|&l| peaks[l][s]).fold(0.0_f32, f32::max))
+            .collect();
+        clip_rows.insert(name, quantised(&folded).into());
+    }
+    serde_json::json!({
+        "t": "waves", "per_bar": PER_BAR, "clips": clip_rows, "lanes": lane_rows,
+    })
+    .to_string()
+}
+
+/// Normalised to its own loudest moment and packed into bytes.
+fn quantised(peaks: &[f32]) -> Vec<u8> {
+    let loudest = peaks.iter().copied().fold(0.0_f32, f32::max).max(1e-6);
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    peaks
+        .iter()
+        .map(|peak| (peak / loudest * 255.0).round() as u8)
+        .collect()
 }

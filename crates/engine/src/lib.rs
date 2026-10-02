@@ -22,7 +22,7 @@ pub mod voices;
 
 use automation::{Flight, Macro};
 use clock::Clock;
-use dsp::inst::{Bass, Glass, Hat, Kick, Strings};
+use dsp::inst::{Bass, Glass, Hat, Kick, Snare, Strings};
 use dsp::reverb::Reverb;
 use dsp::smooth::Smoothed;
 use dsp::space::{Ears, Motion, Placer, Position};
@@ -572,6 +572,9 @@ impl Engine {
                 self.duck.trigger();
                 AnyVoice::Kick(Kick::new(sr, pitch, velocity, length, p))
             }
+            // The snare does not duck the rest: ducking is the kick's privilege,
+            // or the two of them together would pump the mix twice a beat.
+            Voicing::Snare(p) => AnyVoice::Snare(Snare::new(sr, pitch, velocity, length, p)),
             // The step number seeds the phases, so every hit differs and
             // the render still repeats exactly.
             Voicing::Hat(p) => AnyVoice::Hat(Hat::new(

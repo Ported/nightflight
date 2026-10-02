@@ -190,7 +190,7 @@ pub struct LaneDescription {
     pub name: String,
     /// The clip this lane belongs to.
     pub clip: String,
-    /// Which instrument plays it: kick, hat, bass, glass, strings.
+    /// Which instrument plays it: kick, snare, hat, bass, glass, strings.
     pub instrument: &'static str,
     /// The saved patch it plays, if it plays a saved one.
     pub patch: Option<String>,

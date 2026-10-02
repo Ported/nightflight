@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "snare",
+  "instrument": "snare",
+  "sweep": 1.5,
+  "pitch_decay": 0.02,
+  "decay": 0.12,
+  "snap": 1.0,
+  "snap_decay": 0.09,
+  "snap_tone": 1800.0,
+  "drive": 1.5,
+  "release": 0.005
+}

@@ -31,9 +31,15 @@ const macroHeld = new Map();
 let socket = null;
 /** Which view is showing: "conductor", or a clip's name. */
 let tab = "conductor";
-/** Per-clip waveforms for the timeline, rendered offline by the server and
- * pushed a few seconds after each document change. Null until they arrive. */
+/** Per-clip and per-lane waveforms for the timeline, rendered offline by the
+ * server and pushed a few seconds after each document change. Null until they
+ * arrive. */
 let waves = null;
+/** Clips unfolded to show each lane's own waveform under the clip's row. */
+const unfolded = new Set();
+/** Where each clip's name was drawn, for the gutter's click-to-unfold.
+ * Rebuilt every frame, like `handles` — a canvas keeps no elements. */
+const gutterRows = [];
 
 function connect() {
   socket = new WebSocket(`ws://${location.host}/`);
@@ -773,9 +779,15 @@ $("timeline").addEventListener("pointerdown", (event) => {
     (h) => Math.abs(h.x - px) < 7 && py >= h.y && py <= h.y + h.rowHeight,
   );
   if (!near.length) {
-    // Anywhere on the bars that is not a handle: jump there, and drag to
-    // scrub. The gutter is names, not time, so a press there does nothing.
-    if (px < 74) return;
+    // A press on a clip's name unfolds it into its lanes, and back.
+    if (px < 74) {
+      const row = gutterRows.find((r) => py >= r.y && py <= r.y + r.h);
+      if (row) {
+        if (unfolded.has(row.clip)) unfolded.delete(row.clip);
+        else unfolded.add(row.clip);
+      }
+      return;
+    }
     scrubbingTo = rawBarAt(event.clientX);
     send({ t: "seek", bar: scrubbingTo });
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -804,11 +816,13 @@ $("timeline").addEventListener("pointermove", (event) => {
     }
     return;
   }
-  // A cursor that changes is the only way to discover a handle on a canvas.
+  // A cursor that changes is the only way to discover a handle on a canvas —
+  // or that a clip's name is a button.
   const over = handles.some(
     (h) => Math.abs(h.x - px) < 7 && py >= h.y && py <= h.y + h.rowHeight,
   );
-  event.currentTarget.style.cursor = over ? "ew-resize" : "";
+  const name = px < 74 && gutterRows.some((r) => py >= r.y && py <= r.y + r.h);
+  event.currentTarget.style.cursor = over ? "ew-resize" : name ? "pointer" : "";
 });
 
 for (const done of ["pointerup", "pointercancel"]) {
@@ -830,7 +844,17 @@ for (const done of ["pointerup", "pointercancel"]) {
 }
 
 function drawTimeline() {
-  const { context, width, height } = fit($("timeline"));
+  const canvas = $("timeline");
+  // An unfolded clip adds a row per lane, and the canvas grows to hold them
+  // rather than squeezing every row thinner.
+  const rows = [...clips()].reduce(
+    (n, [clip, lanes]) => n + 1 + (unfolded.has(clip) ? lanes.length : 0),
+    0,
+  );
+  const want = Math.max(190, rows * 20 + 40);
+  if (Math.abs(canvas.clientHeight - want) > 1) canvas.style.height = `${want}px`;
+
+  const { context, width, height } = fit(canvas);
   context.clearRect(0, 0, width, height);
   if (!description) return;
 
@@ -840,7 +864,6 @@ function drawTimeline() {
   const top = 4;
   // The piece loops over its written length, so that length is the width.
   const bars = description.length_bars;
-  const rows = clips().size;
   // Tall enough for a waveform to have a shape when there are few clips,
   // shared out when there are many.
   const rowHeight = Math.min(26, (height - top - 16) / Math.max(rows, 1));
@@ -865,53 +888,17 @@ function drawTimeline() {
   const inside = (from, to) => playhead >= from && playhead < to;
 
   handles.length = 0;
+  gutterRows.length = 0;
   const brought = new Set(live.map((l) => l.clip));
 
-  [...clips()].forEach(([clip, lanes], index) => {
-    const y = top + index * rowHeight;
-    const middle = y + rowHeight / 2 - 1;
-    // A clip is muted when every lane of it is.
-    const muted = lanes.every((lane) => telemetry?.lanes?.[lane.index]?.muted);
-
-    // Every span of every lane in the clip. A lane with no spans plays for
-    // ever, which a piece for jamming wants, and so does a clip brought in by
-    // hand — `end` is null for both, and they run to the edge of what is
-    // drawn.
-    const spans = lanes
-      .flatMap((lane) =>
-        lane.spans.length ? lane.spans : [{ start: 0, end: null, first_bar: 0 }],
-      )
-      .map((span) => ({ ...span, end: Math.min(span.end ?? bars, bars) }));
-    // Whether a block is lit follows the playhead being inside it, not whether
-    // a voice happens to be ringing this instant: a closed hat sounds for a
-    // third of the time it is playing, so voice activity makes a block flicker
-    // and says nothing about the arrangement.
-    const sounding = spans.some((span) => inside(span.first_bar, span.end));
-    const wave = waves?.clips?.[clip];
-
-    context.fillStyle = muted ? colour("--line") : sounding ? colour("--text") : colour("--weak");
-    context.textAlign = "right";
-    context.fillText(clip, gutter - 6, middle);
-    context.textAlign = "left";
-
-    // Only a clip the conductor brought in can be dragged. The ones the piece
-    // placed belong to the file, and moving those would be an edit — which
-    // this page stopped doing when the editors went.
-    if (brought.has(clip)) {
-      const entry = live.find((l) => l.clip === clip);
-      handles.push(
-        { clip, edge: "from", bar: entry.from, x: x(entry.from), y, rowHeight },
-        { clip, edge: "to", bar: entry.to ?? bars, x: x(entry.to ?? bars), y, rowHeight },
-      );
-    }
-
-    // The grips. Drawn after the block so they sit on top of it.
-    const grips = handles.filter((h) => h.clip === clip);
-
+  // One row's worth of drawing: spans as blocks until the waveform arrives,
+  // the waveform once it has, flights always. Shared between a clip's header
+  // row and the lane rows under it when it is unfolded.
+  function row(y, spans, wave, muted, sounding, faint) {
     for (const span of spans) {
-      // A flight's approach: the lane is sounding, but from somewhere else. It
-      // is drawn thinner rather than fainter, so that it can still light up
-      // when the playhead is in it.
+      // A flight's approach: the lane is sounding, but from somewhere else.
+      // It is drawn thinner rather than fainter, so that it can still light
+      // up when the playhead is in it.
       if (span.first_bar < span.start) {
         const flying = inside(span.first_bar, span.start);
         context.fillStyle = muted
@@ -930,19 +917,83 @@ function drawTimeline() {
       context.fillStyle = muted ? colour("--line") : colour("--accent") + (landed ? "e6" : "55");
       context.fillRect(x(span.start), y + 1, Math.max(x(span.end) - x(span.start), 1.5), rowHeight - 3);
     }
-
     // The waveform is the row: no block behind it, silence is empty space.
-    // Once per clip rather than once per span — a span-less lane stands in a
+    // Once per row rather than once per span — a span-less lane stands in a
     // full-width span, and six translucent anythings stacked read as a slab.
     if (wave) {
       const per = waves.per_bar;
       const middle = y + 1 + (rowHeight - 3) / 2;
-      context.fillStyle = muted ? colour("--line") : colour("--accent") + (sounding ? "f0" : "88");
+      context.fillStyle = muted
+        ? colour("--line")
+        : colour("--accent") + (sounding ? (faint ? "b0" : "f0") : faint ? "50" : "88");
       for (let s = 0; s < wave.length; s++) {
         if (!wave[s]) continue;
         const tall = Math.max((wave[s] / 255) * (rowHeight - 3), 0.8);
         const left = x(s / per);
         context.fillRect(left, middle - tall / 2, Math.max(x((s + 1) / per) - left - 0.4, 0.7), tall);
+      }
+    }
+  }
+
+  /** A lane's spans, or the always-playing stand-in, clipped to the score. */
+  const spansOf = (lane) =>
+    (lane.spans.length ? lane.spans : [{ start: 0, end: null, first_bar: 0 }]).map(
+      (span) => ({ ...span, end: Math.min(span.end ?? bars, bars) }),
+    );
+
+  let rowY = top;
+  for (const [clip, lanes] of clips()) {
+    const y = rowY;
+    rowY += rowHeight;
+    const middle = y + rowHeight / 2 - 1;
+    const open = unfolded.has(clip);
+    // A clip is muted when every lane of it is.
+    const muted = lanes.every((lane) => telemetry?.lanes?.[lane.index]?.muted);
+
+    // Every span of every lane in the clip, for the header row.
+    const spans = lanes.flatMap(spansOf);
+    // Whether a row is lit follows the playhead being inside it, not whether
+    // a voice happens to be ringing this instant: a closed hat sounds for a
+    // third of the time it is playing, so voice activity makes a block flicker
+    // and says nothing about the arrangement.
+    const sounding = spans.some((span) => inside(span.first_bar, span.end));
+    const wave = waves?.clips?.[clip];
+
+    context.fillStyle = muted ? colour("--line") : sounding ? colour("--text") : colour("--weak");
+    context.textAlign = "right";
+    context.fillText(`${open ? "▾" : "▸"} ${clip}`, gutter - 6, middle);
+    context.textAlign = "left";
+    gutterRows.push({ clip, y, h: rowHeight });
+
+    // Only a clip the conductor brought in can be dragged. The ones the piece
+    // placed belong to the file, and moving those would be an edit — which
+    // this page stopped doing when the editors went.
+    if (brought.has(clip)) {
+      const entry = live.find((l) => l.clip === clip);
+      handles.push(
+        { clip, edge: "from", bar: entry.from, x: x(entry.from), y, rowHeight },
+        { clip, edge: "to", bar: entry.to ?? bars, x: x(entry.to ?? bars), y, rowHeight },
+      );
+    }
+
+    // The grips. Drawn after the block so they sit on top of it.
+    const grips = handles.filter((h) => h.clip === clip);
+
+    row(y, spans, wave, muted, sounding, false);
+
+    // The lanes, each its own quieter row, under an unfolded clip.
+    if (open) {
+      for (const lane of lanes) {
+        const laneY = rowY;
+        rowY += rowHeight;
+        const laneMuted = telemetry?.lanes?.[lane.index]?.muted ?? false;
+        const laneSpans = spansOf(lane);
+        const laneSounding = laneSpans.some((span) => inside(span.first_bar, span.end));
+        context.fillStyle = laneMuted ? colour("--line") : colour("--weak");
+        context.textAlign = "right";
+        context.fillText(lane.name, gutter - 6, laneY + rowHeight / 2 - 1);
+        context.textAlign = "left";
+        row(laneY, laneSpans, waves?.lanes?.[lane.name], laneMuted, laneSounding, true);
       }
     }
 
@@ -966,7 +1017,7 @@ function drawTimeline() {
         context.fillText(`bar ${grip.to}`, x(grip.to) + 4, y + rowHeight / 2 - 1);
       }
     }
-  });
+  }
 
   // The macro curves over the top, so the shape of the piece is visible at a
   // glance. Labelled at their left end, since four unlabelled lines say little.
