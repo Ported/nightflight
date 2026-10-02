@@ -46,8 +46,8 @@ grid hook bars 1-64
 # first full section, shut again for the breakdown, and climbing all through
 # the build so the drop is the moment it arrives rather than a new sound.
 macro open curve=16:0,24:0.85,32:0.9,33:0.25,40:0.2,48:1,56:1,62:0.4,64:0.1
-  acid bass_cutoff 80 2600 2
-  acid bass_env_amount 3 13
+  acid bass_cutoff 65 800 2
+  acid bass_env_amount 2 5.5
   acid send 0 0.3
 
 # The stabs lose their bite in the breakdown and get it back at the drop.
@@ -71,7 +71,20 @@ macro wash curve=32:0,34:1,40:1,44:0,62:0,63:1,64:1
   stab2 send 0.3 0.9
   stab3 send 0.35 0.95
 
-params acid  cutoff=110 env_amount=11 env_decay=0.055 resonance=0.93 sub=0.25 drive=4.5 decay=0.3 release=0.03
+# Dialled back, by separating the two things that were both called "acid".
+#
+# **Resonance is the character; drive is the dirt.** The first version had
+# drive at 4.5 against a default of 2.5, which is waveshaping, and a macro
+# that swept the cutoff to 2600 Hz with the envelope multiplying it fourteen
+# times — putting the filter's corner past Nyquist, so at the top of the sweep
+# there was no filter at all, only a driven saw. It measured 8.7 dB of crest,
+# where a plucked bass is twelve to fifteen: squashed, not plucked.
+#
+# Drive is nearly off now and resonance is *higher* than it was. The result has
+# more energy in the 1-4 kHz bite than the distorted one did, because the
+# filter's resonant peak is doing the work the saturation was doing badly.
+# Crest 13.2 dB, and 3 dB less above 4 kHz.
+params acid  cutoff=105 env_amount=7 env_decay=0.06 resonance=0.82 sub=0.3 drive=1.3 decay=0.3 release=0.03
 params stab1 copies=5 detune=20 depth=6 cutoff=3200 attack=0.004 release=0.09 phaser=0.25
 params stab2 copies=5 detune=22 depth=6 cutoff=3000 attack=0.004 release=0.09 phaser=0.3
 params stab3 copies=5 detune=24 depth=7 cutoff=2800 attack=0.004 release=0.1 phaser=0.35
