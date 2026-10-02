@@ -85,19 +85,19 @@ nf measure intro --lanes       every lane soloed, loudest first, and a lint
 ```
 
 A piece is a name in `pieces/`, a path to a `.json`, or a path to a `.tab`;
-`nf measure` reports **crest factor** beside peak and loudness, because that is
-the number that tells distorted from bright — the two look nearly identical in
-a spectrum. A plucked sound is 12 to 15 dB; under about 9 something is
-squashing it.
+all three work anywhere one is asked for. `nf measure` on a piece renders it
+first, which is the loop: edit the grid, run one command, read the numbers.
+
+It reports **crest factor** beside peak and loudness, because that is the
+number that tells distorted from bright — the two look nearly identical in a
+spectrum. A plucked sound is 12 to 15 dB; under about 9 something is squashing
+it, which is usually saturation.
 
 `--lanes` solos every lane in turn. Instruments here are nothing like each
 other at the same gain — a kick at 0.9 peaks near −6 dBFS and a saw ensemble at
 0.5 comes to −33 dB RMS — and there is no way to know that without rendering.
 It also warns when a sustaining line's notes outlast the gap between them,
 which means the melody is playing itself as a chord.
-
-all three work anywhere one is asked for. `nf measure` on a piece renders it
-first, which is the loop: edit the grid, run one command, read the numbers.
 
 **And the server is watching.** Write a tab under `pieces/`, or a patch under
 `library/`, while it is playing, and it reloads and carries on from the bar it
