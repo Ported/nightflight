@@ -46,7 +46,7 @@
 
 use std::fmt::Write as _;
 
-use crate::automation::Play;
+use crate::automation::{Curve, Macro, Mapping, Play, Target};
 use crate::seq::{Home, Lane, Length, Pattern, ReverbSettings, STEPS_PER_BAR, Set, Step, Voicing};
 
 /// Velocity where a bare note name carries none of its own.
@@ -324,6 +324,40 @@ pub fn write(name: &str, set: &Set) -> String {
         }
     }
 
+    // Macros: the only thing in a piece that changes over time by itself, and
+    // therefore the only way a two minute track has stages rather than
+    // sections. A curve of bar:value points, then one line per thing it moves.
+    for m in &set.macros {
+        let mut head = format!("\nmacro {}", word(&m.name));
+        if let Some(curve) = &m.automation {
+            let points: Vec<String> = curve
+                .points()
+                .iter()
+                .map(|(bar, value)| format!("{}:{}", trim(*bar), trim(*value)))
+                .collect();
+            let _ = write!(head, " curve={}", points.join(","));
+        }
+        if let Some(manual) = m.manual {
+            let _ = write!(head, " at={}", trim(manual));
+        }
+        let _ = writeln!(out, "{head}");
+        for mapping in &m.mappings {
+            let _ = writeln!(
+                out,
+                "  {} {} {} {}{}",
+                word(&mapping.lane),
+                target_name(mapping.target),
+                trim(mapping.from),
+                trim(mapping.to),
+                if (mapping.curve - 1.0).abs() < 1e-6 {
+                    String::new()
+                } else {
+                    format!(" {}", trim(mapping.curve))
+                }
+            );
+        }
+    }
+
     // Parameters last: they are the least interesting thing about a piece and
     // the longest, so they do not get to be the first thing you read. Only
     // what differs from the instrument's default, because a patch is a set of
@@ -343,6 +377,44 @@ pub fn write(name: &str, set: &Set) -> String {
         }
     }
     out
+}
+
+/// What a macro can move, as the word a tab writes.
+fn target_name(t: Target) -> &'static str {
+    match t {
+        Target::Level => "level",
+        Target::Send => "send",
+        Target::GateDepth => "gate_depth",
+        Target::Velocity => "velocity",
+        Target::LapRate => "lap_rate",
+        Target::Radius => "radius",
+        Target::GlassIndex => "glass_index",
+        Target::StringsCutoff => "strings_cutoff",
+        Target::BassCutoff => "bass_cutoff",
+        Target::BassEnvAmount => "bass_env_amount",
+        Target::KickPunch => "kick_punch",
+        Target::KickDrive => "kick_drive",
+        Target::HatDecay => "hat_decay",
+    }
+}
+
+fn target_of(name: &str) -> Option<Target> {
+    Some(match name {
+        "level" => Target::Level,
+        "send" => Target::Send,
+        "gate_depth" => Target::GateDepth,
+        "velocity" => Target::Velocity,
+        "lap_rate" => Target::LapRate,
+        "radius" => Target::Radius,
+        "glass_index" => Target::GlassIndex,
+        "strings_cutoff" => Target::StringsCutoff,
+        "bass_cutoff" => Target::BassCutoff,
+        "bass_env_amount" => Target::BassEnvAmount,
+        "kick_punch" => Target::KickPunch,
+        "kick_drive" => Target::KickDrive,
+        "hat_decay" => Target::HatDecay,
+        _ => return None,
+    })
 }
 
 /// A name with no spaces, so a line can be split on whitespace. Spaces become
@@ -409,8 +481,11 @@ pub fn read(text: &str) -> Result<(String, Set), String> {
     // covers and the blocks need not arrive in order.
     let mut steps: Vec<Vec<Step>> = Vec::new();
     let mut velocities: Vec<f32> = Vec::new();
+    let mut macros: Vec<Macro> = Vec::new();
     let mut clip_of_grid = String::new();
     let mut bar_of_grid = 0usize;
+    // Indented lines belong to whichever block was last opened.
+    let mut in_macro = false;
 
     for (n, raw) in text.lines().enumerate() {
         let line = n + 1;
@@ -420,6 +495,35 @@ pub fn read(text: &str) -> Result<(String, Set), String> {
         }
         let indented = body.starts_with(' ') || body.starts_with('\t');
         let words: Vec<&str> = body.split_whitespace().collect();
+
+        // An indented line under a macro is one thing it moves:
+        // `<lane> <target> <from> <to> [shape]`.
+        if indented && in_macro {
+            let Some(target) = words.get(1).copied().and_then(target_of) else {
+                return Err(format!(
+                    "line {line}: {:?} is not something a macro can move",
+                    words.get(1).copied().unwrap_or("")
+                ));
+            };
+            let number_at = |i: usize, what: &str| -> Result<f32, String> {
+                number(words.get(i).copied().unwrap_or(""), line, what)
+            };
+            let mapping = Mapping {
+                lane: unword(words[0]),
+                target,
+                from: number_at(2, "from")?,
+                to: number_at(3, "to")?,
+                curve: match words.get(4) {
+                    Some(shape) => number(shape, line, "shape")?,
+                    None => 1.0,
+                },
+            };
+            match macros.last_mut() {
+                Some(m) => m.mappings.push(mapping),
+                None => return Err(format!("line {line}: no macro to map onto")),
+            }
+            continue;
+        }
 
         // An indented line inside a grid block is a lane's steps.
         if indented && !clip_of_grid.is_empty() {
@@ -462,12 +566,51 @@ pub fn read(text: &str) -> Result<(String, Set), String> {
                 });
             }
             "lane" => {
+                in_macro = false;
                 let (lane, vel) = read_lane(&words, line)?;
                 lanes.push(lane);
                 steps.push(Vec::new());
                 velocities.push(vel);
             }
+            "macro" => {
+                let a = attrs(&words[2..]);
+                // `curve=8:0,16:1,40:0.1` — bar and value, straight lines
+                // between. `at=0.6` is a hand on the fader instead.
+                let automation = match get(&a, "curve") {
+                    Some(spec) => {
+                        let mut points = Vec::new();
+                        for point in spec.split(',') {
+                            let Some((bar, value)) = point.split_once(':') else {
+                                return Err(format!(
+                                    "line {line}: {point:?} should be bar:value"
+                                ));
+                            };
+                            points.push((
+                                number(bar, line, "bar")?,
+                                number(value, line, "value")?,
+                            ));
+                        }
+                        if points.is_empty() {
+                            return Err(format!("line {line}: a curve needs a point"));
+                        }
+                        Some(Curve::new(points))
+                    }
+                    None => None,
+                };
+                macros.push(Macro {
+                    name: unword(words.get(1).copied().unwrap_or("macro")),
+                    mappings: Vec::new(),
+                    automation,
+                    manual: match get(&a, "at") {
+                        Some(v) => Some(number(v, line, "at")?),
+                        None => None,
+                    },
+                });
+                in_macro = true;
+                clip_of_grid.clear();
+            }
             "grid" => {
+                in_macro = false;
                 clip_of_grid = unword(words.get(1).copied().unwrap_or(""));
                 // `bars 5-8` — only the first matters; the rest is for reading.
                 bar_of_grid = words
@@ -522,7 +665,7 @@ pub fn read(text: &str) -> Result<(String, Set), String> {
             bpm,
             lanes,
             reverb,
-            macros: Vec::new(),
+            macros,
             length_bars: bars,
         },
     ))
@@ -675,6 +818,25 @@ mod tests {
             assert_eq!(read_name, *name);
             assert!((after.bpm - before.bpm).abs() < 1e-3, "{name}: bpm");
             assert_eq!(after.lanes.len(), before.lanes.len(), "{name}: lane count");
+            assert_eq!(after.macros.len(), before.macros.len(), "{name}: macro count");
+            for (a, b) in after.macros.iter().zip(&before.macros) {
+                assert_eq!(a.name, b.name);
+                assert_eq!(
+                    a.automation.as_ref().map(|c| c.points().to_vec()),
+                    b.automation.as_ref().map(|c| c.points().to_vec()),
+                    "{}: curve",
+                    a.name
+                );
+                assert_eq!(a.manual, b.manual, "{}: manual", a.name);
+                assert_eq!(a.mappings.len(), b.mappings.len(), "{}: mappings", a.name);
+                for (x, y) in a.mappings.iter().zip(&b.mappings) {
+                    assert_eq!(x.lane, y.lane);
+                    assert_eq!(x.target, y.target, "{} -> {}", a.name, x.lane);
+                    assert!((x.from - y.from).abs() < 1e-4, "{} from", x.lane);
+                    assert!((x.to - y.to).abs() < 1e-4, "{} to", x.lane);
+                    assert!((x.curve - y.curve).abs() < 1e-4, "{} shape", x.lane);
+                }
+            }
 
             for (a, b) in after.lanes.iter().zip(&before.lanes) {
                 assert_eq!(a.name, b.name);
