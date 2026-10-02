@@ -753,10 +753,7 @@ function rawBarAt(clientX) {
   const canvas = $("timeline");
   const box = canvas.getBoundingClientRect();
   const gutter = 74;
-  const bars = Math.max(
-    description?.length_bars ?? 16,
-    Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
-  );
+  const bars = description?.length_bars ?? 16;
   const span = box.width - gutter - 4;
   return Math.max(0, ((clientX - box.left - gutter) / span) * bars);
 }
@@ -823,10 +820,7 @@ for (const done of ["pointerup", "pointercancel"]) {
       const from = dragging.edge === "from" ? dragging.to : entry.from;
       // Dragging the end to the far edge means "no end" again, rather than a
       // stop at whatever bar the canvas happened to run out at.
-      const bars = Math.max(
-        description?.length_bars ?? 16,
-        Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
-      );
+      const bars = description?.length_bars ?? 16;
       let to = dragging.edge === "to" ? dragging.to : entry.to;
       if (to !== null && to >= bars) to = null;
       send({ t: "place", clip: dragging.clip, from, to });
@@ -844,13 +838,8 @@ function drawTimeline() {
   // is unreadable against either colour.
   const gutter = 74;
   const top = 4;
-  // As far as the piece says, or as far as the transport has actually got.
-  // A brought-in clip has no end and the transport runs past the last bar of
-  // the score, so the written length is a floor rather than the width.
-  const bars = Math.max(
-    description.length_bars,
-    Math.ceil((telemetry?.bar ?? 0) / 4) * 4,
-  );
+  // The piece loops over its written length, so that length is the width.
+  const bars = description.length_bars;
   const rows = clips().size;
   // Tall enough for a waveform to have a shape when there are few clips,
   // shared out when there are many.
@@ -999,7 +988,10 @@ function drawTimeline() {
     context.fillText(macro.name, x(firstBar) + 3, curveBottom - (curveBottom - curveTop) * firstValue - 7);
   });
 
-  if (telemetry && telemetry.loop_to > telemetry.loop_from) {
+  // The editing loop, shaded — but not the whole-piece loop every piece now
+  // carries, which would just tint everything.
+  if (telemetry && telemetry.loop_to > telemetry.loop_from
+      && !(telemetry.loop_from === 0 && telemetry.loop_to >= bars)) {
     context.fillStyle = colour("--good") + "22";
     context.fillRect(
       x(telemetry.loop_from),

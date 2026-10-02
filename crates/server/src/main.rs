@@ -227,7 +227,12 @@ impl Session {
         let q = if quantum > 0.0 { quantum } else { 1.0 };
         // Strictly after: pressing it exactly on the bar line means the next
         // one, not this one, which has already gone.
-        ((self.stage_bar / q).floor() + 1.0) * q
+        let at = ((self.stage_bar / q).floor() + 1.0) * q;
+        // The piece loops, so a line at or past its end is the wrap point —
+        // bar 64 of a 64-bar piece is bar 0 of the next time round, and a
+        // span starting there would otherwise never fire.
+        let length = self.document.length_bars;
+        if length > 0.0 && at >= length { 0.0 } else { at }
     }
 
     /// Bring a clip into the mix, starting at a bar in the future.
@@ -489,8 +494,11 @@ impl Session {
         let bar = at.map_or(bar, |at| if loop_to > 0.0 { at % loop_to } else { 0.0 });
         let mut next = Box::new(Engine::new(dsp::SR, set.bpm, set));
         next.start_at(bar);
-        if *wanted != Stage::Piece {
-            // The loop is what makes it an audition rather than a single pass.
+        // Everything loops — an audition over its clip, the piece over its
+        // written length. The piece used to run off the end of its score
+        // into a counter that only climbed, with every macro held at its
+        // final value: not the piece looping, just its last bar's state.
+        if loop_to > 0.0 {
             next.apply(Command::Loop {
                 from: 0.0,
                 to: loop_to,
@@ -664,13 +672,23 @@ fn main() {
 
     // The engine is given a copy; the original stays here as the document.
     let document = set.clone();
-    let link = match host::start(set) {
+    let mut link = match host::start(set) {
         Ok(link) => link,
         Err(err) => {
             eprintln!("could not open the audio device: {err}");
             std::process::exit(1);
         }
     };
+    // The piece loops over its written length, from the first engine on —
+    // every later engine gets this in `stage_at`, but this one was built by
+    // the host and would otherwise run off the end of its score.
+    if document.length_bars > 0.0 {
+        link.send(Command::Loop {
+            from: 0.0,
+            to: document.length_bars,
+            on: true,
+        });
+    }
 
     println!(
         "{set_name} · {} · {} frames",
