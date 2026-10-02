@@ -1,0 +1,103 @@
+piece hooks
+bpm 128
+bars 16
+
+# Four hooks over one groove, four bars each, so they can be judged against
+# each other rather than against a memory.
+#
+#   bars  1-4   pluck      FM, short and bright, on a tresillo
+#   bars  5-8   acid       the resonant bass doing what it was built for
+#   bars  9-12  stab       supersaw chords on the offbeat, the house organ
+#   bars 13-16  layered    the same line on FM and saws an octave apart
+#
+# A minor throughout. What makes a hook work on a floor, in the order it
+# matters: a rhythm you could clap before you could hum it; a gap, because the
+# silence is part of the phrase; repetition with exactly one thing changed, so
+# the ear learns it by the third time and the fourth pays; and a register
+# between the bass and the hats where nothing else is competing.
+#
+# The tresillo under hook one — 3+3+2, steps 0 3 6 8 11 14 — is the single
+# most useful rhythm in dance music and the reason hook one works at all.
+
+# Everything 0.61x: the balance that made the four hooks comparable
+# peaked at +2.8 dBFS, and there is still no limiter.
+lane kick  clip=floor inst=kick root=A1  gain=0.577 len=0.4s
+lane clap  clip=floor inst=hat  root=C-1 gain=0.334 len=0.16s send=0.35
+lane hat   clip=floor inst=hat  root=C-1 gain=0.182 len=0.04s send=0.08 orbit=1.1/8/0/0/0/1
+lane sub   clip=floor inst=bass root=A0  gain=0.486 len=1.6 duck vel=8
+
+lane pluck clip=hook inst=glass   root=A3 gain=0.577 len=2.2 send=0.3 plays=0-4 vel=8
+lane acid  clip=hook inst=bass    root=A1 gain=0.516 len=0.9 duck plays=4-8 vel=8
+lane stab1 clip=hook inst=strings root=A2 gain=1.573 len=1.6 send=0.3 plays=8-12 vel=8
+lane stab2 clip=hook inst=strings root=A2 gain=1.397 len=1.6 send=0.3 plays=8-12 vel=8
+lane stab3 clip=hook inst=strings root=A2 gain=1.312 len=1.6 send=0.35 plays=8-12 vel=8
+lane bell  clip=hook inst=glass   root=A4 gain=0.425 len=5 send=0.45 plays=12-16 vel=8
+lane under clip=hook inst=strings root=A3 gain=1.446 len=6 send=0.3 plays=12-16 vel=7
+
+grid floor bars 1-16
+  kick  X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . . | X . . . X . . . X . . . X . . x
+  clap  . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . . | . . . . X . . . . . . . X . . .
+  hat   . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . . 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . 4 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . . 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . 4 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . . 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . 4 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . . 5 6 | . . 5 . . . 5 . . . 5 . . . 5 . | . . 5 . . . 5 . . . 5 . . 4 5 6
+  sub   A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | F0 . . . . . . . F0 . . . . . . . | F0 . . . . . . . F0 . . . . . . . | G0 . . . . . . . G0 . . . . . . . | E0 . . . . . . . E0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | A0 . . . . . . . A0 . . . . . . . | F0 . . . . . . . F0 . . . . . . . | G0 . . . . . . . G0 . . . . . . .
+
+grid hook bars 1-4
+  pluck A4 .  .  C5 .  .  E5 .  D5 .  .  C5 .  .  .  .  | A4 .  .  C5 .  .  E5 .  D5 .  .  C5 .  .  .  .  | A4 .  .  C5 .  .  E5 .  D5 .  .  C5 .  .  .  .  | A4 .  .  C5 .  .  E5 .  D5 .  .  C5 .  B4 .  A4
+  acid  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab1 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  bell  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  under .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+
+grid hook bars 5-8
+  pluck .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  acid  A1 .  A1 A2 A1 .  A1 .  A1 A2 .  A1 .  A1 .  A1 | A1 .  A1 A2 A1 .  A1 .  A1 A2 .  A1 G1 .  A1 . | A1 .  A1 A2 A1 .  A1 .  A1 A2 .  A1 .  A1 .  A1 | C2 .  C2 .  A1 .  A1 A2 G1 .  G1 .  E1 .  E1 E2
+  stab1 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  bell  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  under .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+
+grid hook bars 9-12
+  pluck .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  acid  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab1 .  .  A3 .  .  .  A3 .  .  .  A3 .  .  .  A3 . | .  .  A3 .  .  .  A3 .  .  .  A3 .  .  .  A3 . | .  .  B3 .  .  .  B3 .  .  .  B3 .  .  .  B3 . | .  .  B3 .  .  .  B3 .  .  .  B3 .  .  .  B3 .
+  stab2 .  .  C4 .  .  .  C4 .  .  .  C4 .  .  .  C4 . | .  .  C4 .  .  .  C4 .  .  .  C4 .  .  .  C4 . | .  .  D4 .  .  .  D4 .  .  .  D4 .  .  .  D4 . | .  .  E4 .  .  .  E4 .  .  .  E4 .  .  .  E4 .
+  stab3 .  .  E4 .  .  .  E4 .  .  .  E4 .  .  .  E4 . | .  .  F4 .  .  .  F4 .  .  .  F4 .  .  .  F4 . | .  .  G4 .  .  .  G4 .  .  .  G4 .  .  .  G4 . | .  .  G4 .  .  .  G4 .  .  .  G4 .  .  .  G4 .
+  bell  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  under .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+
+grid hook bars 13-16
+  pluck .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  acid  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab1 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  stab3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . | .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+  bell  A5 .  .  .  .  .  G5 .  E5 .  .  .  .  .  .  . | .  .  D5 .  .  .  E5 .  .  .  .  .  .  .  .  . | A5 .  .  .  .  .  G5 .  E5 .  .  .  .  .  .  . | .  .  D5 .  .  .  C5 .  A4 .  .  .  .  .  .  .
+  under A4 .  .  .  .  .  G4 .  E4 .  .  .  .  .  .  . | .  .  D4 .  .  .  E4 .  .  .  .  .  .  .  .  . | A4 .  .  .  .  .  G4 .  E4 .  .  .  .  .  .  . | .  .  D4 .  .  .  C4 .  A3 .  .  .  .  .  .  .
+
+# A pluck is FM with the brightness gone before the note is: a high index that
+# melts in a tenth of a second, over an amplitude that lasts barely longer.
+params pluck ratio=2 index=5.5 index_decay=0.07 decay=0.22 release=0.08 strike=0.35 detune=8
+
+# Acid: the filter's floor low, the envelope throwing it wide open, and enough
+# resonance to whistle at the corner. Short env_decay is what makes it bite.
+params acid  cutoff=110 env_amount=11 env_decay=0.055 resonance=0.93 sub=0.25 drive=4.5 decay=0.3 release=0.03
+
+# The house organ stab: a wide ensemble cut off almost at once. All the work is
+# in the attack and the release; there is no sustain to speak of.
+params stab1 copies=5 detune=20 depth=6 cutoff=3200 attack=0.004 release=0.09 phaser=0.25
+params stab2 copies=5 detune=22 depth=6 cutoff=3000 attack=0.004 release=0.09 phaser=0.3
+params stab3 copies=5 detune=24 depth=7 cutoff=2800 attack=0.004 release=0.1 phaser=0.35
+
+# The layer pair: a bell bright enough to be heard over the saws, and saws dark
+# enough not to fight it. Same notes, an octave apart.
+params bell  ratio=4 index=3 index_decay=0.3 decay=1.4 release=0.5 strike=0.3 detune=5
+params under copies=5 detune=16 depth=9 cutoff=1500 attack=0.01 release=0.4 phaser=0.5 phaser_rate=0.1
+
+# The clap experiment: the hat is a bandpass on noise and its tone will not go
+# below 2 kHz, so this is all top and no body. It reads as a rimshot at best.
+params clap  tone=2000 decay=0.13 noise=1 release=0.03
+params hat   tone=9000 decay=0.035 noise=0.85
+params kick  sweep=4.5 pitch_decay=0.028 punch=7 decay=0.3 hold=0.03 click=0.35 knock=0.35 drive=3.2
+params sub   cutoff=90 env_amount=2 env_decay=0.12 resonance=0.3 sub=0.8 drive=2 decay=0.8 release=0.1

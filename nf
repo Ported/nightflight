@@ -208,24 +208,33 @@ def per_lane(what: str) -> None:
     breakdown was silent.
     """
     lanes = json.loads(engine("lanes", what))
-    print(f"\n  {'lane':<14}{'plays':<9}{'gain':>6}{'peak':>9}{'rms':>8}   ")
+    bpm = piece_facts(what).get("bpm") or 120
+    bar = 240.0 / bpm
+    print(f"\n  {'lane':<14}{'plays':<9}{'gain':>6}{'peak':>9}{'loudest bar':>12}")
     rows = []
     for lane in lanes:
         tmp = Path(tempfile.gettempdir()) / f"nf-solo-{lane['name'].replace(' ', '_')}.wav"
         engine("render", what, str(tmp), "--solo", lane["name"])
         sr, x = read_wav(tmp)
         mono = x.mean(axis=1)
-        rows.append((
-            lane, db(float(np.abs(x).max())),
-            db(float(np.sqrt((mono ** 2).mean()))),
-        ))
+        # The loudest bar, not the whole render. A lane that only plays for
+        # four bars of sixteen reads six decibels low against one that plays
+        # throughout, and then the table says the hook is quieter than the
+        # drums when it is not — which is exactly the wrong answer from a tool
+        # whose only job is to compare lanes.
+        loudest = max(
+            float(np.sqrt((mono[int(b * bar * sr):int((b + 1) * bar * sr)] ** 2).mean()))
+            for b in range(max(1, int(len(mono) / sr / bar)))
+        )
+        rows.append((lane, db(float(np.abs(x).max())), db(loudest)))
     for lane, peak, rms in sorted(rows, key=lambda r: -r[2]):
         mark = " gated" if lane["gated"] else ""
         print(f"  {lane['name']:<14}{lane['instrument']:<9}{lane['gain']:>6.2f}"
-              f"{peak:>9.1f}{rms:>8.1f}{mark}")
+              f"{peak:>9.1f}{rms:>12.1f}{mark}")
     spread = rows and max(r[2] for r in rows) - min(r[2] for r in rows)
     if spread:
-        print(f"\n  {spread:.0f} dB between the loudest lane and the quietest.")
+        print(f"\n  {spread:.0f} dB between the loudest lane and the quietest, "
+              f"each measured in the bar where it works hardest.")
 
 
 def cmd_new(args: list[str]) -> None:
