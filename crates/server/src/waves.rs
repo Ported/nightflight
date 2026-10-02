@@ -35,12 +35,14 @@ const PER_BAR: usize = 16;
 pub fn spawn(session: Arc<Mutex<Session>>) {
     thread::spawn(move || {
         // What was last rendered. The name catches `load`, the generation
-        // catches the watcher; nothing else replaces the document.
-        let mut rendered: Option<(String, u64)> = None;
+        // catches the watcher, and `performed` catches the conductor — a
+        // brought-in clip changes what the document plays without any file
+        // changing.
+        let mut rendered: Option<(String, u64, u64)> = None;
         loop {
             let next = {
                 let session = session.lock().expect("no panics hold this");
-                let key = (session.name.clone(), session.generation);
+                let key = (session.name.clone(), session.generation, session.performed);
                 (rendered.as_ref() != Some(&key)).then(|| (key, session.document.clone()))
             };
             let Some((key, set)) = next else {
@@ -53,7 +55,9 @@ pub fn spawn(session: Arc<Mutex<Session>>) {
                 // Publish only if this is still the document on stage; a
                 // reload mid-render means going round again, not showing a
                 // picture of the old piece.
-                if (session.name.as_str(), session.generation) == (key.0.as_str(), key.1) {
+                if (session.name.as_str(), session.generation, session.performed)
+                    == (key.0.as_str(), key.1, key.2)
+                {
                     session.waves = Some(message);
                     session.waves_generation += 1;
                 }

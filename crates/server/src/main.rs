@@ -141,6 +141,10 @@ struct Session {
     /// Why the last reload did not happen, for the page to show. A tab file
     /// with a typo in it is the normal case here, not an exceptional one.
     trouble: Option<String>,
+    /// Bumped whenever conducting changes what the document plays — a clip
+    /// brought in, taken out, or dragged. The file watcher cannot see these
+    /// (nothing touched a file), so the waves worker watches this instead.
+    performed: u64,
     /// The timeline's waveforms, as the message to send — rendered offline by
     /// the waves worker, a few seconds behind the document it pictures.
     waves: Option<String>,
@@ -339,6 +343,7 @@ impl Session {
 
     /// Tell the engine where a brought clip's lanes now play.
     fn push_spans(&mut self, name: &str) {
+        self.performed += 1;
         let Some(brought) = self.live.iter().find(|b| b.clip == name).cloned() else {
             return;
         };
@@ -712,6 +717,7 @@ fn main() {
         live: Vec::new(),
         generation: 0,
         trouble: None,
+        performed: 0,
         waves: None,
         waves_generation: 0,
         stage_bars: 0.0,
